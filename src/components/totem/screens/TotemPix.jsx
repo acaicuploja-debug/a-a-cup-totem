@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import TotemHeader from '../TotemHeader';
 import PixQRCode from '../PixQRCode';
 import { useCart } from '../CartContext';
@@ -20,7 +19,6 @@ export default function TotemPix({
       const now = new Date();
       const brasiliaTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
       
-      // Get next order number
       const orders = await base44.entities.Order.list('-order_number', 1);
       const nextNumber = orders.length > 0 ? (orders[0].order_number || 0) + 1 : 1;
       
@@ -48,7 +46,6 @@ export default function TotemPix({
       
       const order = await base44.entities.Order.create(orderData);
       
-      // Update customer loyalty if not cancelled
       if (status !== 'cancelado' && customer?.id && !customer?.has_pending_reward) {
         const newCount = (customer.loyalty_count || 0) + 1;
         const loyaltyTarget = settings?.loyalty_target || 10;
@@ -60,7 +57,6 @@ export default function TotemPix({
           reward_available_date: hasPendingReward ? new Date().toISOString() : null
         });
         
-        // Log loyalty action
         await base44.entities.LoyaltyLog.create({
           customer_id: customer.id,
           customer_phone: customer.phone,
@@ -72,7 +68,6 @@ export default function TotemPix({
         });
       }
       
-      // If redeeming reward
       if (customer?.redeeming_reward && customer?.id) {
         await base44.entities.Customer.update(customer.id, {
           loyalty_count: 0,
@@ -108,9 +103,7 @@ export default function TotemPix({
     }
   };
   
-  const handleExpired = () => {
-    // PIX expired, do nothing yet
-  };
+  const handleExpired = () => {};
 
   return (
     <div className="min-h-screen bg-gray-50">

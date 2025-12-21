@@ -122,7 +122,6 @@ export default function TotemUpsell({
         </div>
       </main>
       
-      {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-xl mx-auto space-y-3">
           <Button

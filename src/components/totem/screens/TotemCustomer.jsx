@@ -86,7 +86,7 @@ export default function TotemCustomer({
   });
   
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     
     const cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length < 10) {
@@ -224,7 +224,6 @@ export default function TotemCustomer({
         </motion.div>
       </main>
       
-      {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-xl mx-auto">
           <Button

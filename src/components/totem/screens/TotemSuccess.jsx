@@ -11,7 +11,6 @@ export default function TotemSuccess({
 }) {
   const { currentOrder, customer } = useCart();
   
-  // Auto redirect after 30 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       onNewOrder();
