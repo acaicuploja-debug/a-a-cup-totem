@@ -24,15 +24,15 @@ export default function TotemPix({
       
       const orderData = {
         order_number: nextNumber,
-        customer_id: customer?.id,
-        customer_name: customer?.name,
-        customer_phone: customer?.phone,
+        customer_id: customer?.id || null,
+        customer_name: customer?.name || null,
+        customer_phone: customer?.phone || null,
         items: items.map(item => ({
           product_id: item.product_id,
           product_name: item.product_name,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          complements: item.complements,
+          complements: item.complements || [],
           total: item.total
         })),
         subtotal: total,
@@ -46,44 +46,48 @@ export default function TotemPix({
       
       const order = await base44.entities.Order.create(orderData);
       
-      if (status !== 'cancelado' && customer?.id && !customer?.has_pending_reward) {
-        const newCount = (customer.loyalty_count || 0) + 1;
-        const loyaltyTarget = settings?.loyalty_target || 10;
-        const hasPendingReward = newCount >= loyaltyTarget;
-        
-        await base44.entities.Customer.update(customer.id, {
-          loyalty_count: hasPendingReward ? loyaltyTarget : newCount,
-          has_pending_reward: hasPendingReward,
-          reward_available_date: hasPendingReward ? new Date().toISOString() : null
-        });
-        
-        await base44.entities.LoyaltyLog.create({
-          customer_id: customer.id,
-          customer_phone: customer.phone,
-          order_id: order.id,
-          action: hasPendingReward ? 'premio_disponivel' : 'pedido_contado',
-          loyalty_count_before: customer.loyalty_count || 0,
-          loyalty_count_after: newCount,
-          datetime_brasilia: brasiliaTime
-        });
-      }
-      
-      if (customer?.redeeming_reward && customer?.id) {
-        await base44.entities.Customer.update(customer.id, {
-          loyalty_count: 0,
-          has_pending_reward: false,
-          reward_available_date: null
-        });
-        
-        await base44.entities.LoyaltyLog.create({
-          customer_id: customer.id,
-          customer_phone: customer.phone,
-          order_id: order.id,
-          action: 'premio_resgatado',
-          loyalty_count_before: customer.loyalty_count || 0,
-          loyalty_count_after: 0,
-          datetime_brasilia: brasiliaTime
-        });
+      // Update loyalty only if customer exists and order is not cancelled
+      if (status !== 'cancelado' && customer?.id) {
+        if (customer.redeeming_reward) {
+          // Resgatando prêmio
+          await base44.entities.Customer.update(customer.id, {
+            loyalty_count: 0,
+            has_pending_reward: false,
+            reward_available_date: null
+          });
+          
+          await base44.entities.LoyaltyLog.create({
+            customer_id: customer.id,
+            customer_phone: customer.phone,
+            order_id: order.id,
+            action: 'premio_resgatado',
+            loyalty_count_before: customer.loyalty_count || 0,
+            loyalty_count_after: 0,
+            datetime_brasilia: brasiliaTime
+          });
+        } else {
+          // Contando pedido normal
+          const currentCount = customer.loyalty_count || 0;
+          const newCount = currentCount + 1;
+          const loyaltyTarget = settings?.loyalty_target || 10;
+          const hasPendingReward = newCount >= loyaltyTarget;
+          
+          await base44.entities.Customer.update(customer.id, {
+            loyalty_count: hasPendingReward ? loyaltyTarget : newCount,
+            has_pending_reward: hasPendingReward,
+            reward_available_date: hasPendingReward ? new Date().toISOString() : customer.reward_available_date
+          });
+          
+          await base44.entities.LoyaltyLog.create({
+            customer_id: customer.id,
+            customer_phone: customer.phone,
+            order_id: order.id,
+            action: hasPendingReward ? 'premio_disponivel' : 'pedido_contado',
+            loyalty_count_before: currentCount,
+            loyalty_count_after: newCount,
+            datetime_brasilia: brasiliaTime
+          });
+        }
       }
       
       return order;
