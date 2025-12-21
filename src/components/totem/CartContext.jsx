@@ -8,6 +8,7 @@ export function CartProvider({ children }) {
   const [consumptionType, setConsumptionType] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   const addItem = useCallback((product, complements = [], quantity = 1) => {
     const complementsTotal = complements.reduce((sum, c) => sum + (c.price || 0), 0);
@@ -50,10 +51,23 @@ export function CartProvider({ children }) {
     setConsumptionType(null);
     setPaymentMethod(null);
     setCurrentOrder(null);
+    setAppliedCoupon(null);
   }, []);
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const total = subtotal;
+  
+  const calculateDiscount = useCallback(() => {
+    if (!appliedCoupon) return 0;
+    
+    if (appliedCoupon.discount_type === 'percentage') {
+      return subtotal * (appliedCoupon.discount_value / 100);
+    } else {
+      return appliedCoupon.discount_value;
+    }
+  }, [appliedCoupon, subtotal]);
+  
+  const discount = calculateDiscount();
+  const total = Math.max(0, subtotal - discount);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -64,6 +78,7 @@ export function CartProvider({ children }) {
       removeItem,
       clearCart,
       subtotal,
+      discount,
       total,
       itemCount,
       customer,
@@ -73,7 +88,9 @@ export function CartProvider({ children }) {
       paymentMethod,
       setPaymentMethod,
       currentOrder,
-      setCurrentOrder
+      setCurrentOrder,
+      appliedCoupon,
+      setAppliedCoupon
     }}>
       {children}
     </CartContext.Provider>

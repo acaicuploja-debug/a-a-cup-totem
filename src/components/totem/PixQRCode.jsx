@@ -5,44 +5,52 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 function generatePixCode(pixKey, value, receiverName, description) {
-  // Simplified PIX code generation (EMV standard)
-  const formatValue = (id, value) => {
+  const formatField = (id, value) => {
     const len = value.length.toString().padStart(2, '0');
     return `${id}${len}${value}`;
   };
   
   let payload = '';
-  payload += formatValue('00', '01'); // Payload Format Indicator
-  payload += formatValue('26', formatValue('00', 'BR.GOV.BCB.PIX') + formatValue('01', pixKey));
-  payload += formatValue('52', '0000'); // Merchant Category Code
-  payload += formatValue('53', '986'); // Currency (BRL)
-  payload += formatValue('54', value.toFixed(2));
-  payload += formatValue('58', 'BR'); // Country
-  payload += formatValue('59', receiverName?.substring(0, 25) || 'ACAI CUP');
-  payload += formatValue('60', 'SAO PAULO');
-  payload += formatValue('62', formatValue('05', description || 'PEDIDO'));
+  payload += formatField('00', '01');
   
-  // CRC16 placeholder
-  const crcPayload = payload + '6304';
-  const crc = calculateCRC16(crcPayload);
-  payload += formatValue('63', crc);
+  const merchantAccount = formatField('00', 'BR.GOV.BCB.PIX') + formatField('01', pixKey);
+  payload += formatField('26', merchantAccount);
+  
+  payload += formatField('52', '0000');
+  payload += formatField('53', '986');
+  payload += formatField('54', value.toFixed(2));
+  payload += formatField('58', 'BR');
+  payload += formatField('59', (receiverName || 'ACAI CUP').substring(0, 25));
+  payload += formatField('60', 'SAO PAULO');
+  
+  const additionalData = formatField('05', (description || 'PEDIDO').substring(0, 25));
+  payload += formatField('62', additionalData);
+  
+  payload += '6304';
+  
+  const crc = calculateCRC16(payload);
+  payload += crc;
   
   return payload;
 }
 
 function calculateCRC16(str) {
   let crc = 0xFFFF;
-  for (let i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i) << 8;
+  const bytes = new TextEncoder().encode(str);
+  
+  for (let i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i] << 8;
     for (let j = 0; j < 8; j++) {
-      if (crc & 0x8000) {
+      if ((crc & 0x8000) !== 0) {
         crc = (crc << 1) ^ 0x1021;
       } else {
         crc <<= 1;
       }
+      crc &= 0xFFFF;
     }
   }
-  return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+  
+  return crc.toString(16).toUpperCase().padStart(4, '0');
 }
 
 export default function PixQRCode({ 

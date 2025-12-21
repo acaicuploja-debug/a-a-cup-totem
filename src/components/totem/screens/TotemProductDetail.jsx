@@ -159,8 +159,8 @@ export default function TotemProductDetail({
       </div>
       
       {/* Fixed bottom bar - always visible */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl safe-area-bottom">
-        <div className="max-w-xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-50">
+        <div className="w-full max-w-xl mx-auto px-safe">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <button 
@@ -197,11 +197,11 @@ export default function TotemProductDetail({
           <Button
             onClick={handleAddToCart}
             disabled={!canAddToCart}
-            className="w-full h-16 text-xl font-bold rounded-2xl text-white disabled:opacity-50"
+            className="w-full h-16 text-lg md:text-xl font-bold rounded-2xl text-white disabled:opacity-50 whitespace-nowrap"
             style={{ backgroundColor: canAddToCart ? primaryColor : '#9CA3AF' }}
           >
-            <ShoppingCart className="w-6 h-6 mr-3" />
-            Adicionar ao Carrinho
+            <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
+            <span className="truncate">Adicionar ao Carrinho</span>
           </Button>
         </div>
       </div>

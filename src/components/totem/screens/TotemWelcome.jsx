@@ -9,8 +9,9 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-8"
+      className="min-h-screen flex flex-col items-center justify-center p-8 cursor-pointer"
       style={bgStyle}
+      onClick={onStart}
     >
       <div className="absolute inset-0 bg-black/30" />
       
@@ -32,7 +33,7 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         )}
         
         <motion.h1 
-          className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg"
+          className="text-4xl md:text-6xl font-light text-white mb-4 drop-shadow-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -41,35 +42,22 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         </motion.h1>
         
         <motion.h2 
-          className="text-5xl md:text-7xl font-extrabold text-white mb-12 drop-shadow-lg"
+          className="text-5xl md:text-7xl font-bold text-white mb-16 drop-shadow-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           {settings?.store_name || 'Açaí Cup'}
         </motion.h2>
-        
-        <motion.button
-          onClick={onStart}
-          className="group flex items-center gap-4 bg-white text-gray-900 px-12 py-6 rounded-full text-2xl font-bold shadow-2xl hover:shadow-3xl transition-all"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span>Clique aqui para iniciar seu pedido</span>
-          <ChevronRight className="w-8 h-8 group-hover:translate-x-1 transition-transform" />
-        </motion.button>
       </motion.div>
       
       <motion.div 
-        className="absolute bottom-8 text-white/60 text-sm"
+        className="absolute bottom-12 text-white text-xl font-light"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
       >
-        Toque na tela para começar
+        Clique na tela para iniciar seu pedido
       </motion.div>
     </div>
   );

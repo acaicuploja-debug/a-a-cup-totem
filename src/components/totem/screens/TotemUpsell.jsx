@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 export default function TotemUpsell({ 
   settings, 
@@ -14,15 +15,21 @@ export default function TotemUpsell({
   onSkip,
   onProceed 
 }) {
-  const { addItem } = useCart();
+  const { addItem, total } = useCart();
   
   const { data: upsellProducts, isLoading } = useQuery({
     queryKey: ['upsell-products'],
     queryFn: () => base44.entities.Product.filter({ is_upsell: true, active: true })
   });
   
+  const [addedProducts, setAddedProducts] = React.useState({});
+  
   const handleAddUpsell = (product) => {
     addItem(product, [], 1);
+    setAddedProducts(prev => ({
+      ...prev,
+      [product.id]: (prev[product.id] || 0) + 1
+    }));
     toast.success(`${product.name} adicionado!`);
   };
 
@@ -109,14 +116,21 @@ export default function TotemUpsell({
                 </p>
               </div>
               
-              <Button
-                onClick={() => handleAddUpsell(product)}
-                size="icon"
-                className="w-12 h-12 rounded-full flex-shrink-0 text-white"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <Plus className="w-6 h-6" />
-              </Button>
+              <div className="flex flex-col items-center gap-2">
+                {addedProducts[product.id] > 0 && (
+                  <Badge className="bg-green-100 text-green-800">
+                    {addedProducts[product.id]}x adicionado
+                  </Badge>
+                )}
+                <Button
+                  onClick={() => handleAddUpsell(product)}
+                  size="icon"
+                  className="w-12 h-12 rounded-full flex-shrink-0 text-white"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Plus className="w-6 h-6" />
+                </Button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -124,6 +138,12 @@ export default function TotemUpsell({
       
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-xl mx-auto space-y-3">
+          <div className="flex items-center justify-between px-4">
+            <span className="text-gray-600">Total do carrinho</span>
+            <span className="text-2xl font-bold" style={{ color: primaryColor }}>
+              R$ {total.toFixed(2)}
+            </span>
+          </div>
           <Button
             onClick={onProceed}
             className="w-full h-16 text-xl font-bold rounded-2xl text-white"
