@@ -11,94 +11,82 @@ function generatePixCode(pixKey, value, receiverName, merchantCity) {
     return '';
   }
 
-  // Remove espaços e caracteres especiais da chave PIX
   const cleanKey = String(pixKey).trim();
   
-  const formatField = (id, content) => {
-    const contentStr = String(content);
-    const length = contentStr.length.toString().padStart(2, '0');
-    return `${id}${length}${contentStr}`;
+  // Função para formatar campo EMV
+  const EMV = (id, value) => {
+    const str = String(value);
+    const len = String(str.length).padStart(2, '0');
+    return id + len + str;
   };
 
-  let payload = '';
-  
-  // 00 - Payload Format Indicator
-  payload += '000201';
-  
-  // 26 - Merchant Account Information
-  const gui = formatField('00', 'BR.GOV.BCB.PIX');
-  const key = formatField('01', cleanKey);
-  const merchantAccount = gui + key;
-  payload += formatField('26', merchantAccount);
-  
-  // 52 - Merchant Category Code
-  payload += '52040000';
-  
-  // 53 - Transaction Currency
-  payload += '5303986';
-  
-  // 54 - Transaction Amount
-  const amount = value.toFixed(2);
-  payload += formatField('54', amount);
-  
-  // 58 - Country Code
-  payload += '5802BR';
-  
-  // 59 - Merchant Name (remove acentos e caracteres especiais)
-  const name = (receiverName || 'Merchant')
+  // Limpar nome - remover acentos e caracteres especiais
+  const cleanName = String(receiverName || 'MERCHANT')
+    .toUpperCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Za-z0-9 ]/g, '')
-    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, '')
     .trim()
     .substring(0, 25);
-  payload += formatField('59', name);
-  
-  // 60 - Merchant City (remove acentos)
-  const city = (merchantCity || 'SAO PAULO')
+
+  const cleanCity = String(merchantCity || 'SAO PAULO')
+    .toUpperCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Za-z0-9 ]/g, '')
-    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, '')
     .trim()
     .substring(0, 15);
-  payload += formatField('60', city);
+
+  // Construir payload EMV
+  let payload = '';
+  payload += EMV('00', '01'); // Payload Format Indicator
   
-  // 62 - Additional Data (txid único)
-  const txid = Date.now().toString().substring(3);
-  const additionalData = formatField('05', txid);
-  payload += formatField('62', additionalData);
+  // Merchant Account Information - PIX
+  const merchantAccountInfo = EMV('00', 'BR.GOV.BCB.PIX') + EMV('01', cleanKey);
+  payload += EMV('26', merchantAccountInfo);
   
-  // 63 - CRC16
+  payload += EMV('52', '0000'); // Merchant Category Code
+  payload += EMV('53', '986'); // Transaction Currency (BRL)
+  payload += EMV('54', value.toFixed(2)); // Transaction Amount
+  payload += EMV('58', 'BR'); // Country Code
+  payload += EMV('59', cleanName); // Merchant Name
+  payload += EMV('60', cleanCity); // Merchant City
+  
+  // Additional Data Field Template
+  const txid = '***' + Date.now().toString().slice(-10);
+  const additionalInfo = EMV('05', txid);
+  payload += EMV('62', additionalInfo);
+  
+  // CRC16 placeholder
   payload += '6304';
   
-  // Calcula CRC16 CCITT
-  const crc = calculateCRC16(payload);
+  // Calcular e adicionar CRC16
+  const crc = computeCRC16(payload);
   payload += crc;
   
-  console.log('Generated PIX code:', payload);
+  console.log('PIX Code gerado:', payload);
+  console.log('Chave:', cleanKey, 'Valor:', value, 'Nome:', cleanName);
+  
   return payload;
 }
 
-function calculateCRC16(payload) {
-  const polynomial = 0x1021;
+function computeCRC16(str) {
   let crc = 0xFFFF;
   
-  for (let i = 0; i < payload.length; i++) {
-    const byte = payload.charCodeAt(i);
+  for (let i = 0; i < str.length; i++) {
+    const byte = str.charCodeAt(i) & 0xFF;
     crc ^= (byte << 8);
     
-    for (let j = 0; j < 8; j++) {
-      if ((crc & 0x8000) !== 0) {
-        crc = ((crc << 1) ^ polynomial) & 0xFFFF;
+    for (let bit = 0; bit < 8; bit++) {
+      if (crc & 0x8000) {
+        crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
       } else {
         crc = (crc << 1) & 0xFFFF;
       }
     }
   }
   
-  const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
-  return crcHex;
+  return crc.toString(16).toUpperCase().padStart(4, '0');
 }
 
 export default function PixQRCode({ 
