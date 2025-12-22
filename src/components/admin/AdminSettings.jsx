@@ -274,8 +274,12 @@ export default function AdminSettings({ settings, primaryColor }) {
                     <Input
                       value={formData.pix_receiver_name || ''}
                       onChange={(e) => handleChange('pix_receiver_name', e.target.value)}
-                      placeholder="Nome que aparece no PIX"
+                      placeholder="Nome exato cadastrado na chave PIX"
                     />
+                    <p className="text-xs text-amber-600">
+                      ⚠️ <strong>IMPORTANTE:</strong> Digite o nome EXATAMENTE como está cadastrado na chave PIX no seu banco. 
+                      Qualquer diferença (maiúsculas, acentos, espaços) pode causar erro no pagamento.
+                    </p>
                   </div>
                 </div>
               </div>
