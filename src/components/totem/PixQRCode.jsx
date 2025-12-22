@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle, RefreshCw, CreditCard, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import QRCode from 'qrcode';
 
 function generatePixCode(pixKey, value, receiverName, description) {
   const formatField = (id, value) => {
@@ -64,6 +65,8 @@ export default function PixQRCode({
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [expired, setExpired] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+  const canvasRef = useRef(null);
   
   const pixCode = generatePixCode(
     settings?.pix_key || '',
@@ -72,7 +75,21 @@ export default function PixQRCode({
     `Pedido Acai Cup`
   );
   
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pixCode)}`;
+  useEffect(() => {
+    if (pixCode && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, pixCode, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }).catch(err => {
+        console.error('Error generating QR code:', err);
+        toast.error('Erro ao gerar QR Code');
+      });
+    }
+  }, [pixCode]);
   
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -108,6 +125,7 @@ export default function PixQRCode({
   const handleGenerateNew = () => {
     setTimeLeft(300);
     setExpired(false);
+    setCopied(false);
   };
   
   if (expired) {
@@ -176,10 +194,9 @@ export default function PixQRCode({
       </div>
       
       <div className="bg-white p-4 rounded-2xl shadow-lg mb-6">
-        <img 
-          src={qrCodeUrl} 
-          alt="QR Code PIX"
-          className="w-64 h-64"
+        <canvas 
+          ref={canvasRef}
+          className="w-full h-auto max-w-[300px] mx-auto"
         />
       </div>
       
