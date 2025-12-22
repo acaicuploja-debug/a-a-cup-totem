@@ -5,78 +5,100 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 
-function generatePixCode(pixKey, value, receiverName, description) {
-  if (!pixKey || !value) {
+function generatePixCode(pixKey, value, receiverName, merchantCity) {
+  if (!pixKey || !value || value <= 0) {
+    console.error('Invalid PIX parameters:', { pixKey, value });
     return '';
   }
+
+  // Remove espaços e caracteres especiais da chave PIX
+  const cleanKey = String(pixKey).trim();
   
-  const formatField = (id, value) => {
-    const len = value.length.toString().padStart(2, '0');
-    return `${id}${len}${value}`;
+  const formatField = (id, content) => {
+    const contentStr = String(content);
+    const length = contentStr.length.toString().padStart(2, '0');
+    return `${id}${length}${contentStr}`;
   };
-  
+
   let payload = '';
   
-  // Payload Format Indicator
-  payload += formatField('00', '01');
+  // 00 - Payload Format Indicator
+  payload += '000201';
   
-  // Merchant Account Information (PIX)
-  const merchantAccount = formatField('00', 'BR.GOV.BCB.PIX') + formatField('01', pixKey);
+  // 26 - Merchant Account Information
+  const gui = formatField('00', 'BR.GOV.BCB.PIX');
+  const key = formatField('01', cleanKey);
+  const merchantAccount = gui + key;
   payload += formatField('26', merchantAccount);
   
-  // Merchant Category Code
-  payload += formatField('52', '0000');
+  // 52 - Merchant Category Code
+  payload += '52040000';
   
-  // Transaction Currency (BRL)
-  payload += formatField('53', '986');
+  // 53 - Transaction Currency
+  payload += '5303986';
   
-  // Transaction Amount
-  payload += formatField('54', value.toFixed(2));
+  // 54 - Transaction Amount
+  const amount = value.toFixed(2);
+  payload += formatField('54', amount);
   
-  // Country Code
-  payload += formatField('58', 'BR');
+  // 58 - Country Code
+  payload += '5802BR';
   
-  // Merchant Name
-  const cleanName = (receiverName || 'ACAI CUP')
+  // 59 - Merchant Name (remove acentos e caracteres especiais)
+  const name = (receiverName || 'Merchant')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ]/g, '')
     .toUpperCase()
+    .trim()
     .substring(0, 25);
-  payload += formatField('59', cleanName);
+  payload += formatField('59', name);
   
-  // Merchant City
-  payload += formatField('60', 'SAO PAULO');
+  // 60 - Merchant City (remove acentos)
+  const city = (merchantCity || 'SAO PAULO')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ]/g, '')
+    .toUpperCase()
+    .trim()
+    .substring(0, 15);
+  payload += formatField('60', city);
   
-  // Additional Data Field Template (with Reference Label)
-  const txid = `***${Date.now().toString().slice(-10)}`;
+  // 62 - Additional Data (txid único)
+  const txid = Date.now().toString().substring(3);
   const additionalData = formatField('05', txid);
   payload += formatField('62', additionalData);
   
-  // CRC16
+  // 63 - CRC16
   payload += '6304';
+  
+  // Calcula CRC16 CCITT
   const crc = calculateCRC16(payload);
   payload += crc;
   
+  console.log('Generated PIX code:', payload);
   return payload;
 }
 
-function calculateCRC16(str) {
+function calculateCRC16(payload) {
+  const polynomial = 0x1021;
   let crc = 0xFFFF;
-  const bytes = new TextEncoder().encode(str);
   
-  for (let i = 0; i < bytes.length; i++) {
-    crc ^= bytes[i] << 8;
+  for (let i = 0; i < payload.length; i++) {
+    const byte = payload.charCodeAt(i);
+    crc ^= (byte << 8);
+    
     for (let j = 0; j < 8; j++) {
       if ((crc & 0x8000) !== 0) {
-        crc = (crc << 1) ^ 0x1021;
+        crc = ((crc << 1) ^ polynomial) & 0xFFFF;
       } else {
-        crc <<= 1;
+        crc = (crc << 1) & 0xFFFF;
       }
-      crc &= 0xFFFF;
     }
   }
   
-  return crc.toString(16).toUpperCase().padStart(4, '0');
+  const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
+  return crcHex;
 }
 
 export default function PixQRCode({ 
@@ -94,10 +116,10 @@ export default function PixQRCode({
   const canvasRef = useRef(null);
   
   const pixCode = generatePixCode(
-    settings?.pix_key || '',
+    settings?.pix_key,
     total,
     settings?.pix_receiver_name,
-    `Pedido Acai Cup`
+    'SAO PAULO'
   );
   
   useEffect(() => {
