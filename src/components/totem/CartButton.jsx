@@ -12,7 +12,7 @@ export default function CartButton({ onClick, primaryColor }) {
     <AnimatePresence>
       <motion.button
         onClick={onClick}
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center gap-3 px-8 py-5 rounded-full text-white shadow-2xl max-w-[calc(100vw-2rem)] w-auto"
+        className="fixed bottom-6 left-4 right-4 z-50 flex items-center justify-center gap-3 px-6 py-5 rounded-full text-white shadow-2xl"
         style={{ backgroundColor: primaryColor || '#6B21A8' }}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -28,11 +28,11 @@ export default function CartButton({ onClick, primaryColor }) {
           </span>
         </div>
         
-        <span className="font-semibold text-lg whitespace-nowrap">
+        <span className="font-semibold text-lg">
           Ver Carrinho
         </span>
         
-        <span className="font-bold text-xl whitespace-nowrap">
+        <span className="font-bold text-xl ml-auto">
           R$ {total.toFixed(2)}
         </span>
       </motion.button>
