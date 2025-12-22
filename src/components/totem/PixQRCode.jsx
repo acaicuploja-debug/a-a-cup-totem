@@ -6,29 +6,54 @@ import { toast } from 'sonner';
 import QRCode from 'qrcode';
 
 function generatePixCode(pixKey, value, receiverName, description) {
+  if (!pixKey || !value) {
+    return '';
+  }
+  
   const formatField = (id, value) => {
     const len = value.length.toString().padStart(2, '0');
     return `${id}${len}${value}`;
   };
   
   let payload = '';
+  
+  // Payload Format Indicator
   payload += formatField('00', '01');
   
+  // Merchant Account Information (PIX)
   const merchantAccount = formatField('00', 'BR.GOV.BCB.PIX') + formatField('01', pixKey);
   payload += formatField('26', merchantAccount);
   
+  // Merchant Category Code
   payload += formatField('52', '0000');
+  
+  // Transaction Currency (BRL)
   payload += formatField('53', '986');
+  
+  // Transaction Amount
   payload += formatField('54', value.toFixed(2));
+  
+  // Country Code
   payload += formatField('58', 'BR');
-  payload += formatField('59', (receiverName || 'ACAI CUP').substring(0, 25));
+  
+  // Merchant Name
+  const cleanName = (receiverName || 'ACAI CUP')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .substring(0, 25);
+  payload += formatField('59', cleanName);
+  
+  // Merchant City
   payload += formatField('60', 'SAO PAULO');
   
-  const additionalData = formatField('05', (description || 'PEDIDO').substring(0, 25));
+  // Additional Data Field Template (with Reference Label)
+  const txid = `***${Date.now().toString().slice(-10)}`;
+  const additionalData = formatField('05', txid);
   payload += formatField('62', additionalData);
   
+  // CRC16
   payload += '6304';
-  
   const crc = calculateCRC16(payload);
   payload += crc;
   
