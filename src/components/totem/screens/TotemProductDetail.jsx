@@ -119,7 +119,7 @@ export default function TotemProductDetail({
             </p>
           )}
           
-          <div className="flex items-baseline gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
             {product.promo_price && product.promo_price < product.price ? (
               <>
                 <span 
@@ -130,6 +130,9 @@ export default function TotemProductDetail({
                 </span>
                 <span className="text-lg text-gray-400 line-through">
                   R$ {product.price.toFixed(2)}
+                </span>
+                <span className="text-sm font-bold px-3 py-1 rounded-full bg-red-500 text-white">
+                  -{Math.round((1 - product.promo_price / product.price) * 100)}%
                 </span>
               </>
             ) : (
@@ -145,13 +148,20 @@ export default function TotemProductDetail({
           {product.complements && product.complements.length > 0 && (
             <div className="border-t border-gray-200 pt-6">
               {product.complements.map((group, index) => (
-                <ComplementSelector
-                  key={index}
-                  group={group}
-                  selectedItems={selectedComplements[index] || []}
-                  onToggle={(item) => handleToggleComplement(index, item)}
-                  primaryColor={primaryColor}
-                />
+                <div key={index} id={`complement-group-${index}`}>
+                  <ComplementSelector
+                    group={group}
+                    selectedItems={selectedComplements[index] || []}
+                    onToggle={(item) => handleToggleComplement(index, item)}
+                    primaryColor={primaryColor}
+                    onMaxReached={() => {
+                      const nextGroup = document.getElementById(`complement-group-${index + 1}`);
+                      if (nextGroup) {
+                        nextGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                  />
+                </div>
               ))}
             </div>
           )}

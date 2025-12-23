@@ -235,9 +235,15 @@ export default function PixQRCode({
         />
       </div>
       
-      <p className="text-center text-gray-600 mb-4">
+      <p className="text-center text-gray-600 mb-2">
         Escaneie o QR Code acima com o app do seu banco
       </p>
+
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mb-4">
+        <p className="text-center text-amber-800 text-sm font-medium">
+          ⚠️ Apresente o comprovante do PIX na retirada do produto
+        </p>
+      </div>
       
       <div className="text-center mb-6">
         <span className="text-sm text-gray-500">Valor total</span>
