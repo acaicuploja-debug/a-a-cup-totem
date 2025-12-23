@@ -93,7 +93,7 @@ export default function AdminOrders({ settings, primaryColor }) {
               body { 
                 margin: 0; 
                 padding: 0; 
-                font-family: 'Courier New', Courier, monospace; 
+                font-family: Arial, Helvetica, sans-serif; 
                 font-size: 16px;
                 font-weight: bold;
                 width: 80mm;

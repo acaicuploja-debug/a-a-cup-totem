@@ -33,7 +33,7 @@ function generatePixCode(pixKey, value, receiverName, merchantCity) {
     .toUpperCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Z0-9 ]/g, '')
+    .replace(/[^A-Z ]/g, '')
     .trim()
     .substring(0, 15);
 
@@ -52,11 +52,6 @@ function generatePixCode(pixKey, value, receiverName, merchantCity) {
   payload += EMV('59', cleanName); // Merchant Name
   payload += EMV('60', cleanCity); // Merchant City
   
-  // Additional Data Field Template
-  const txid = '***' + Date.now().toString().slice(-10);
-  const additionalInfo = EMV('05', txid);
-  payload += EMV('62', additionalInfo);
-  
   // CRC16 placeholder
   payload += '6304';
   
@@ -65,7 +60,7 @@ function generatePixCode(pixKey, value, receiverName, merchantCity) {
   payload += crc;
   
   console.log('PIX Code gerado:', payload);
-  console.log('Chave:', cleanKey, 'Valor:', value, 'Nome:', cleanName);
+  console.log('Chave:', cleanKey, 'Valor:', value, 'Nome:', cleanName, 'Cidade:', cleanCity);
   
   return payload;
 }
