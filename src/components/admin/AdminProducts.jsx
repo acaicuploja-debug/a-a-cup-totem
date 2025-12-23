@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductComplementEditor from './ProductComplementEditor';
 
@@ -221,6 +221,27 @@ export default function AdminProducts({ settings, primaryColor }) {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
                     <Pencil className="w-4 h-4 mr-1" />
                     Editar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Duplicar este produto?')) {
+                        const duplicated = {
+                          ...product,
+                          name: `${product.name} (Cópia)`,
+                          id: undefined,
+                          created_date: undefined,
+                          updated_date: undefined
+                        };
+                        delete duplicated.id;
+                        delete duplicated.created_date;
+                        delete duplicated.updated_date;
+                        createMutation.mutate(duplicated);
+                      }
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
