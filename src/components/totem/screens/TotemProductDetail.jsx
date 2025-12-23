@@ -83,7 +83,7 @@ export default function TotemProductDetail({
       />
       
       <div className="flex-1 overflow-auto pb-32">
-        <div className="relative aspect-video bg-gray-200">
+        <div className="relative aspect-[4/3] bg-gray-200">
           {product.image_url ? (
             <img 
               src={product.image_url} 

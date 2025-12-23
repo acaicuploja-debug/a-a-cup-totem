@@ -70,69 +70,95 @@ export default function TotemUpsell({
               Sugestões para você
             </span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Complemente seu pedido!
+          <h2 className="text-3xl font-bold text-gray-900">
+            Quer turbinar seu pedido?
           </h2>
         </motion.div>
         
-        <div className="space-y-4">
-          {upsellProducts.map((product, index) => (
-            <motion.div
-              key={product.id}
-              className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              {product.image_url ? (
-                <img 
-                  src={product.image_url} 
-                  alt={product.name}
-                  className="w-20 h-20 rounded-xl object-cover"
-                />
-              ) : (
-                <div 
-                  className="w-20 h-20 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: `${primaryColor}15` }}
-                >
-                  <span className="text-2xl">🍨</span>
+        <div className="grid grid-cols-2 gap-4">
+          {upsellProducts.map((product, index) => {
+            const hasPromo = product.promo_price && product.promo_price < product.price;
+            const displayPrice = product.promo_price || product.price;
+            
+            return (
+              <motion.div
+                key={product.id}
+                className="bg-white rounded-2xl overflow-hidden shadow-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="relative aspect-square">
+                  {product.image_url ? (
+                    <img 
+                      src={product.image_url} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div 
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ backgroundColor: `${primaryColor}20` }}
+                    >
+                      <span className="text-5xl">🍨</span>
+                    </div>
+                  )}
+                  {product.badges && product.badges.length > 0 && (
+                    <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                      {product.badges.map(badge => (
+                        <div key={badge} className="px-2 py-1 rounded-lg bg-black/70 text-white text-xs font-bold">
+                          {badge === 'promocao' && '🔥 Promoção'}
+                          {badge === 'novo' && '✨ Novo'}
+                          {badge === 'mais_vendido' && '⭐ Top'}
+                          {badge === 'oferta' && '💰 Oferta'}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {addedProducts[product.id] > 0 && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      {addedProducts[product.id]}x
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-gray-900 truncate">
-                  {product.name}
-                </h3>
-                {product.description && (
-                  <p className="text-sm text-gray-500 truncate">
-                    {product.description}
-                  </p>
-                )}
-                <p 
-                  className="text-lg font-bold mt-1"
-                  style={{ color: primaryColor }}
-                >
-                  R$ {(product.promo_price || product.price).toFixed(2)}
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center gap-2">
-                {addedProducts[product.id] > 0 && (
-                  <Badge className="bg-green-100 text-green-800">
-                    {addedProducts[product.id]}x adicionado
-                  </Badge>
-                )}
-                <Button
-                  onClick={() => handleAddUpsell(product)}
-                  size="icon"
-                  className="w-12 h-12 rounded-full flex-shrink-0 text-white"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Plus className="w-6 h-6" />
-                </Button>
-              </div>
-            </motion.div>
-          ))}
+                
+                <div className="p-3">
+                  <h3 className="font-bold text-gray-900 text-sm line-clamp-2 mb-1">
+                    {product.name}
+                  </h3>
+                  
+                  <div className="flex items-center gap-1 mb-2 flex-wrap">
+                    {hasPromo ? (
+                      <>
+                        <span className="text-lg font-bold" style={{ color: primaryColor }}>
+                          R$ {displayPrice.toFixed(2)}
+                        </span>
+                        <span className="text-xs text-gray-400 line-through">
+                          R$ {product.price.toFixed(2)}
+                        </span>
+                        <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">
+                          -{Math.round((1 - product.promo_price / product.price) * 100)}%
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold" style={{ color: primaryColor }}>
+                        R$ {displayPrice.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <Button
+                    onClick={() => handleAddUpsell(product)}
+                    className="w-full h-10 rounded-xl text-sm font-bold text-white"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </main>
       

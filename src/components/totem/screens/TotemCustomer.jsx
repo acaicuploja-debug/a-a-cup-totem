@@ -129,17 +129,17 @@ export default function TotemCustomer({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <div 
-              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4"
+              className="w-24 h-24 rounded-full mx-auto flex items-center justify-center mb-6"
               style={{ backgroundColor: `${primaryColor}15` }}
             >
-              <User className="w-8 h-8" style={{ color: primaryColor }} />
+              <User className="w-12 h-12" style={{ color: primaryColor }} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">
               Seus Dados
             </h2>
-            <p className="text-gray-500">
+            <p className="text-lg text-gray-500">
               Para identificar seu pedido
             </p>
           </div>
@@ -156,58 +156,58 @@ export default function TotemCustomer({
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-base font-medium">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-3">
+              <Label htmlFor="phone" className="text-xl font-bold">
                 Telefone *
               </Label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
                 <Input
                   id="phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   placeholder="(00) 00000-0000"
-                  className="pl-12 h-14 text-lg rounded-xl"
+                  className="pl-16 h-16 text-xl rounded-2xl border-2"
                   required
                 />
                 {isSearching && (
-                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-gray-400" />
+                  <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 animate-spin text-gray-400" />
                 )}
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-base font-medium">
+            <div className="space-y-3">
+              <Label htmlFor="name" className="text-xl font-bold">
                 Nome
               </Label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
                 <Input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Seu nome"
-                  className="pl-12 h-14 text-lg rounded-xl"
+                  className="pl-16 h-16 text-xl rounded-2xl border-2"
                 />
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="cpf" className="text-base font-medium">
+            <div className="space-y-3">
+              <Label htmlFor="cpf" className="text-xl font-bold">
                 CPF
               </Label>
               <div className="relative">
-                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
                 <Input
                   id="cpf"
                   type="text"
                   value={cpf}
                   onChange={(e) => setCpf(formatCpf(e.target.value))}
                   placeholder="000.000.000-00"
-                  className="pl-12 h-14 text-lg rounded-xl"
+                  className="pl-16 h-16 text-xl rounded-2xl border-2"
                   maxLength={14}
                 />
               </div>
