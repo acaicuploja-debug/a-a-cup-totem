@@ -1,28 +1,79 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   DollarSign, 
   ShoppingBag, 
   Users, 
   TrendingUp,
-  Package
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { format } from 'date-fns';
 
 export default function AdminDashboard({ settings, primaryColor }) {
-  const { data: orders } = useQuery({
+  const [dateFilter, setDateFilter] = useState('today');
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
+  
+  const getDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (dateFilter) {
+      case 'today':
+        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+        return { start: yesterday, end: today };
+      case 'last7':
+        return { start: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'last15':
+        return { start: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'last30':
+        return { start: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'custom':
+        return { start: customStartDate, end: customEndDate };
+      default:
+        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+    }
+  };
+  const { data: allOrders } = useQuery({
     queryKey: ['admin-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 100)
+    queryFn: () => base44.entities.Order.list('-created_date')
   });
   
-  const { data: customers } = useQuery({
+  const { data: allCustomers } = useQuery({
     queryKey: ['admin-customers'],
     queryFn: () => base44.entities.Customer.list()
   });
   
-  const stats = React.useMemo(() => {
+  const orders = useMemo(() => {
+    const { start, end } = getDateRange();
+    if (!start || !end || !allOrders) return [];
+    
+    return allOrders.filter(order => {
+      const orderDate = new Date(order.created_date);
+      return orderDate >= start && orderDate < end;
+    });
+  }, [allOrders, dateFilter, customStartDate, customEndDate]);
+  
+  const customers = useMemo(() => {
+    const { start, end } = getDateRange();
+    if (!start || !end || !allCustomers) return [];
+    
+    return allCustomers.filter(customer => {
+      const customerDate = new Date(customer.created_date);
+      return customerDate >= start && customerDate < end;
+    });
+  }, [allCustomers, dateFilter, customStartDate, customEndDate]);
+  
+  const stats = useMemo(() => {
     if (!orders) return { revenue: 0, orderCount: 0, avgTicket: 0, todayOrders: 0 };
     
     const completedOrders = orders.filter(o => 
@@ -33,15 +84,10 @@ export default function AdminDashboard({ settings, primaryColor }) {
     const orderCount = completedOrders.length;
     const avgTicket = orderCount > 0 ? revenue / orderCount : 0;
     
-    const today = new Date().toDateString();
-    const todayOrders = completedOrders.filter(o => 
-      new Date(o.created_date).toDateString() === today
-    ).length;
-    
-    return { revenue, orderCount, avgTicket, todayOrders };
+    return { revenue, orderCount, avgTicket };
   }, [orders]);
   
-  const paymentData = React.useMemo(() => {
+  const paymentData = useMemo(() => {
     if (!orders) return [];
     
     const completedOrders = orders.filter(o => o.status !== 'cancelado');
@@ -58,7 +104,7 @@ export default function AdminDashboard({ settings, primaryColor }) {
     }));
   }, [orders]);
   
-  const productData = React.useMemo(() => {
+  const productData = useMemo(() => {
     if (!orders) return [];
     
     const products = {};
