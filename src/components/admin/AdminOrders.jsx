@@ -81,44 +81,144 @@ export default function AdminOrders({ settings, primaryColor }) {
   }, [orders, statusFilter]);
   
   const handlePrint = (order) => {
-    const printContent = `
-      =====================
-      ${settings?.store_name || 'AÇAÍ CUP'}
-      =====================
-      
-      Pedido #${String(order.order_number).padStart(3, '0')}
-      Data: ${order.order_datetime || new Date(order.created_date).toLocaleString('pt-BR')}
-      
-      Cliente: ${order.customer_name || 'Não informado'}
-      Telefone: ${order.customer_phone || 'Não informado'}
-      
-      Consumo: ${order.consumption_type === 'local' ? 'Comer no Local' : 'Para Viagem'}
-      
-      ---------------------
-      ITENS:
-      ---------------------
-      ${order.items?.map(item => 
-        `${item.quantity}x ${item.product_name} - R$ ${item.total.toFixed(2)}
-        ${item.complements?.length > 0 ? `   + ${item.complements.map(c => c.name).join(', ')}` : ''}`
-      ).join('\n')}
-      
-      ---------------------
-      TOTAL: R$ ${order.total.toFixed(2)}
-      ---------------------
-      
-      Pagamento: ${order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'cartao' ? 'Cartão' : 'Dinheiro'}
-      
-      ${order.reward_redeemed ? '🎁 PRÊMIO RESGATADO neste pedido' : ''}
-      
-      =====================
-      Obrigado pela preferência!
-      =====================
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`<pre style="font-family: monospace; font-size: 14px;">${printContent}</pre>`);
+    const printWindow = window.open('', '', 'width=300,height=600');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Pedido #${String(order.order_number || '').padStart(3, '0')}</title>
+          <style>
+            @page { margin: 0; size: 80mm auto; }
+            @media print {
+              * { margin: 0; padding: 0; }
+              body { 
+                margin: 0; 
+                padding: 0; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 16px;
+                font-weight: bold;
+                width: 80mm;
+                max-width: 80mm;
+              }
+              .header { 
+                text-align: center; 
+                border-bottom: 2px dashed #000; 
+                padding: 10px 0; 
+                margin-bottom: 10px; 
+              }
+              .header h2 { margin: 0 0 5px 0; font-size: 20px; font-weight: bold; }
+              .header p { margin: 3px 0; font-size: 15px; font-weight: bold; }
+              .section { margin-bottom: 15px; font-weight: bold; }
+              .item { 
+                margin-bottom: 10px; 
+                line-height: 1.5;
+                font-weight: bold;
+              }
+              .complements {
+                margin-left: 0;
+                margin-top: 4px;
+              }
+              .complement-item {
+                display: block;
+                margin: 3px 0;
+                font-weight: bold;
+              }
+              .total { 
+                border-top: 2px dashed #000; 
+                padding-top: 10px; 
+                margin-top: 10px; 
+                font-weight: bold; 
+                font-size: 18px;
+                text-align: center;
+              }
+              .footer { 
+                text-align: center; 
+                margin-top: 15px; 
+                border-top: 2px dashed #000; 
+                padding-top: 10px;
+                font-weight: bold;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>${settings?.store_name || 'Loja'}</h2>
+            <p>PEDIDO #${String(order.order_number || '').padStart(3, '0')}</p>
+            <p>${order.order_datetime || new Date().toLocaleString('pt-BR')}</p>
+          </div>
+          
+          <div class="section">
+            <strong>Cliente:</strong><br/>
+            ${order.customer_name || 'N/A'}<br/>
+            ${order.customer_phone || ''}
+          </div>
+          
+          <div class="section">
+            <strong>Itens:</strong><br/>
+            ${order.items?.map(item => `
+              <div class="item">
+                <div>${item.quantity}x ${item.product_name}</div>
+                <div>R$ ${item.total.toFixed(2)}</div>
+                ${item.complements?.length > 0 ? `
+                  <div class="complements">
+                    ${item.complements.map(c => `<div class="complement-item">+ ${c.name}</div>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `).join('') || ''}
+          </div>
+          
+          <div class="total">
+            TOTAL: R$ ${order.total.toFixed(2)}
+          </div>
+          
+          <div class="section">
+            <strong>Consumo:</strong> ${order.consumption_type === 'local' ? 'No local' : 'Para viagem'}<br/>
+            <strong>Pagamento:</strong> ${
+              order.payment_method === 'pix' ? 'PIX' :
+              order.payment_method === 'cartao' ? 'Cartão' : 'Dinheiro'
+            }
+          </div>
+          
+          <div class="footer">
+            <p>Obrigado pela preferencia!</p>
+          </div>
+        </body>
+      </html>
+    `);
     printWindow.document.close();
-    printWindow.print();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  const handleFinalizeAll = async () => {
+    const activeOrders = orders?.filter(o => 
+      o.status !== 'finalizado' && o.status !== 'cancelado'
+    ) || [];
+    
+    if (activeOrders.length === 0) {
+      toast.info('Não há pedidos para finalizar');
+      return;
+    }
+    
+    if (!confirm(`Finalizar ${activeOrders.length} pedido(s)? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    
+    try {
+      await Promise.all(
+        activeOrders.map(order => 
+          base44.entities.Order.update(order.id, { status: 'finalizado' })
+        )
+      );
+      queryClient.invalidateQueries(['admin-orders']);
+      toast.success(`${activeOrders.length} pedido(s) finalizado(s)!`);
+    } catch (error) {
+      toast.error('Erro ao finalizar pedidos');
+    }
   };
 
   return (
@@ -127,6 +227,15 @@ export default function AdminOrders({ settings, primaryColor }) {
         <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
         
         <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleFinalizeAll}
+            className="bg-green-50 hover:bg-green-100 text-green-700"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Finalizar Todos
+          </Button>
+          
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filtrar por status" />
@@ -159,95 +268,98 @@ export default function AdminOrders({ settings, primaryColor }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredOrders.map(order => {
             const status = statusConfig[order.status] || statusConfig.aguardando_pix;
             const StatusIcon = status.icon;
+            const nextStatus = 
+              order.status === 'aguardando_pix' ? 'pagamento_informado' :
+              order.status === 'pagamento_informado' ? 'em_preparo' :
+              order.status === 'em_preparo' ? 'pronto' :
+              order.status === 'pronto' ? 'finalizado' : null;
             
             return (
-              <Card key={order.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
+              <Card key={order.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
                       <div 
-                        className="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl text-white"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-white"
                         style={{ backgroundColor: primaryColor }}
                       >
                         #{String(order.order_number).padStart(3, '0')}
                       </div>
-                      
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-gray-900">
-                            {order.customer_name || 'Cliente'}
-                          </span>
-                          <Badge className={status.color}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {status.label}
-                          </Badge>
-                          {order.reward_redeemed && (
-                            <Badge className="bg-amber-100 text-amber-800">
-                              🎁 Prêmio
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <p className="text-sm text-gray-500">
-                          {order.order_datetime || new Date(order.created_date).toLocaleString('pt-BR')}
-                          {' • '}
-                          {order.consumption_type === 'local' ? '🍽 Local' : '📦 Viagem'}
-                          {' • '}
-                          {order.payment_method === 'pix' ? '📱 PIX' : order.payment_method === 'cartao' ? '💳 Cartão' : '💵 Dinheiro'}
-                        </p>
-                        
-                        <p className="text-sm text-gray-600 mt-1">
-                          {order.items?.map(item => `${item.quantity}x ${item.product_name}`).join(', ')}
-                        </p>
-                      </div>
+                      <Badge className={status.color}>
+                        <StatusIcon className="w-3 h-3 mr-1" />
+                        {status.label}
+                      </Badge>
                     </div>
                     
-                    <div className="flex flex-col items-end gap-3">
+                    <div>
+                      <p className="font-bold text-gray-900 truncate">
+                        {order.customer_name || 'Cliente'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {order.order_datetime?.split(' ')[1] || new Date(order.created_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      {order.reward_redeemed && (
+                        <Badge className="bg-amber-100 text-amber-800 text-xs mt-1">
+                          🎁 Prêmio
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-gray-600">
+                      {order.consumption_type === 'local' ? '🍽 Local' : '📦 Viagem'}
+                      {' • '}
+                      {order.payment_method === 'pix' ? 'PIX' : order.payment_method === 'cartao' ? 'Cartão' : 'Dinheiro'}
+                    </div>
+                    
+                    <p className="text-xs text-gray-600 line-clamp-2">
+                      {order.items?.map(item => `${item.quantity}x ${item.product_name}`).join(', ')}
+                    </p>
+                    
+                    <div className="pt-2 border-t">
                       <span 
-                        className="text-2xl font-bold"
+                        className="text-xl font-bold block"
                         style={{ color: primaryColor }}
                       >
                         R$ {order.total?.toFixed(2)}
                       </span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                      {nextStatus && order.status !== 'finalizado' && order.status !== 'cancelado' && (
+                        <Button 
+                          className="w-full h-9 text-sm"
+                          style={{ backgroundColor: primaryColor }}
+                          onClick={() => updateStatusMutation.mutate({ orderId: order.id, status: nextStatus })}
+                        >
+                          {nextStatus === 'pagamento_informado' && '✓ Confirmar Pgto'}
+                          {nextStatus === 'em_preparo' && '👨‍🍳 Iniciar Preparo'}
+                          {nextStatus === 'pronto' && '✓ Marcar Pronto'}
+                          {nextStatus === 'finalizado' && '✓ Finalizar'}
+                        </Button>
+                      )}
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex gap-2">
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="flex-1 h-8 text-xs"
                           onClick={() => setSelectedOrder(order)}
                         >
-                          Detalhes
+                          Ver
                         </Button>
                         
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="h-8 px-2"
                           onClick={() => handlePrint(order)}
                         >
-                          <Printer className="w-4 h-4" />
+                          <Printer className="w-3 h-3" />
                         </Button>
-                        
-                        {order.status !== 'finalizado' && order.status !== 'cancelado' && (
-                          <Select 
-                            value={order.status}
-                            onValueChange={(status) => updateStatusMutation.mutate({ orderId: order.id, status })}
-                          >
-                            <SelectTrigger className="w-40">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pagamento_informado">Pagamento Informado</SelectItem>
-                              <SelectItem value="em_preparo">Em Preparo</SelectItem>
-                              <SelectItem value="pronto">Pronto</SelectItem>
-                              <SelectItem value="finalizado">Finalizado</SelectItem>
-                              <SelectItem value="cancelado">Cancelado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
                       </div>
                     </div>
                   </div>
