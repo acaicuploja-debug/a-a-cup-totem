@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Check, Plus, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -6,11 +6,20 @@ export default function ComplementSelector({
   group, 
   selectedItems, 
   onToggle, 
-  primaryColor 
+  primaryColor,
+  onMaxReached
 }) {
   const selectedCount = selectedItems.length;
   const canSelectMore = !group.max || selectedCount < group.max;
   const meetsMinimum = !group.min || selectedCount >= group.min;
+  const prevCountRef = useRef(selectedCount);
+  
+  useEffect(() => {
+    if (group.required && group.max && selectedCount === group.max && prevCountRef.current < selectedCount) {
+      onMaxReached?.();
+    }
+    prevCountRef.current = selectedCount;
+  }, [selectedCount, group.required, group.max, onMaxReached]);
   
   return (
     <div className="mb-6">

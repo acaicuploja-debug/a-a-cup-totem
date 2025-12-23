@@ -8,14 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import ProductComplementEditor from './ProductComplementEditor';
 import { toast } from 'sonner';
 
 export default function AdminUpsell({ settings, primaryColor }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', description: '', image_url: '', price: 0, active: true
+    name: '', description: '', image_url: '', price: 0, promo_price: 0, active: true, badges: [], complements: []
   });
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
@@ -51,6 +53,13 @@ export default function AdminUpsell({ settings, primaryColor }) {
     }
   });
   
+  const badgeOptions = [
+    { value: 'promocao', label: '🔥 Promoção' },
+    { value: 'novo', label: '✨ Novo' },
+    { value: 'mais_vendido', label: '⭐ Mais Vendido' },
+    { value: 'oferta', label: '💰 Oferta' }
+  ];
+  
   const handleOpenDialog = (product = null) => {
     if (product) {
       setEditingProduct(product);
@@ -59,11 +68,14 @@ export default function AdminUpsell({ settings, primaryColor }) {
         description: product.description || '',
         image_url: product.image_url || '',
         price: product.price,
-        active: product.active !== false
+        promo_price: product.promo_price || 0,
+        active: product.active !== false,
+        badges: product.badges || [],
+        complements: product.complements || []
       });
     } else {
       setEditingProduct(null);
-      setFormData({ name: '', description: '', image_url: '', price: 0, active: true });
+      setFormData({ name: '', description: '', image_url: '', price: 0, promo_price: 0, active: true, badges: [], complements: [] });
     }
     setShowDialog(true);
   };
@@ -82,7 +94,8 @@ export default function AdminUpsell({ settings, primaryColor }) {
     
     const data = {
       ...formData,
-      price: parseFloat(formData.price) || 0
+      price: parseFloat(formData.price) || 0,
+      promo_price: parseFloat(formData.promo_price) || 0
     };
     
     if (editingProduct) {
@@ -162,14 +175,48 @@ export default function AdminUpsell({ settings, primaryColor }) {
                 <h3 className="font-bold text-gray-900">{product.name}</h3>
                 {product.description && <p className="text-sm text-gray-500 mb-2">{product.description}</p>}
                 
-                <p className="text-lg font-bold mb-4" style={{ color: primaryColor }}>
-                  R$ {product.price.toFixed(2)}
-                </p>
+                <div className="mb-4">
+                  {product.promo_price && product.promo_price < product.price ? (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-lg font-bold" style={{ color: primaryColor }}>
+                        R$ {product.promo_price.toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-400 line-through">
+                        R$ {product.price.toFixed(2)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-bold" style={{ color: primaryColor }}>
+                      R$ {product.price.toFixed(2)}
+                    </p>
+                  )}
+                </div>
                 
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
                     <Pencil className="w-4 h-4 mr-1" />
                     Editar
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Duplicar este produto?')) {
+                        const duplicated = {
+                          ...product,
+                          name: `${product.name} (Cópia)`,
+                          id: undefined,
+                          created_date: undefined,
+                          updated_date: undefined
+                        };
+                        delete duplicated.id;
+                        delete duplicated.created_date;
+                        delete duplicated.updated_date;
+                        createMutation.mutate(duplicated);
+                      }
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
@@ -221,10 +268,45 @@ export default function AdminUpsell({ settings, primaryColor }) {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label>Preço (R$) *</Label>
-              <Input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Preço (R$) *</Label>
+                <Input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))} />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Preço Promocional (R$)</Label>
+                <Input type="number" step="0.01" value={formData.promo_price} onChange={(e) => setFormData(prev => ({ ...prev, promo_price: e.target.value }))} />
+              </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label>Selos de Destaque</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {badgeOptions.map(badge => (
+                  <div key={badge.value} className="flex items-center space-x-2 p-2 border rounded-lg">
+                    <Checkbox
+                      checked={formData.badges?.includes(badge.value)}
+                      onCheckedChange={(checked) => {
+                        const current = formData.badges || [];
+                        setFormData(prev => ({
+                          ...prev,
+                          badges: checked 
+                            ? [...current, badge.value]
+                            : current.filter(b => b !== badge.value)
+                        }));
+                      }}
+                    />
+                    <label className="text-sm">{badge.label}</label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <ProductComplementEditor
+              complements={formData.complements || []}
+              onChange={(complements) => setFormData(prev => ({ ...prev, complements }))}
+            />
             
             <div className="flex items-center justify-between">
               <Label>Ativo</Label>

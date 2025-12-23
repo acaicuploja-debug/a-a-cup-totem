@@ -49,7 +49,7 @@ export default function ProductCard({ product, onClick, primaryColor }) {
           </p>
         )}
         
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {hasPromo ? (
             <>
               <span 
@@ -60,6 +60,9 @@ export default function ProductCard({ product, onClick, primaryColor }) {
               </span>
               <span className="text-sm text-gray-400 line-through">
                 R$ {product.price.toFixed(2)}
+              </span>
+              <span className="text-xs font-bold px-2 py-1 rounded-full bg-red-500 text-white">
+                -{Math.round((1 - product.promo_price / product.price) * 100)}%
               </span>
             </>
           ) : (
