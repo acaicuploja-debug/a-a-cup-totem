@@ -21,17 +21,6 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {settings?.logo_url && (
-          <motion.img 
-            src={settings.logo_url} 
-            alt="Logo"
-            className="h-32 w-auto mb-8 drop-shadow-2xl"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2 }}
-          />
-        )}
-        
         <motion.h1 
           className="text-4xl md:text-6xl font-light text-white mb-4 drop-shadow-lg"
           initial={{ opacity: 0 }}
@@ -42,22 +31,22 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         </motion.h1>
         
         <motion.h2 
-          className="text-5xl md:text-7xl font-bold text-white mb-16 drop-shadow-lg"
+          className="text-5xl md:text-7xl font-bold text-white mb-8 drop-shadow-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           {settings?.store_name || 'Açaí Cup'}
         </motion.h2>
-      </motion.div>
-      
-      <motion.div 
-        className="absolute bottom-12 text-white text-xl font-light"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-      >
-        Clique na tela para iniciar seu pedido
+        
+        <motion.div 
+          className="text-white text-2xl font-light mt-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          Clique na tela para iniciar seu pedido
+        </motion.div>
       </motion.div>
     </div>
   );
