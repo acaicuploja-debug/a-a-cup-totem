@@ -24,6 +24,8 @@ const badgeOptions = [
 export default function AdminProducts({ settings, primaryColor }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [productToDuplicate, setProductToDuplicate] = useState(null);
   const [formData, setFormData] = useState({
     name: '', description: '', image_url: '', price: 0, promo_price: null,
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
@@ -144,6 +146,29 @@ export default function AdminProducts({ settings, primaryColor }) {
   const getCategoryName = (categoryId) => {
     return categories?.find(c => c.id === categoryId)?.name || 'Sem categoria';
   };
+  
+  const handleDuplicateProduct = (product) => {
+    setProductToDuplicate(product);
+    setShowDuplicateDialog(true);
+  };
+  
+  const confirmDuplicate = () => {
+    if (productToDuplicate) {
+      const duplicated = {
+        ...productToDuplicate,
+        name: `${productToDuplicate.name} (Cópia)`,
+        id: undefined,
+        created_date: undefined,
+        updated_date: undefined
+      };
+      delete duplicated.id;
+      delete duplicated.created_date;
+      delete duplicated.updated_date;
+      createMutation.mutate(duplicated);
+      setShowDuplicateDialog(false);
+      setProductToDuplicate(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -225,21 +250,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => {
-                      if (confirm('Duplicar este produto?')) {
-                        const duplicated = {
-                          ...product,
-                          name: `${product.name} (Cópia)`,
-                          id: undefined,
-                          created_date: undefined,
-                          updated_date: undefined
-                        };
-                        delete duplicated.id;
-                        delete duplicated.created_date;
-                        delete duplicated.updated_date;
-                        createMutation.mutate(duplicated);
-                      }
-                    }}
+                    onClick={() => handleDuplicateProduct(product)}
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -386,6 +397,26 @@ export default function AdminProducts({ settings, primaryColor }) {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Duplicate Confirmation Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar Produto</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600">
+            Deseja criar uma cópia de "{productToDuplicate?.name}"?
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDuplicateDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmDuplicate} style={{ backgroundColor: primaryColor }}>
+              Sim, Duplicar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

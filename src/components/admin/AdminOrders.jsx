@@ -19,8 +19,6 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const statusConfig = {
-  aguardando_pix: { label: 'Aguardando PIX', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  pagamento_informado: { label: 'Pagamento Informado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
   em_preparo: { label: 'Em Preparo', color: 'bg-purple-100 text-purple-800', icon: ChefHat },
   pronto: { label: 'Pronto', color: 'bg-green-100 text-green-800', icon: Package },
   finalizado: { label: 'Finalizado', color: 'bg-gray-100 text-gray-800', icon: CheckCircle },
@@ -30,6 +28,7 @@ const statusConfig = {
 export default function AdminOrders({ settings, primaryColor }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const previousOrderCount = useRef(0);
   const audioRef = useRef(null);
   const queryClient = useQueryClient();
@@ -81,6 +80,23 @@ export default function AdminOrders({ settings, primaryColor }) {
   }, [orders, statusFilter]);
   
   const handlePrint = (order) => {
+    const customerInfo = getCustomerInfo(order.customer_phone);
+    const loyaltyTarget = settings?.loyalty_target || 10;
+    const customerOrders = orders?.filter(o => 
+      o.customer_phone === order.customer_phone && 
+      o.status !== 'cancelado'
+    ).length || 0;
+    
+    let loyaltyText = '';
+    if (order.reward_redeemed) {
+      loyaltyText = '🎁 PREMIO RESGATADO NESTE PEDIDO!';
+    } else if (customerInfo) {
+      const remaining = loyaltyTarget - (customerInfo.loyalty_count || 0);
+      loyaltyText = remaining <= 0 
+        ? `🎁 Voce tem um premio disponivel!`
+        : `Faltam ${remaining} pedido(s) para ganhar premio!`;
+    }
+    
     const printWindow = window.open('', '', 'width=300,height=600');
     printWindow.document.write(`
       <html>
@@ -130,6 +146,13 @@ export default function AdminOrders({ settings, primaryColor }) {
                 font-size: 18px;
                 text-align: center;
               }
+              .loyalty {
+                background: #f0f0f0;
+                padding: 8px;
+                margin: 10px 0;
+                text-align: center;
+                font-size: 14px;
+              }
               .footer { 
                 text-align: center; 
                 margin-top: 15px; 
@@ -150,7 +173,8 @@ export default function AdminOrders({ settings, primaryColor }) {
           <div class="section">
             <strong>Cliente:</strong><br/>
             ${order.customer_name || 'N/A'}<br/>
-            ${order.customer_phone || ''}
+            ${order.customer_phone || ''}<br/>
+            <div style="margin-top: 5px;">Total de pedidos: ${customerOrders}</div>
           </div>
           
           <div class="section">
@@ -173,12 +197,14 @@ export default function AdminOrders({ settings, primaryColor }) {
           </div>
           
           <div class="section">
-            <strong>Consumo:</strong> ${order.consumption_type === 'local' ? 'No local' : 'Para viagem'}<br/>
+            <strong>Consumo:</strong> ${order.consumption_type === 'local' ? '🍽 No local' : '📦 Para viagem'}<br/>
             <strong>Pagamento:</strong> ${
               order.payment_method === 'pix' ? 'PIX' :
-              order.payment_method === 'cartao' ? 'Cartão' : 'Dinheiro'
+              order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro'
             }
           </div>
+          
+          ${loyaltyText ? `<div class="loyalty">${loyaltyText}</div>` : ''}
           
           <div class="footer">
             <p>Obrigado pela preferencia!</p>
@@ -194,6 +220,16 @@ export default function AdminOrders({ settings, primaryColor }) {
     }, 250);
   };
 
+  const { data: customers } = useQuery({
+    queryKey: ['admin-customers'],
+    queryFn: () => base44.entities.Customer.list()
+  });
+
+  const getCustomerInfo = (phone) => {
+    if (!phone || !customers) return null;
+    return customers.find(c => c.phone === phone);
+  };
+
   const handleFinalizeAll = async () => {
     const activeOrders = orders?.filter(o => 
       o.status !== 'finalizado' && o.status !== 'cancelado'
@@ -204,9 +240,13 @@ export default function AdminOrders({ settings, primaryColor }) {
       return;
     }
     
-    if (!confirm(`Finalizar ${activeOrders.length} pedido(s)? Esta ação não pode ser desfeita.`)) {
-      return;
-    }
+    setShowFinalizeDialog(true);
+  };
+  
+  const confirmFinalizeAll = async () => {
+    const activeOrders = orders?.filter(o => 
+      o.status !== 'finalizado' && o.status !== 'cancelado'
+    ) || [];
     
     try {
       await Promise.all(
@@ -216,6 +256,7 @@ export default function AdminOrders({ settings, primaryColor }) {
       );
       queryClient.invalidateQueries(['admin-orders']);
       toast.success(`${activeOrders.length} pedido(s) finalizado(s)!`);
+      setShowFinalizeDialog(false);
     } catch (error) {
       toast.error('Erro ao finalizar pedidos');
     }
@@ -270,13 +311,12 @@ export default function AdminOrders({ settings, primaryColor }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredOrders.map(order => {
-            const status = statusConfig[order.status] || statusConfig.aguardando_pix;
+            const status = statusConfig[order.status] || statusConfig.em_preparo;
             const StatusIcon = status.icon;
             const nextStatus = 
-              order.status === 'aguardando_pix' ? 'pagamento_informado' :
-              order.status === 'pagamento_informado' ? 'em_preparo' :
               order.status === 'em_preparo' ? 'pronto' :
-              order.status === 'pronto' ? 'finalizado' : null;
+              order.status === 'pronto' ? 'finalizado' : 
+              (!order.status || order.status === 'aguardando_pix' || order.status === 'pagamento_informado') ? 'em_preparo' : null;
             
             return (
               <Card key={order.id} className="hover:shadow-lg transition-shadow">
@@ -335,7 +375,6 @@ export default function AdminOrders({ settings, primaryColor }) {
                           style={{ backgroundColor: primaryColor }}
                           onClick={() => updateStatusMutation.mutate({ orderId: order.id, status: nextStatus })}
                         >
-                          {nextStatus === 'pagamento_informado' && '✓ Confirmar Pgto'}
                           {nextStatus === 'em_preparo' && '👨‍🍳 Iniciar Preparo'}
                           {nextStatus === 'pronto' && '✓ Marcar Pronto'}
                           {nextStatus === 'finalizado' && '✓ Finalizar'}
@@ -437,6 +476,30 @@ export default function AdminOrders({ settings, primaryColor }) {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Finalize All Confirmation Dialog */}
+      <Dialog open={showFinalizeDialog} onOpenChange={setShowFinalizeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalizar Todos os Pedidos</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600">
+            Você está prestes a finalizar {orders?.filter(o => o.status !== 'finalizado' && o.status !== 'cancelado').length} pedido(s). 
+            Esta ação não pode ser desfeita. Deseja continuar?
+          </p>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setShowFinalizeDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmFinalizeAll}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Sim, Finalizar Todos
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

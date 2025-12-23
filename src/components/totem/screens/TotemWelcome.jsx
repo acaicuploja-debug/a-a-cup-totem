@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { Hand } from 'lucide-react';
 
 export default function TotemWelcome({ settings, primaryColor, onStart }) {
   const bgStyle = settings?.background_url 
@@ -40,12 +40,25 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         </motion.h2>
         
         <motion.div 
-          className="text-white text-2xl font-light mt-4"
+          className="text-white text-2xl font-light mt-4 flex flex-col items-center gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          Clique na tela para iniciar seu pedido
+          <motion.div
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0]
+            }}
+            transition={{ 
+              duration: 1.5,
+              repeat: Infinity,
+              repeatDelay: 0.5
+            }}
+          >
+            <Hand className="w-16 h-16 text-white drop-shadow-lg" />
+          </motion.div>
+          <span>Clique na tela para iniciar seu pedido</span>
         </motion.div>
       </motion.div>
     </div>
