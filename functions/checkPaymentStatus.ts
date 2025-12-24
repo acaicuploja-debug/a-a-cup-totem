@@ -3,12 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
     const { orderId } = await req.json();
     
     // Get order
@@ -19,8 +13,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Order not found' }, { status: 404 });
     }
     
+    // If already confirmed, return success
+    if (order.status === 'em_preparo' || order.status === 'pronto' || order.status === 'finalizado') {
+      return Response.json({ 
+        confirmed: true,
+        order_status: order.status
+      });
+    }
+    
     if (!order.mercadopago_payment_id) {
-      return Response.json({ error: 'No Mercado Pago payment ID' }, { status: 400 });
+      return Response.json({ confirmed: false, message: 'No payment ID' });
     }
     
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
@@ -35,10 +37,14 @@ Deno.serve(async (req) => {
       }
     });
     
+    if (!paymentResponse.ok) {
+      return Response.json({ confirmed: false, message: 'Payment not found in MP' });
+    }
+    
     const payment = await paymentResponse.json();
     
     // If approved, update order
-    if (payment.status === 'approved' && order.status === 'aguardando_pix') {
+    if (payment.status === 'approved') {
       await base44.asServiceRole.entities.Order.update(orderId, {
         status: 'em_preparo',
         payment_confirmed_at: new Date().toISOString()
@@ -87,18 +93,15 @@ Deno.serve(async (req) => {
       }
       
       return Response.json({ 
-        success: true, 
-        message: 'Payment confirmed and order updated',
+        confirmed: true,
         payment_status: payment.status,
         order_status: 'em_preparo'
       });
     }
     
     return Response.json({ 
-      success: false,
-      payment_status: payment.status,
-      order_status: order.status,
-      message: `Payment status: ${payment.status}, Order status: ${order.status}`
+      confirmed: false,
+      payment_status: payment.status
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

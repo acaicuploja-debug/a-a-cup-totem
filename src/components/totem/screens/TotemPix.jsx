@@ -161,16 +161,16 @@ export default function TotemPix({
     setCheckingPayment(true);
     const interval = setInterval(async () => {
       try {
-        const orders = await base44.entities.Order.filter({ id: orderId });
-        const order = orders[0];
-        
-        if (order?.status === 'em_preparo') {
+        // Check directly with Mercado Pago via backend
+        const response = await base44.functions.invoke('checkPaymentStatus', { orderId });
+
+        if (response.data.confirmed) {
           clearInterval(interval);
           setPaymentConfirmed(true);
           setCheckingPayment(false);
-          
+
           toast.success('Pagamento confirmado!');
-          
+
           setTimeout(() => {
             onConfirmPayment();
           }, 2000);
@@ -178,8 +178,8 @@ export default function TotemPix({
       } catch (error) {
         console.error('Error checking payment:', error);
       }
-    }, 2000); // Check every 2 seconds
-    
+    }, 3000); // Check every 3 seconds
+
     // Stop checking after 10 minutes
     setTimeout(() => {
       clearInterval(interval);
