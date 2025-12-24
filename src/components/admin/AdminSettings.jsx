@@ -242,52 +242,87 @@ export default function AdminSettings({ settings, primaryColor }) {
                     { id: 'cartao', label: 'Cartão (Maquininha)', emoji: '💳' },
                     { id: 'dinheiro', label: 'Dinheiro', emoji: '💵' }
                   ].map(method => (
-                    <div key={method.id} className="p-4 bg-gray-50 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{method.emoji}</span>
-                          <span className="font-medium">{method.label}</span>
+                    <div key={method.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{method.emoji}</span>
+                        <span className="font-medium">{method.label}</span>
+                      </div>
+                      <Switch
+                        checked={(formData.payment_methods || ['pix', 'cartao']).includes(method.id)}
+                        onCheckedChange={() => togglePaymentMethod(method.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">💰 Descontos e Acréscimos por Forma de Pagamento</h3>
+                <p className="text-sm text-gray-600 mb-4">Configure ajustes no preço final para incentivar pagamentos via PIX</p>
+                <div className="space-y-4">
+                  {[
+                    { id: 'pix', label: 'PIX', emoji: '📱', hint: 'Ex: -5 para dar 5% de desconto e incentivar PIX' },
+                    { id: 'cartao', label: 'Cartão', emoji: '💳', hint: 'Ex: 3 para adicionar 3% de taxa' },
+                    { id: 'dinheiro', label: 'Dinheiro', emoji: '💵', hint: 'Ex: -2 para dar 2% de desconto' }
+                  ].map(method => (
+                    <div key={method.id} className="p-4 bg-white border-2 border-gray-200 rounded-xl">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">{method.emoji}</span>
+                        <div className="flex-1">
+                          <span className="font-bold text-gray-900 text-lg">{method.label}</span>
+                          <p className="text-xs text-gray-500">{method.hint}</p>
                         </div>
-                        <Switch
-                          checked={(formData.payment_methods || ['pix', 'cartao']).includes(method.id)}
-                          onCheckedChange={() => togglePaymentMethod(method.id)}
-                        />
                       </div>
                       
-                      {(formData.payment_methods || ['pix', 'cartao']).includes(method.id) && (
-                        <div className="space-y-2 pt-2 border-t">
-                          <Label className="text-sm text-gray-600">
-                            Ajuste de Preço (% - Negativo = Desconto, Positivo = Acréscimo)
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium mb-2 block">
+                            Ajuste (%) • Negativo = Desconto • Positivo = Acréscimo
                           </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={formData.payment_adjustments?.[method.id] || 0}
-                              onChange={(e) => {
-                                const adjustments = formData.payment_adjustments || {};
-                                handleChange('payment_adjustments', {
-                                  ...adjustments,
-                                  [method.id]: parseFloat(e.target.value) || 0
-                                });
-                              }}
-                              className="text-center"
-                            />
-                            <span className="text-sm text-gray-500 min-w-[80px]">
-                              {formData.payment_adjustments?.[method.id] 
-                                ? (formData.payment_adjustments[method.id] > 0 
-                                    ? `+${formData.payment_adjustments[method.id]}%` 
-                                    : `${formData.payment_adjustments[method.id]}%`)
-                                : '0%'}
-                            </span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            value={formData.payment_adjustments?.[method.id] || 0}
+                            onChange={(e) => {
+                              const adjustments = formData.payment_adjustments || {};
+                              handleChange('payment_adjustments', {
+                                ...adjustments,
+                                [method.id]: parseFloat(e.target.value) || 0
+                              });
+                            }}
+                            className="text-center text-lg font-bold"
+                          />
+                        </div>
+                        <div className="text-center min-w-[120px]">
+                          <Label className="text-xs text-gray-500 mb-1 block">Visualização</Label>
+                          <div className={`text-2xl font-bold ${
+                            formData.payment_adjustments?.[method.id] > 0 ? 'text-red-600' :
+                            formData.payment_adjustments?.[method.id] < 0 ? 'text-green-600' :
+                            'text-gray-400'
+                          }`}>
+                            {formData.payment_adjustments?.[method.id] 
+                              ? (formData.payment_adjustments[method.id] > 0 
+                                  ? `+${formData.payment_adjustments[method.id]}%` 
+                                  : `${formData.payment_adjustments[method.id]}%`)
+                              : '0%'}
                           </div>
-                          {formData.payment_adjustments?.[method.id] !== 0 && (
-                            <p className="text-xs text-amber-600">
-                              {formData.payment_adjustments[method.id] < 0 
-                                ? `💰 Desconto de ${Math.abs(formData.payment_adjustments[method.id])}% aplicado`
-                                : `💳 Acréscimo de ${formData.payment_adjustments[method.id]}% aplicado`}
-                            </p>
-                          )}
+                        </div>
+                      </div>
+                      
+                      {formData.payment_adjustments?.[method.id] !== 0 && (
+                        <div className={`mt-3 p-3 rounded-lg ${
+                          formData.payment_adjustments[method.id] < 0 
+                            ? 'bg-green-50 border border-green-200' 
+                            : 'bg-amber-50 border border-amber-200'
+                        }`}>
+                          <p className={`text-sm font-medium ${
+                            formData.payment_adjustments[method.id] < 0 ? 'text-green-700' : 'text-amber-700'
+                          }`}>
+                            {formData.payment_adjustments[method.id] < 0 
+                              ? `✅ Cliente ganha ${Math.abs(formData.payment_adjustments[method.id])}% de desconto`
+                              : `⚠️ Será cobrado ${formData.payment_adjustments[method.id]}% a mais`}
+                          </p>
                         </div>
                       )}
                     </div>
