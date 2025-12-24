@@ -129,10 +129,7 @@ export default function TotemCustomer({
       />
       
       <main className="max-w-xl mx-auto px-4 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <div>
           <div className="text-center mb-10">
             <div 
               className="w-24 h-24 rounded-full mx-auto flex items-center justify-center mb-6"
