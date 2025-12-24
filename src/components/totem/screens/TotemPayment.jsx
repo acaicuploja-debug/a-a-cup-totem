@@ -29,12 +29,6 @@ export default function TotemPayment({
   
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
-      console.log('🔵 INICIANDO CRIAÇÃO DE PEDIDO');
-      console.log('🔵 Payment method:', paymentMethod);
-      console.log('🔵 Customer:', customer);
-      console.log('🔵 Items:', items);
-      console.log('🔵 Total:', total);
-
       const now = new Date();
       const brasiliaTime = new Intl.DateTimeFormat('pt-BR', {
         timeZone: 'America/Sao_Paulo',
@@ -47,14 +41,10 @@ export default function TotemPayment({
         hour12: false
       }).format(now).replace(',', '');
 
-      console.log('🔵 Brasilia time:', brasiliaTime);
-
       const orders = await base44.entities.Order.list('-order_number', 1);
-      console.log('🔵 Últimos pedidos:', orders);
       const nextNumber = orders.length > 0 ? (orders[0].order_number || 0) + 1 : 1;
-      console.log('🔵 Próximo número:', nextNumber);
 
-      const orderData = {
+      const order = await base44.entities.Order.create({
         order_number: nextNumber,
         customer_id: customer?.id || null,
         customer_name: customer?.name || null,
@@ -74,31 +64,17 @@ export default function TotemPayment({
         status: 'em_preparo',
         order_datetime: brasiliaTime,
         reward_redeemed: customer?.redeeming_reward || false
-      };
+      });
 
-      console.log('🔵 Dados do pedido:', JSON.stringify(orderData, null, 2));
-
-      try {
-        const order = await base44.entities.Order.create(orderData);
-        console.log('✅ PEDIDO CRIADO COM SUCESSO:', order);
-        console.log('✅ ID do pedido:', order.id);
-        return order;
-      } catch (error) {
-        console.error('❌ ERRO AO CRIAR PEDIDO:', error);
-        console.error('❌ Error details:', error.message, error.stack);
-        throw error;
-      }
-      
-      // Update loyalty only if customer exists
+      // Update loyalty
       if (customer?.id) {
         if (customer.redeeming_reward) {
-          // Resgatando prêmio
           await base44.entities.Customer.update(customer.id, {
             loyalty_count: 0,
             has_pending_reward: false,
             reward_available_date: null
           });
-          
+
           await base44.entities.LoyaltyLog.create({
             customer_id: customer.id,
             customer_phone: customer.phone,
@@ -109,18 +85,17 @@ export default function TotemPayment({
             datetime_brasilia: brasiliaTime
           });
         } else {
-          // Contando pedido normal
           const currentCount = customer.loyalty_count || 0;
           const newCount = currentCount + 1;
           const loyaltyTarget = settings?.loyalty_target || 10;
           const hasPendingReward = newCount >= loyaltyTarget;
-          
+
           await base44.entities.Customer.update(customer.id, {
             loyalty_count: hasPendingReward ? loyaltyTarget : newCount,
             has_pending_reward: hasPendingReward,
             reward_available_date: hasPendingReward ? new Date().toISOString() : customer.reward_available_date
           });
-          
+
           await base44.entities.LoyaltyLog.create({
             customer_id: customer.id,
             customer_phone: customer.phone,
@@ -132,7 +107,7 @@ export default function TotemPayment({
           });
         }
       }
-      
+
       return order;
     },
     onSuccess: (order) => {
