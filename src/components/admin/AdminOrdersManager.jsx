@@ -28,6 +28,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const previousPendingOrderIds = useRef(new Set());
   const isFirstLoad = useRef(true);
   const notificationIntervalRef = useRef(null);
+  const previousPreparingOrderIds = useRef(new Set());
   const queryClient = useQueryClient();
 
   const { data: allOrders, isLoading } = useQuery({
@@ -64,24 +65,24 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   // Check for new pending orders and start notifications
   useEffect(() => {
     if (!allOrders) return;
-    
+
     const currentPendingOrders = allOrders.filter(o => 
       o.status === 'aguardando_pix' || 
       o.status === 'pagamento_informado' ||
       (!o.status)
     );
-    
+
     const currentPendingIds = new Set(currentPendingOrders.map(o => o.id));
-    
+
     // Detect truly NEW orders (IDs that didn't exist before)
     const newOrderIds = [...currentPendingIds].filter(id => !previousPendingOrderIds.current.has(id));
-    
+
     if (newOrderIds.length > 0 && !isFirstLoad.current) {
       // Only notify for truly NEW orders (not on first load)
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
-      
+
       if ('Notification' in window && Notification.permission === 'granted') {
         const newOrders = currentPendingOrders.filter(o => newOrderIds.includes(o.id));
         new Notification('Novo Pedido!', {
@@ -93,25 +94,48 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           requireInteraction: true
         });
       }
-      
+
       // Play sound only for NEW orders
       playNotificationSound();
     }
-    
+
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
     }
-    
+
     previousPendingOrderIds.current = currentPendingIds;
     setPendingOrders(currentPendingOrders);
-    
+
     if (currentPendingOrders.length > 0) {
       startNotificationLoop();
     } else {
       stopNotificationLoop();
     }
-    
+
     return () => stopNotificationLoop();
+  }, [allOrders, settings]);
+
+  // Auto-print new orders in "em_preparo" status
+  useEffect(() => {
+    if (!allOrders || !settings) return;
+
+    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
+    const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
+
+    // Detect NEW orders in em_preparo
+    const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
+
+    if (newPreparingIds.length > 0 && !isFirstLoad.current) {
+      // Auto-print each new order
+      newPreparingIds.forEach(orderId => {
+        const order = currentPreparingOrders.find(o => o.id === orderId);
+        if (order) {
+          setTimeout(() => handlePrint(order), 500);
+        }
+      });
+    }
+
+    previousPreparingOrderIds.current = currentPreparingIds;
   }, [allOrders, settings]);
 
   const getSoundUrl = () => {
