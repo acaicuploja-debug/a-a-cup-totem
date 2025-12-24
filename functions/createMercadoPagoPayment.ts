@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     console.log('✅ Access Token encontrado:', accessToken.substring(0, 20) + '...');
     
     const paymentData = {
-      transaction_amount: amount,
+      transaction_amount: parseFloat(amount.toFixed(2)),
       description: description,
       payment_method_id: 'pix',
       payer: {
@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': `${orderId}-${Date.now()}`
       },
       body: JSON.stringify(paymentData)
     });
