@@ -54,48 +54,6 @@ export default function Admin() {
   
   const primaryColor = settings?.primary_color || '#6B21A8';
 
-  const renderContent = () => {
-    try {
-      switch (activeTab) {
-        case 'dashboard':
-          return <AdminDashboard settings={settings} primaryColor={primaryColor} />;
-        case 'categories':
-          return <AdminCategories settings={settings} primaryColor={primaryColor} />;
-        case 'products':
-          return <AdminProducts settings={settings} primaryColor={primaryColor} />;
-        case 'upsell':
-          return <AdminUpsell settings={settings} primaryColor={primaryColor} />;
-        case 'coupons':
-          return <AdminCoupons settings={settings} primaryColor={primaryColor} />;
-        case 'orders':
-          return <AdminOrdersManager settings={settings} primaryColor={primaryColor} />;
-        case 'history':
-          return <AdminOrderHistory settings={settings} primaryColor={primaryColor} />;
-        case 'customers':
-          return <AdminCustomers settings={settings} primaryColor={primaryColor} />;
-        case 'loyalty':
-          return <AdminLoyalty settings={settings} primaryColor={primaryColor} />;
-        case 'settings':
-          return <AdminSettings settings={settings} primaryColor={primaryColor} />;
-        default:
-          return <AdminDashboard settings={settings} primaryColor={primaryColor} />;
-      }
-    } catch (error) {
-      return (
-        <div className="p-8 bg-red-50 border border-red-200 rounded-xl">
-          <h2 className="text-red-800 font-bold text-xl mb-2">Erro ao carregar componente</h2>
-          <p className="text-red-600 mb-4">{error.message}</p>
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg"
-          >
-            Voltar ao Dashboard
-          </button>
-        </div>
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
@@ -182,7 +140,16 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="lg:ml-64 p-6">
-        {renderContent()}
+        {activeTab === 'dashboard' && <AdminDashboard settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'categories' && <AdminCategories settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'products' && <AdminProducts settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'upsell' && <AdminUpsell settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'coupons' && <AdminCoupons settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'orders' && <AdminOrdersManager settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'history' && <AdminOrderHistory settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'customers' && <AdminCustomers settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'loyalty' && <AdminLoyalty settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'settings' && <AdminSettings settings={settings} primaryColor={primaryColor} />}
       </main>
     </div>
   );
