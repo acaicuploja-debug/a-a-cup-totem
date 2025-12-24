@@ -50,7 +50,13 @@ export default function AdminOrders({ settings, primaryColor }) {
   
   const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date'),
+    queryFn: async () => {
+      console.log('🔵 AdminOrders: Buscando pedidos...');
+      const result = await base44.entities.Order.list('-created_date');
+      console.log('🔵 AdminOrders: Total de pedidos recebidos:', result?.length);
+      console.log('🔵 AdminOrders: Pedidos:', result);
+      return result;
+    },
     refetchInterval: 3000
   });
   
