@@ -16,6 +16,11 @@ export default function AdminSettings({ settings, primaryColor }) {
   const [uploading, setUploading] = useState({});
   const queryClient = useQueryClient();
   
+  const { data: products } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: () => base44.entities.Product.list()
+  });
+  
   useEffect(() => {
     if (settings) {
       setFormData(settings);
@@ -303,12 +308,37 @@ export default function AdminSettings({ settings, primaryColor }) {
               </div>
               
               <div className="space-y-2">
-                <Label>Descrição do Prêmio</Label>
+                <Label>Produto que Será o Prêmio *</Label>
+                <Select 
+                  value={formData.loyalty_reward_product_id || ''}
+                  onValueChange={(value) => handleChange('loyalty_reward_product_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products?.filter(p => !p.is_upsell && p.active).map(product => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name} - R$ {product.price.toFixed(2)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  Selecione o produto real que será dado como prêmio. Necessário para calcular o custo e ROI.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Descrição do Prêmio (Opcional)</Label>
                 <Input
                   value={formData.loyalty_reward_description || ''}
                   onChange={(e) => handleChange('loyalty_reward_description', e.target.value)}
                   placeholder="Ex: Açaí 300ml grátis"
                 />
+                <p className="text-xs text-gray-500">
+                  Texto alternativo exibido para o cliente. Se vazio, usa o nome do produto.
+                </p>
               </div>
               
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
