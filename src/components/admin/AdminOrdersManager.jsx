@@ -535,14 +535,14 @@ Obrigado pela preferencia!
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
-      }, 250);
-      } catch (error) {
-      console.error('Erro ao imprimir:', error);
-      toast.error('Erro ao imprimir pedido');
-      }
-      };
+    }, 250);
+  } catch (error) {
+    console.error('Erro ao imprimir:', error);
+    toast.error('Erro ao imprimir pedido');
+  }
+};
 
-      const getCustomerInfo = (phone) => {
+const getCustomerInfo = (phone) => {
     if (!phone || !customers) return null;
     return customers.find(c => c.phone === phone);
   };
