@@ -2,6 +2,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
+    console.log('========== WEBHOOK INICIADO ==========');
+    console.log('🔔 Requisição recebida:', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries()),
+      timestamp: new Date().toISOString()
+    });
+    
     const base44 = createClientFromRequest(req);
     
     // Mercado Pago sends notifications via query params
@@ -9,11 +17,10 @@ Deno.serve(async (req) => {
     const topic = url.searchParams.get('topic') || url.searchParams.get('type');
     const id = url.searchParams.get('id') || url.searchParams.get('data.id');
     
-    console.log('🔔 Webhook received:', { 
+    console.log('📋 Parâmetros extraídos:', { 
       topic, 
       id, 
-      allParams: Object.fromEntries(url.searchParams.entries()),
-      timestamp: new Date().toISOString()
+      allParams: Object.fromEntries(url.searchParams.entries())
     });
     
     if (topic !== 'payment' && topic !== 'merchant_order') {
