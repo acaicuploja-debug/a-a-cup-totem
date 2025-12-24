@@ -29,6 +29,12 @@ export default function TotemPayment({
   
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
+      console.log('🔵 INICIANDO CRIAÇÃO DE PEDIDO');
+      console.log('🔵 Payment method:', paymentMethod);
+      console.log('🔵 Customer:', customer);
+      console.log('🔵 Items:', items);
+      console.log('🔵 Total:', total);
+
       const now = new Date();
       const brasiliaTime = new Intl.DateTimeFormat('pt-BR', {
         timeZone: 'America/Sao_Paulo',
@@ -40,10 +46,14 @@ export default function TotemPayment({
         second: '2-digit',
         hour12: false
       }).format(now).replace(',', '');
-      
+
+      console.log('🔵 Brasilia time:', brasiliaTime);
+
       const orders = await base44.entities.Order.list('-order_number', 1);
+      console.log('🔵 Últimos pedidos:', orders);
       const nextNumber = orders.length > 0 ? (orders[0].order_number || 0) + 1 : 1;
-      
+      console.log('🔵 Próximo número:', nextNumber);
+
       const orderData = {
         order_number: nextNumber,
         customer_id: customer?.id || null,
@@ -65,10 +75,19 @@ export default function TotemPayment({
         order_datetime: brasiliaTime,
         reward_redeemed: customer?.redeeming_reward || false
       };
-      
-      console.log('>>> Criando pedido no banco:', orderData);
-      const order = await base44.entities.Order.create(orderData);
-      console.log('>>> PEDIDO SALVO NO BANCO:', order);
+
+      console.log('🔵 Dados do pedido:', JSON.stringify(orderData, null, 2));
+
+      try {
+        const order = await base44.entities.Order.create(orderData);
+        console.log('✅ PEDIDO CRIADO COM SUCESSO:', order);
+        console.log('✅ ID do pedido:', order.id);
+        return order;
+      } catch (error) {
+        console.error('❌ ERRO AO CRIAR PEDIDO:', error);
+        console.error('❌ Error details:', error.message, error.stack);
+        throw error;
+      }
       
       // Update loyalty only if customer exists
       if (customer?.id) {
