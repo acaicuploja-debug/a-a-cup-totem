@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
     console.log('🔔 Requisição recebida:', {
       method: req.method,
       url: req.url,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      headers: Object.fromEntries(req.headers.entries())
     });
     
     // Mercado Pago sends notifications via query params or body
