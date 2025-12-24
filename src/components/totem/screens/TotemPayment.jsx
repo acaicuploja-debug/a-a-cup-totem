@@ -186,10 +186,14 @@ export default function TotemPayment({
             if (!Icon || !label) return null;
             
             return (
-              <button
+              <motion.button
                 key={method}
                 onClick={() => handleSelect(method)}
-                className="w-full flex items-center gap-6 p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-all active:scale-98"
+                className="w-full flex items-center gap-6 p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-all"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <div 
                   className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
@@ -215,7 +219,7 @@ export default function TotemPayment({
                 </div>
                 
                 <ArrowRight className="w-6 h-6 text-gray-400" />
-              </button>
+              </motion.button>
             );
           })}
         </div>
