@@ -19,6 +19,20 @@ export default function TotemProductDetail({
   const [quantity, setQuantity] = useState(1);
   const [selectedComplements, setSelectedComplements] = useState({});
   
+  React.useEffect(() => {
+    if (product?.complements && product.complements.length > 0) {
+      const firstRequiredGroup = product.complements.findIndex(g => g.required);
+      if (firstRequiredGroup >= 0) {
+        setTimeout(() => {
+          const element = document.getElementById(`complement-group-${firstRequiredGroup}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
+      }
+    }
+  }, [product]);
+  
   const handleToggleComplement = (groupIndex, item) => {
     setSelectedComplements(prev => {
       const current = prev[groupIndex] || [];
@@ -157,7 +171,8 @@ export default function TotemProductDetail({
                     onMaxReached={() => {
                       const nextGroup = document.getElementById(`complement-group-${index + 1}`);
                       if (nextGroup) {
-                        nextGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const targetPosition = nextGroup.getBoundingClientRect().top + window.pageYOffset - 100;
+                        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
                       }
                     }}
                   />

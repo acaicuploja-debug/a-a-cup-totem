@@ -99,7 +99,7 @@ export default function TotemPix({
   
   const handleConfirmPayment = async () => {
     try {
-      await createOrderMutation.mutateAsync('pagamento_informado');
+      await createOrderMutation.mutateAsync('em_preparo');
       toast.success('Pedido confirmado!');
       onConfirmPayment();
     } catch (error) {

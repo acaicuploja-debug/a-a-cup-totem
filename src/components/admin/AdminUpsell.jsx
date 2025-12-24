@@ -238,7 +238,7 @@ export default function AdminUpsell({ settings, primaryColor }) {
       )}
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingProduct ? 'Editar Upsell' : 'Novo Upsell'}</DialogTitle>
           </DialogHeader>

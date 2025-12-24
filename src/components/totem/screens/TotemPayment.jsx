@@ -14,9 +14,9 @@ const paymentIcons = {
 };
 
 const paymentLabels = {
-  pix: { title: 'PIX', description: 'Pagamento instantâneo via QR Code', emoji: '📱' },
-  cartao: { title: 'Cartão', description: 'Débito ou crédito na maquininha', emoji: '💳' },
-  dinheiro: { title: 'Dinheiro', description: 'Pagamento em espécie', emoji: '💵' }
+  pix: { title: 'PIX', subtitle: '(recomendado)', description: 'Pagamento instantâneo via QR Code', emoji: '📱' },
+  cartao: { title: 'Cartão', subtitle: '', description: 'Débito ou crédito na maquininha', emoji: '💳' },
+  dinheiro: { title: 'Dinheiro', subtitle: '', description: 'Pagamento em espécie', emoji: '💵' }
 };
 
 export default function TotemPayment({ 
@@ -53,7 +53,7 @@ export default function TotemPayment({
         total: total,
         consumption_type: consumptionType,
         payment_method: paymentMethod,
-        status: paymentMethod === 'pix' ? 'aguardando_pix' : 'pagamento_informado',
+        status: paymentMethod === 'pix' ? 'aguardando_pix' : 'em_preparo',
         order_datetime: brasiliaTime,
         reward_redeemed: customer?.redeeming_reward || false
       };
@@ -175,9 +175,16 @@ export default function TotemPayment({
                 </div>
                 
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {label.title}
-                  </h3>
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      {label.title}
+                    </h3>
+                    {label.subtitle && (
+                      <span className="text-sm text-gray-500 font-normal">
+                        {label.subtitle}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-500">
                     {label.description}
                   </p>

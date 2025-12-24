@@ -69,15 +69,21 @@ export default function TotemSuccess({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <p className="text-xl text-gray-600 mb-2">
-            {currentOrder?.payment_method === 'pix' 
-              ? 'Pagamento informado. Aguarde a confirmação.'
-              : 'Aguarde seu pedido ser preparado.'
-            }
-          </p>
-          {customer?.name && (
-            <p className="text-lg text-gray-500">
-              {customer.name}, você será chamado(a) após o preparo do pedido.
+          {customer?.name ? (
+            <>
+              <p className="text-xl text-gray-600 mb-2">
+                {currentOrder?.payment_method === 'pix' 
+                  ? 'Pagamento informado. Aguarde a confirmação.'
+                  : `${customer.name}, aguarde ser chamada pelo seu nome para retirar o pedido no balcão.`
+                }
+              </p>
+            </>
+          ) : (
+            <p className="text-xl text-gray-600 mb-2">
+              {currentOrder?.payment_method === 'pix' 
+                ? 'Pagamento informado. Aguarde a confirmação.'
+                : 'Aguarde seu pedido ser preparado.'
+              }
             </p>
           )}
         </motion.div>

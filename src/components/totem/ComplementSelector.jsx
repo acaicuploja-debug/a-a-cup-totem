@@ -16,7 +16,9 @@ export default function ComplementSelector({
   
   useEffect(() => {
     if (group.required && group.max && selectedCount === group.max && prevCountRef.current < selectedCount) {
-      onMaxReached?.();
+      setTimeout(() => {
+        onMaxReached?.();
+      }, 400);
     }
     prevCountRef.current = selectedCount;
   }, [selectedCount, group.required, group.max, onMaxReached]);
