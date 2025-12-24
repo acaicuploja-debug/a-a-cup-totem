@@ -9,7 +9,12 @@ Deno.serve(async (req) => {
     const topic = url.searchParams.get('topic') || url.searchParams.get('type');
     const id = url.searchParams.get('id') || url.searchParams.get('data.id');
     
-    console.log('Webhook received:', { topic, id });
+    console.log('🔔 Webhook received:', { 
+      topic, 
+      id, 
+      allParams: Object.fromEntries(url.searchParams.entries()),
+      timestamp: new Date().toISOString()
+    });
     
     if (topic !== 'payment' && topic !== 'merchant_order') {
       return Response.json({ status: 'ignored' });
