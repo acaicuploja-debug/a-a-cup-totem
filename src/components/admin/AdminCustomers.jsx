@@ -10,6 +10,7 @@ import { Search, Users, Gift, Star, Phone, Loader2 } from 'lucide-react';
 export default function AdminCustomers({ settings, primaryColor }) {
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   
   const { data: customers, isLoading } = useQuery({
     queryKey: ['admin-customers'],
@@ -141,7 +142,7 @@ export default function AdminCustomers({ settings, primaryColor }) {
       )}
       
       <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes do Cliente</DialogTitle>
           </DialogHeader>
@@ -193,6 +194,106 @@ export default function AdminCustomers({ settings, primaryColor }) {
                   </div>
                 </div>
               )}
+              
+              <div className="border-t pt-4">
+                <h4 className="font-bold text-gray-900 mb-3">Histórico de Pedidos</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {getCustomerOrders(selectedCustomer.id).length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">Nenhum pedido ainda</p>
+                  ) : (
+                    getCustomerOrders(selectedCustomer.id).map(order => (
+                      <div 
+                        key={order.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
+                      >
+                        <div>
+                          <p className="font-medium">Pedido #{order.order_number?.toString().padStart(3, '0')}</p>
+                          <p className="text-sm text-gray-500">
+                            {order.order_datetime || new Date(order.created_date).toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold" style={{ color: primaryColor }}>
+                            R$ {order.total?.toFixed(2)}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCustomer(null);
+                              setSelectedOrder(order);
+                            }}
+                          >
+                            Ver Pedido
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Order Detail Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Pedido #{selectedOrder?.order_number?.toString().padStart(3, '0')}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Cliente</p>
+                  <p className="font-medium">{selectedOrder.customer_name || 'Não informado'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Telefone</p>
+                  <p className="font-medium">{selectedOrder.customer_phone || 'Não informado'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Data/Hora</p>
+                  <p className="font-medium">{selectedOrder.order_datetime}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Consumo</p>
+                  <p className="font-medium">
+                    {selectedOrder.consumption_type === 'local' ? 'No Local' : 'Para Viagem'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-bold mb-3">Itens</h4>
+                <div className="space-y-2">
+                  {selectedOrder.items?.map((item, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <div>
+                        <span className="font-medium">{item.quantity}x {item.product_name}</span>
+                        {item.complements?.length > 0 && (
+                          <p className="text-sm text-gray-500">
+                            + {item.complements.map(c => c.name).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                      <span className="font-medium">R$ {item.total.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 flex justify-between">
+                <span className="text-xl font-bold">Total</span>
+                <span className="text-xl font-bold" style={{ color: primaryColor }}>
+                  R$ {selectedOrder.total?.toFixed(2)}
+                </span>
+              </div>
             </div>
           )}
         </DialogContent>

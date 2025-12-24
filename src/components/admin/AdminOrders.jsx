@@ -13,8 +13,16 @@ import {
   Package,
   Printer,
   Bell,
-  RefreshCw
+  RefreshCw,
+  Calendar as CalendarIcon,
+  X as CloseIcon
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -59,12 +67,6 @@ export default function AdminOrders({ settings, primaryColor }) {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }) => {
       await base44.entities.Order.update(orderId, { status });
-      
-      // If finalizing, trigger WhatsApp message
-      if (status === 'finalizado' && settings?.whatsapp_number) {
-        // WhatsApp integration would go here
-      }
-      
       return { orderId, status };
     },
     onSuccess: () => {
@@ -73,11 +75,112 @@ export default function AdminOrders({ settings, primaryColor }) {
     }
   });
   
+  const cancelOrderMutation = useMutation({
+    mutationFn: async ({ orderId, reason, details }) => {
+      const order = orders.find(o => o.id === orderId);
+      
+      await base44.entities.Order.update(orderId, { 
+        status: 'cancelado',
+        cancellation_reason: reason,
+        cancellation_details: details
+      });
+      
+      // Reverter fidelidade se necessário
+      if (order?.customer_id && !order.reward_redeemed) {
+        const customer = customers?.find(c => c.id === order.customer_id);
+        if (customer) {
+          const newCount = Math.max(0, (customer.loyalty_count || 0) - 1);
+          await base44.entities.Customer.update(customer.id, {
+            loyalty_count: newCount,
+            has_pending_reward: newCount >= (settings?.loyalty_target || 10)
+          });
+        }
+      }
+      
+      return { orderId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-orders']);
+      queryClient.invalidateQueries(['admin-customers']);
+      toast.success('Pedido cancelado');
+      setShowCancelDialog(false);
+      setOrderToCancel(null);
+      setCancelReason('');
+      setCancelDetails('');
+    }
+  });
+  
+  const handleCancelOrder = (order) => {
+    setOrderToCancel(order);
+    setShowCancelDialog(true);
+  };
+  
+  const confirmCancel = () => {
+    if (!cancelReason) {
+      toast.error('Selecione um motivo');
+      return;
+    }
+    if (cancelReason === 'outro' && !cancelDetails.trim()) {
+      toast.error('Descreva o motivo');
+      return;
+    }
+    cancelOrderMutation.mutate({
+      orderId: orderToCancel.id,
+      reason: cancelReason,
+      details: cancelDetails
+    });
+  };
+  
+  const [dateFilter, setDateFilter] = React.useState('today');
+  const [customStartDate, setCustomStartDate] = React.useState(null);
+  const [customEndDate, setCustomEndDate] = React.useState(null);
+  const [showCancelDialog, setShowCancelDialog] = React.useState(false);
+  const [orderToCancel, setOrderToCancel] = React.useState(null);
+  const [cancelReason, setCancelReason] = React.useState('');
+  const [cancelDetails, setCancelDetails] = React.useState('');
+  
+  const getDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (dateFilter) {
+      case 'today':
+        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+        return { start: yesterday, end: today };
+      case 'last7':
+        return { start: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'last15':
+        return { start: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'last30':
+        return { start: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'custom':
+        return { start: customStartDate, end: customEndDate };
+      default:
+        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+    }
+  };
+  
   const filteredOrders = React.useMemo(() => {
     if (!orders) return [];
-    if (statusFilter === 'all') return orders;
-    return orders.filter(o => o.status === statusFilter);
-  }, [orders, statusFilter]);
+    const { start, end } = getDateRange();
+    
+    let filtered = orders;
+    
+    if (start && end) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_date);
+        return orderDate >= start && orderDate < end;
+      });
+    }
+    
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(o => o.status === statusFilter);
+    }
+    
+    return filtered;
+  }, [orders, statusFilter, dateFilter, customStartDate, customEndDate]);
   
   const handlePrint = (order) => {
     const customerInfo = getCustomerInfo(order.customer_phone);
@@ -264,22 +367,55 @@ export default function AdminOrders({ settings, primaryColor }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
         
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            onClick={handleFinalizeAll}
-            className="bg-green-50 hover:bg-green-100 text-green-700"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Finalizar Todos
-          </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Hoje</SelectItem>
+              <SelectItem value="yesterday">Ontem</SelectItem>
+              <SelectItem value="last7">Últimos 7 dias</SelectItem>
+              <SelectItem value="last15">Últimos 15 dias</SelectItem>
+              <SelectItem value="last30">Últimos 30 dias</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {dateFilter === 'custom' && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    {customStartDate ? format(customStartDate, 'dd/MM') : 'Início'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={customStartDate} onSelect={setCustomStartDate} />
+                </PopoverContent>
+              </Popover>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    {customEndDate ? format(customEndDate, 'dd/MM') : 'Fim'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={customEndDate} onSelect={setCustomEndDate} />
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar por status" />
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
@@ -288,6 +424,15 @@ export default function AdminOrders({ settings, primaryColor }) {
               ))}
             </SelectContent>
           </Select>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleFinalizeAll}
+            className="bg-green-50 hover:bg-green-100 text-green-700"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Finalizar Todos
+          </Button>
           
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
@@ -399,6 +544,20 @@ export default function AdminOrders({ settings, primaryColor }) {
                         >
                           <Printer className="w-3 h-3" />
                         </Button>
+                        
+                        {order.status !== 'cancelado' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-8 px-2 text-red-600 hover:bg-red-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelOrder(order);
+                            }}
+                          >
+                            <CloseIcon className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -498,6 +657,73 @@ export default function AdminOrders({ settings, primaryColor }) {
               className="bg-green-600 hover:bg-green-700"
             >
               Sim, Finalizar Todos
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Pedido</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Pedido #{orderToCancel?.order_number?.toString().padStart(3, '0')} - {orderToCancel?.customer_name}
+            </p>
+            
+            <div className="space-y-3">
+              <Label>Motivo do Cancelamento *</Label>
+              <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="desistiu" id="desistiu" />
+                  <Label htmlFor="desistiu" className="font-normal cursor-pointer">
+                    Cliente desistiu do pedido
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="sem_pagamento" id="sem_pagamento" />
+                  <Label htmlFor="sem_pagamento" className="font-normal cursor-pointer">
+                    Cliente não tinha condições de pagar
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="prazo" id="prazo" />
+                  <Label htmlFor="prazo" className="font-normal cursor-pointer">
+                    Cliente não aceitou o prazo de preparo
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="outro" id="outro" />
+                  <Label htmlFor="outro" className="font-normal cursor-pointer">
+                    Outro
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              {cancelReason === 'outro' && (
+                <Textarea
+                  placeholder="Descreva o motivo..."
+                  value={cancelDetails}
+                  onChange={(e) => setCancelDetails(e.target.value)}
+                  rows={3}
+                />
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              Voltar
+            </Button>
+            <Button 
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={cancelOrderMutation.isPending}
+            >
+              Confirmar Cancelamento
             </Button>
           </div>
         </DialogContent>
