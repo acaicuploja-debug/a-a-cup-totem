@@ -14,6 +14,10 @@ export default function TotemPix({
   onChangePaymentMethod 
 }) {
   const { items, total, customer, consumptionType, setCurrentOrder } = useCart();
+  
+  // Calcular total com desconto do PIX
+  const pixAdjustment = settings?.payment_adjustments?.pix || 0;
+  const adjustedTotal = total * (1 + pixAdjustment / 100);
   const [mercadoPagoData, setMercadoPagoData] = useState(null);
   const [isLoadingMercadoPago, setIsLoadingMercadoPago] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
@@ -41,7 +45,7 @@ export default function TotemPix({
           total: item.total
         })),
         subtotal: total,
-        total: total,
+        total: adjustedTotal,
         consumption_type: consumptionType,
         payment_method: 'pix',
         status: status,
@@ -113,7 +117,7 @@ export default function TotemPix({
           // Create Mercado Pago payment
           const response = await base44.functions.invoke('createMercadoPagoPayment', {
             orderId: order.id,
-            amount: total,
+            amount: adjustedTotal,
             description: `Pedido #${String(order.order_number).padStart(3, '0')} - ${settings?.store_name || 'Loja'}`
           });
           
@@ -270,7 +274,7 @@ export default function TotemPix({
               style={{ backgroundColor: `${primaryColor}10` }}
             >
               <p className="text-2xl font-bold mb-2" style={{ color: primaryColor }}>
-                R$ {total.toFixed(2)}
+                R$ {adjustedTotal.toFixed(2)}
               </p>
               {checkingPayment && (
                 <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
@@ -290,7 +294,7 @@ export default function TotemPix({
         ) : (
           <PixQRCode
             settings={settings}
-            total={total}
+            total={adjustedTotal}
             onConfirmPayment={handleConfirmPayment}
             onChangePaymentMethod={onChangePaymentMethod}
             onExpired={handleExpired}
