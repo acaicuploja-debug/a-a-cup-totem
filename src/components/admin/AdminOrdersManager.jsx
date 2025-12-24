@@ -39,7 +39,8 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
       const result = await base44.entities.Order.list('-created_date');
       return result;
     },
-    refetchInterval: 3000
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false
   });
 
   const { data: customers } = useQuery({
