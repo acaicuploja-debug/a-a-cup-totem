@@ -1,7 +1,6 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { QrCode, CreditCard, Banknote, ArrowRight } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
