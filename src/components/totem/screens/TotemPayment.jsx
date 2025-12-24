@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 
 const paymentIcons = {
   pix: QrCode,
+  debito: CreditCard,
+  credito: CreditCard,
   cartao: CreditCard,
   dinheiro: Banknote
 };
