@@ -172,22 +172,38 @@ export default function AdminOrders({ settings, primaryColor }) {
   };
   
   const filteredOrders = React.useMemo(() => {
+    console.log('🟡 Filtrando pedidos...');
+    console.log('🟡 Total de pedidos antes do filtro:', orders?.length);
+    console.log('🟡 Status filter:', statusFilter);
+    console.log('🟡 Date filter:', dateFilter);
+    
     if (!orders) return [];
     const { start, end } = getDateRange();
+    
+    console.log('🟡 Date range:', { start, end });
     
     let filtered = orders;
     
     if (start && end) {
+      console.log('🟡 Aplicando filtro de data...');
       filtered = filtered.filter(order => {
         const orderDate = new Date(order.created_date);
-        return orderDate >= start && orderDate < end;
+        const passes = orderDate >= start && orderDate < end;
+        if (!passes) {
+          console.log('🟡 Pedido filtrado por data:', order.order_number, orderDate);
+        }
+        return passes;
       });
+      console.log('🟡 Após filtro de data:', filtered.length);
     }
     
     if (statusFilter !== 'all') {
+      console.log('🟡 Aplicando filtro de status...');
       filtered = filtered.filter(o => o.status === statusFilter);
+      console.log('🟡 Após filtro de status:', filtered.length);
     }
     
+    console.log('🟡 Total de pedidos após filtros:', filtered.length);
     return filtered;
   }, [orders, statusFilter, dateFilter, customStartDate, customEndDate]);
   
