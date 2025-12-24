@@ -66,8 +66,12 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     connectQZ();
     
     return () => {
-      if (qz.websocket.isActive()) {
-        qz.websocket.disconnect();
+      try {
+        if (qz.websocket.isActive()) {
+          qz.websocket.disconnect();
+        }
+      } catch (err) {
+        console.log('Erro ao desconectar QZ:', err);
       }
     };
   }, []);
