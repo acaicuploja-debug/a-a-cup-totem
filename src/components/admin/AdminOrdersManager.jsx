@@ -4,6 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ChefHat, Package, CheckCircle, Printer, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PendingOrderNotification from './PendingOrderNotification';
@@ -17,6 +20,11 @@ const statusConfig = {
 export default function AdminOrdersManager({ settings, primaryColor }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelDetails, setCancelDetails] = useState('');
   const previousOrderCount = useRef(0);
   const notificationIntervalRef = useRef(null);
   const queryClient = useQueryClient();
@@ -142,6 +150,94 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handleStatusChange = (order, newStatus) => {
     updateStatusMutation.mutate({ orderId: order.id, status: newStatus });
+  };
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: async ({ orderId, reason, details }) => {
+      const order = allOrders.find(o => o.id === orderId);
+      
+      await base44.entities.Order.update(orderId, { 
+        status: 'cancelado',
+        cancellation_reason: reason,
+        cancellation_details: details
+      });
+      
+      // Reverter fidelidade se necessário
+      if (order?.customer_id && !order.reward_redeemed) {
+        const customer = customers?.find(c => c.id === order.customer_id);
+        if (customer) {
+          const newCount = Math.max(0, (customer.loyalty_count || 0) - 1);
+          await base44.entities.Customer.update(customer.id, {
+            loyalty_count: newCount,
+            has_pending_reward: newCount >= (settings?.loyalty_target || 10)
+          });
+        }
+      }
+      
+      return { orderId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-orders-manager']);
+      queryClient.invalidateQueries(['admin-customers']);
+      toast.success('Pedido cancelado');
+      setShowCancelDialog(false);
+      setOrderToCancel(null);
+      setCancelReason('');
+      setCancelDetails('');
+    }
+  });
+
+  const handleCancelOrder = (order) => {
+    setOrderToCancel(order);
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    if (!cancelReason) {
+      toast.error('Selecione um motivo');
+      return;
+    }
+    if (cancelReason === 'outro' && !cancelDetails.trim()) {
+      toast.error('Descreva o motivo');
+      return;
+    }
+    cancelOrderMutation.mutate({
+      orderId: orderToCancel.id,
+      reason: cancelReason,
+      details: cancelDetails
+    });
+  };
+
+  const handleFinalizeAll = async () => {
+    const activeOrders = todayOrders.filter(o => 
+      o.status !== 'finalizado' && o.status !== 'cancelado'
+    );
+    
+    if (activeOrders.length === 0) {
+      toast.info('Não há pedidos para finalizar');
+      return;
+    }
+    
+    setShowFinalizeDialog(true);
+  };
+  
+  const confirmFinalizeAll = async () => {
+    const activeOrders = todayOrders.filter(o => 
+      o.status !== 'finalizado' && o.status !== 'cancelado'
+    );
+    
+    try {
+      await Promise.all(
+        activeOrders.map(order => 
+          base44.entities.Order.update(order.id, { status: 'finalizado' })
+        )
+      );
+      queryClient.invalidateQueries(['admin-orders-manager']);
+      toast.success(`${activeOrders.length} pedido(s) finalizado(s)!`);
+      setShowFinalizeDialog(false);
+    } catch (error) {
+      toast.error('Erro ao finalizar pedidos');
+    }
   };
 
   const handlePrint = (order) => {
@@ -329,6 +425,14 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           <h1 className="text-3xl font-bold text-gray-900">Gestor de Pedidos</h1>
           <p className="text-gray-500 mt-1">Pedidos de hoje • {todayOrders.length} total</p>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={handleFinalizeAll}
+          className="bg-green-50 hover:bg-green-100 text-green-700"
+        >
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Finalizar Todos
+        </Button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -435,6 +539,17 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
                         >
                           <Printer className="w-4 h-4" />
                         </Button>
+                        
+                        {status !== 'finalizado' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-3 text-red-600 hover:bg-red-50"
+                            onClick={() => handleCancelOrder(order)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -512,6 +627,97 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Finalize All Confirmation Dialog */}
+      <Dialog open={showFinalizeDialog} onOpenChange={setShowFinalizeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalizar Todos os Pedidos</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600">
+            Você está prestes a finalizar {todayOrders.filter(o => o.status !== 'finalizado' && o.status !== 'cancelado').length} pedido(s). 
+            Esta ação não pode ser desfeita. Deseja continuar?
+          </p>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setShowFinalizeDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmFinalizeAll}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Sim, Finalizar Todos
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar Pedido</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Pedido #{orderToCancel?.order_number?.toString().padStart(3, '0')} - {orderToCancel?.customer_name}
+            </p>
+            
+            <div className="space-y-3">
+              <Label>Motivo do Cancelamento *</Label>
+              <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="desistiu" id="desistiu" />
+                  <Label htmlFor="desistiu" className="font-normal cursor-pointer">
+                    Cliente desistiu do pedido
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="sem_pagamento" id="sem_pagamento" />
+                  <Label htmlFor="sem_pagamento" className="font-normal cursor-pointer">
+                    Cliente não tinha condições de pagar
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="prazo" id="prazo" />
+                  <Label htmlFor="prazo" className="font-normal cursor-pointer">
+                    Cliente não aceitou o prazo de preparo
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="outro" id="outro" />
+                  <Label htmlFor="outro" className="font-normal cursor-pointer">
+                    Outro
+                  </Label>
+                </div>
+              </RadioGroup>
+              
+              {cancelReason === 'outro' && (
+                <Textarea
+                  placeholder="Descreva o motivo..."
+                  value={cancelDetails}
+                  onChange={(e) => setCancelDetails(e.target.value)}
+                  rows={3}
+                />
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              Voltar
+            </Button>
+            <Button 
+              onClick={confirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={cancelOrderMutation.isPending}
+            >
+              Confirmar Cancelamento
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
