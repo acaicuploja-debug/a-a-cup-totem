@@ -294,51 +294,6 @@ export default function AdminLoyalty({ settings, primaryColor }) {
       {/* Current Reward with Product Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Meta de Pedidos</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {settings?.loyalty_target || 10} pedidos
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-                <Star className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Prêmios Resgatados</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.redeemed}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Prêmios Pendentes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                <Gift className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-        <Card>
           <CardHeader>
             <CardTitle>Prêmio Atual</CardTitle>
           </CardHeader>
