@@ -121,19 +121,31 @@ export default function TotemPayment({
   });
   
   const handleSelect = async (method) => {
-    console.log('=== PAYMENT SELECT ===', method);
+    console.log('=== PAYMENT SELECT START ===', method);
+    console.log('Items:', items);
+    console.log('Total:', total);
+    console.log('Customer:', customer);
+    console.log('Consumption Type:', consumptionType);
+    
     setPaymentMethod(method);
     
     // Se for cartão ou dinheiro, cria o pedido direto
     if (method === 'cartao' || method === 'dinheiro') {
-      console.log('Criando pedido para', method);
+      console.log('>>> Iniciando criação de pedido para', method);
       try {
+        console.log('>>> Chamando mutateAsync...');
         const order = await createOrderMutation.mutateAsync(method);
-        console.log('Pedido criado com sucesso:', order);
+        console.log('>>> PEDIDO CRIADO COM SUCESSO:', order);
+        console.log('>>> Order ID:', order.id);
+        console.log('>>> Order Number:', order.order_number);
         toast.success('Pedido #' + String(order.order_number).padStart(3, '0') + ' criado!');
+        console.log('>>> Chamando onSelectPayment...');
         onSelectPayment(method);
+        console.log('>>> onSelectPayment chamado');
       } catch (error) {
-        console.error('ERRO ao criar pedido:', error);
+        console.error('>>> ERRO COMPLETO:', error);
+        console.error('>>> Error message:', error.message);
+        console.error('>>> Error stack:', error.stack);
         toast.error('Erro ao criar pedido: ' + error.message);
         return;
       }
@@ -142,6 +154,7 @@ export default function TotemPayment({
       console.log('PIX - pulando criação');
       onSelectPayment(method);
     }
+    console.log('=== PAYMENT SELECT END ===');
   };
   
 
