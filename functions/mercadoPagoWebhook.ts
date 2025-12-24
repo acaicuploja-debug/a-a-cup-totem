@@ -24,9 +24,14 @@ Deno.serve(async (req) => {
       allParams: Object.fromEntries(url.searchParams.entries())
     });
     
+    console.log('🔍 Verificando topic:', topic);
+    
     if (topic !== 'payment' && topic !== 'merchant_order') {
+      console.log('⚠️ Topic ignorado:', topic);
       return Response.json({ status: 'ignored' });
     }
+    
+    console.log('✅ Topic válido:', topic);
     
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
     if (!accessToken) {
