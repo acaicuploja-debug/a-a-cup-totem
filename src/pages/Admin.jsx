@@ -143,7 +143,7 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="lg:ml-64 p-6">
-        {!settings ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin w-10 h-10 border-4 border-gray-200 rounded-full"
               style={{ borderTopColor: primaryColor }}
