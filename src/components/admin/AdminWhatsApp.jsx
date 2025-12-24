@@ -117,6 +117,16 @@ export default function AdminWhatsApp({ settings, primaryColor }) {
 
   const isConfigured = formData.whatsapp_api_token && formData.whatsapp_phone_number_id;
 
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin w-10 h-10 border-4 border-gray-200 rounded-full"
+          style={{ borderTopColor: primaryColor }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
