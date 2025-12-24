@@ -12,9 +12,10 @@ export default function TotemPoint({
   primaryColor,
   onSuccess,
   onBack,
-  onChangePayment
+  onChangePayment,
+  cardType = 'debito'
 }) {
-  const { items, total, customer, consumptionType, clearCart, appliedCoupon } = useCart();
+  const { items, total, customer, consumptionType, clearCart, appliedCoupon, paymentMethod } = useCart();
   const [paymentStatus, setPaymentStatus] = useState('creating'); // creating, waiting, paid, error
   const [orderId, setOrderId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -38,8 +39,9 @@ export default function TotemPoint({
   useEffect(() => {
     const initPayment = async () => {
       try {
-        // Calcular ajuste do cartão
-        const adjustment = settings?.payment_adjustments?.cartao || 0;
+        // Calcular ajuste baseado no tipo de cartão (débito/crédito)
+        const paymentType = paymentMethod || cardType;
+        const adjustment = settings?.payment_adjustments?.[paymentType] || settings?.payment_adjustments?.cartao || 0;
         const adjustedTotal = total * (1 + adjustment / 100);
 
         // Criar pedido
@@ -58,7 +60,7 @@ export default function TotemPoint({
           subtotal: total,
           total: adjustedTotal,
           consumption_type: consumptionType,
-          payment_method: 'cartao',
+          payment_method: paymentMethod || cardType,
           status: 'aguardando_point',
           order_datetime: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
           reward_redeemed: customer?.redeemReward || false
@@ -70,7 +72,8 @@ export default function TotemPoint({
         const pointPayment = await createPointPaymentMutation.mutateAsync({
           orderId: order.id,
           amount: adjustedTotal,
-          description: `Pedido #${order.order_number || order.id}`
+          description: `Pedido #${order.order_number || order.id}`,
+          paymentType: paymentMethod || cardType
         });
 
         if (pointPayment.error) {
@@ -218,13 +221,13 @@ export default function TotemPoint({
         </motion.div>
         
         <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">
-          {paymentStatus === 'creating' ? 'Preparando Pagamento...' : 'Passe o Cartão na Point'}
+          {paymentStatus === 'creating' ? 'Preparando Pagamento...' : `Passe o Cartão de ${(paymentMethod || cardType) === 'debito' ? 'Débito' : 'Crédito'}`}
         </h2>
         
         <p className="text-xl text-gray-500 text-center mb-8">
           {paymentStatus === 'creating' 
             ? 'Conectando com a maquininha...'
-            : 'Aguardando pagamento na maquininha Point Smart'
+            : `Aguardando pagamento ${(paymentMethod || cardType) === 'debito' ? 'no débito' : 'no crédito'} na Point Smart`
           }
         </p>
         

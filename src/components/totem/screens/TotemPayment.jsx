@@ -14,7 +14,9 @@ const paymentIcons = {
 
 const paymentLabels = {
   pix: { title: 'PIX', subtitle: '(recomendado)', description: 'Pagamento instantâneo via QR Code', emoji: '📱' },
-  cartao: { title: 'Cartão', subtitle: '', description: 'Passe o cartão na Point Smart', emoji: '💳' },
+  debito: { title: 'Débito', subtitle: '', description: 'Passe o cartão de débito na Point', emoji: '💳' },
+  credito: { title: 'Crédito', subtitle: '', description: 'Passe o cartão de crédito na Point', emoji: '💳' },
+  cartao: { title: 'Cartão', subtitle: '', description: 'Débito ou crédito na maquininha', emoji: '💳' },
   dinheiro: { title: 'Dinheiro', subtitle: '', description: 'Pagamento em espécie', emoji: '💵' }
 };
 
@@ -25,7 +27,15 @@ export default function TotemPayment({
   onBack 
 }) {
   const { items, total, customer, consumptionType, setPaymentMethod, setCurrentOrder } = useCart();
-  const availableMethods = settings?.payment_methods || ['pix', 'cartao'];
+  const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
+  
+  // Se cartão está disponível E Mercado Pago está ativo, dividir em débito/crédito
+  const availableMethods = configuredMethods.flatMap(method => {
+    if (method === 'cartao' && settings?.mercadopago_enabled) {
+      return ['debito', 'credito'];
+    }
+    return method;
+  });
   
   // Garantir que PIX apareça sempre primeiro
   const sortedMethods = [...availableMethods].sort((a, b) => {
@@ -134,13 +144,13 @@ export default function TotemPayment({
   const handleSelect = async (method) => {
     setPaymentMethod(method);
 
-    // Point usa fluxo especial com tela própria
-    if (method === 'cartao' && settings?.mercadopago_enabled) {
-      onSelectPayment('point');
+    // Point usa fluxo especial com tela própria (débito ou crédito)
+    if ((method === 'debito' || method === 'credito') && settings?.mercadopago_enabled) {
+      onSelectPayment({ screen: 'point', cardType: method });
       return;
     }
 
-    if (method === 'cartao' || method === 'dinheiro') {
+    if (method === 'cartao' || method === 'dinheiro' || method === 'debito' || method === 'credito') {
       toast.info('Criando pedido...');
       await createOrderMutation.mutateAsync(method);
       toast.success('Pedido criado!');

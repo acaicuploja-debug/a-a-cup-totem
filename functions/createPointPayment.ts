@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { orderId, amount, description } = await req.json();
+    const { orderId, amount, description, paymentType = 'debito' } = await req.json();
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
 
     if (!accessToken) {
@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       amount: amount,
       description: description || `Pedido #${orderId}`,
       external_reference: orderId,
+      payment_mode: paymentType === 'credito' ? 'credit' : 'debit',
       notification_url: `${Deno.env.get('BASE44_APP_URL')}/functions/mercadoPagoWebhook`
     };
 

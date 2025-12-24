@@ -89,7 +89,7 @@ function TotemContent() {
   const handlePaymentSelect = (method) => {
     if (method === 'pix') {
       setScreen(SCREENS.PIX);
-    } else if (method === 'point') {
+    } else if (typeof method === 'object' && method.screen === 'point') {
       setScreen(SCREENS.POINT);
     } else {
       setScreen(SCREENS.SUCCESS);
