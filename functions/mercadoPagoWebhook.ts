@@ -44,9 +44,11 @@ Deno.serve(async (req) => {
       const orderId = payment.external_reference;
       
       if (!orderId) {
-        console.log('No order ID in external_reference');
+        console.log('❌ No order ID in external_reference');
         return Response.json({ status: 'no_order' });
       }
+      
+      console.log('🔍 Looking for order:', orderId);
       
       // Get order
       const orders = await base44.asServiceRole.entities.Order.filter({ id: orderId });
