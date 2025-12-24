@@ -25,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import PendingOrderNotification from './PendingOrderNotification';
 
 const statusConfig = {
   em_preparo: { label: 'Em Preparo', color: 'bg-purple-100 text-purple-800', icon: ChefHat },
@@ -44,8 +45,10 @@ export default function AdminOrders({ settings, primaryColor }) {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelDetails, setCancelDetails] = useState('');
+  const [pendingOrders, setPendingOrders] = useState([]);
   const previousOrderCount = useRef(0);
   const audioRef = useRef(null);
+  const notificationIntervalRef = useRef(null);
   const queryClient = useQueryClient();
   
   const { data: orders, isLoading, error, refetch } = useQuery({
@@ -61,21 +64,88 @@ export default function AdminOrders({ settings, primaryColor }) {
     refetchInterval: 3000
   });
   
-  // Play sound on new order
+  // Check for new pending orders and start notifications
   useEffect(() => {
-    if (orders && orders.length > previousOrderCount.current) {
-      if (previousOrderCount.current > 0) {
-        playNotificationSound();
-        toast.success('Novo pedido recebido!');
+    if (!orders) return;
+    
+    const newPendingOrders = orders.filter(o => 
+      o.status === 'aguardando_pix' || 
+      o.status === 'pagamento_informado' ||
+      (!o.status)
+    );
+    
+    // Check if there are NEW pending orders (not previously pending)
+    const hasNewOrders = newPendingOrders.length > previousOrderCount.current;
+    
+    if (hasNewOrders && previousOrderCount.current > 0) {
+      // Request browser notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
       }
-      previousOrderCount.current = orders.length;
+      
+      // Show browser notification if permitted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const count = newPendingOrders.length;
+        new Notification('Novo Pedido!', {
+          body: count === 1 
+            ? `Pedido #${newPendingOrders[0].order_number} - R$ ${newPendingOrders[0].total?.toFixed(2)}`
+            : `${count} novos pedidos aguardando`,
+          icon: settings?.logo_url || '/favicon.ico',
+          tag: 'new-order',
+          requireInteraction: true
+        });
+      }
     }
-  }, [orders?.length]);
+    
+    previousOrderCount.current = orders.length;
+    setPendingOrders(newPendingOrders);
+    
+    // Start or stop notification loop based on pending orders
+    if (newPendingOrders.length > 0) {
+      startNotificationLoop();
+    } else {
+      stopNotificationLoop();
+    }
+    
+    return () => stopNotificationLoop();
+  }, [orders, settings]);
+  
+  const getSoundUrl = () => {
+    const sound = settings?.notification_sound || 'bell';
+    const sounds = {
+      bell: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
+      chime: 'https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3',
+      ding: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
+      alert: 'https://assets.mixkit.co/active_storage/sfx/2860/2860-preview.mp3'
+    };
+    return sounds[sound] || sounds.bell;
+  };
   
   const playNotificationSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.volume = 0.5;
+    const audio = new Audio(getSoundUrl());
+    audio.volume = settings?.notification_volume || 0.8;
     audio.play().catch(e => console.log('Audio play failed:', e));
+  };
+  
+  const startNotificationLoop = () => {
+    if (notificationIntervalRef.current) return;
+    
+    playNotificationSound();
+    notificationIntervalRef.current = setInterval(() => {
+      playNotificationSound();
+    }, 5000); // Repeat every 5 seconds
+  };
+  
+  const stopNotificationLoop = () => {
+    if (notificationIntervalRef.current) {
+      clearInterval(notificationIntervalRef.current);
+      notificationIntervalRef.current = null;
+    }
+  };
+  
+  const handleAcceptPendingOrders = () => {
+    stopNotificationLoop();
+    setPendingOrders([]);
   };
   
   const updateStatusMutation = useMutation({
@@ -393,6 +463,12 @@ export default function AdminOrders({ settings, primaryColor }) {
 
   return (
     <div className="space-y-6">
+      <PendingOrderNotification
+        orders={pendingOrders}
+        onAccept={handleAcceptPendingOrders}
+        primaryColor={primaryColor}
+      />
+      
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
         

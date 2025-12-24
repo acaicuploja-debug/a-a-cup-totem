@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Loader2, Save, Check } from 'lucide-react';
+import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Loader2, Save, Check, Bell, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminSettings({ settings, primaryColor }) {
@@ -73,6 +73,16 @@ export default function AdminSettings({ settings, primaryColor }) {
     saveMutation.mutate(formData);
   };
 
+  const getSoundUrl = (sound) => {
+    const sounds = {
+      bell: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
+      chime: 'https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3',
+      ding: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
+      alert: 'https://assets.mixkit.co/active_storage/sfx/2860/2860-preview.mp3'
+    };
+    return sounds[sound] || sounds.bell;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -92,7 +102,7 @@ export default function AdminSettings({ settings, primaryColor }) {
       </div>
       
       <Tabs defaultValue="store" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2 h-auto p-1">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 gap-2 h-auto p-1">
           <TabsTrigger value="store" className="flex items-center gap-2">
             <Store className="w-4 h-4" />
             <span className="hidden md:inline">Loja</span>
@@ -108,6 +118,10 @@ export default function AdminSettings({ settings, primaryColor }) {
           <TabsTrigger value="loyalty" className="flex items-center gap-2">
             <Gift className="w-4 h-4" />
             <span className="hidden md:inline">Fidelidade</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            <span className="hidden md:inline">Notificações</span>
           </TabsTrigger>
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <MessageCircle className="w-4 h-4" />
@@ -345,6 +359,71 @@ export default function AdminSettings({ settings, primaryColor }) {
                 <p className="text-sm text-amber-800">
                   <strong>Como funciona:</strong> O cliente acumula pontos a cada pedido. 
                   Ao atingir a meta de {formData.loyalty_target || 10} pedidos, ganha o prêmio configurado.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notificações de Pedidos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label>Som de Notificação</Label>
+                <Select 
+                  value={formData.notification_sound || 'bell'}
+                  onValueChange={(value) => handleChange('notification_sound', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o som" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bell">🔔 Sino</SelectItem>
+                    <SelectItem value="chime">🎵 Campainha</SelectItem>
+                    <SelectItem value="ding">✨ Ding</SelectItem>
+                    <SelectItem value="alert">⚠️ Alerta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Volume</Label>
+                  <span className="text-sm text-gray-500">
+                    {Math.round((formData.notification_volume || 0.8) * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={formData.notification_volume || 0.8}
+                  onChange={(e) => handleChange('notification_volume', parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const audio = new Audio(getSoundUrl(formData.notification_sound || 'bell'));
+                    audio.volume = formData.notification_volume || 0.8;
+                    audio.play();
+                  }}
+                  className="w-full"
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Testar Som
+                </Button>
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Como funciona:</strong> Quando um novo pedido chegar, uma notificação visual 
+                  e sonora será exibida continuamente até que você aceite o pedido. 
+                  A notificação funciona mesmo se você estiver em outra aba do navegador.
                 </p>
               </div>
             </CardContent>
