@@ -337,6 +337,8 @@ ${order.customer_name || 'N/A'}
 ${order.customer_phone || ''}
 Total de pedidos: ${customerOrders}
 
+>>> ${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'} <<<
+
 --------------------------------
 Itens:
 ${order.items?.map(item => `
@@ -348,7 +350,6 @@ ${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || 
 TOTAL: R$ ${order.total.toFixed(2)}
 ================================
 
-Consumo: ${order.consumption_type === 'local' ? 'No local' : 'Para viagem'}
 Pagamento: ${
   order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
   order.payment_method === 'pix' ? 'PIX' :
@@ -462,6 +463,12 @@ Obrigado pela preferencia!
             ${order.customer_name || 'N/A'}<br/>
             ${order.customer_phone || ''}<br/>
             <div style="margin-top: 5px;">Total de pedidos: ${customerOrders}</div>
+
+            <div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border: 2px solid #000; text-align: center;">
+              <strong style="font-size: 18px;">
+                ${order.consumption_type === 'local' ? '🍽 COMER NO LOCAL' : '📦 EMBALAR P/ VIAGEM'}
+              </strong>
+            </div>
           </div>
           
           <div class="section">
@@ -482,9 +489,8 @@ Obrigado pela preferencia!
           <div class="total">
             TOTAL: R$ ${order.total.toFixed(2)}
           </div>
-          
+
           <div class="section">
-            <strong>Consumo:</strong> ${order.consumption_type === 'local' ? '🍽 No local' : '📦 Para viagem'}<br/>
             <strong>Pagamento:</strong> ${
               order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
               order.payment_method === 'pix' ? 'PIX' :
