@@ -1,16 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+  // Webhooks do Mercado Pago não têm autenticação de usuário
+  // Criar cliente apenas com service role
+  const base44 = createClientFromRequest(req);
+  
   try {
     console.log('========== WEBHOOK INICIADO ==========');
     console.log('🔔 Requisição recebida:', {
       method: req.method,
       url: req.url,
-      headers: Object.fromEntries(req.headers.entries()),
       timestamp: new Date().toISOString()
     });
-    
-    const base44 = createClientFromRequest(req);
     
     // Mercado Pago sends notifications via query params
     const url = new URL(req.url);
