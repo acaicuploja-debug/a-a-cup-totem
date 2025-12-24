@@ -214,8 +214,18 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     }
   });
 
-  const handleStatusChange = (order, newStatus) => {
+  const handleStatusChange = async (order, newStatus) => {
     updateStatusMutation.mutate({ orderId: order.id, status: newStatus });
+
+    // Se finalizou o pedido e tem telefone, enviar feedback request
+    if (newStatus === 'finalizado' && order.customer_phone && settings?.whatsapp_number) {
+      try {
+        await base44.functions.invoke('sendFeedbackRequest', { orderId: order.id });
+        toast.success('Pedido finalizado! Solicitação de feedback enviada ao cliente.');
+      } catch (error) {
+        console.error('Erro ao enviar feedback:', error);
+      }
+    }
   };
 
   const cancelOrderMutation = useMutation({
