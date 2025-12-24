@@ -15,6 +15,8 @@ import TotemPayment from '../components/totem/screens/TotemPayment';
 import TotemPix from '../components/totem/screens/TotemPix';
 import TotemSuccess from '../components/totem/screens/TotemSuccess';
 
+Totem.publicPage = true;
+
 const SCREENS = {
   WELCOME: 'welcome',
   CATEGORIES: 'categories',
