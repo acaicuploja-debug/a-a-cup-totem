@@ -13,10 +13,22 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString()
     });
     
-    // Mercado Pago sends notifications via query params
+    // Mercado Pago sends notifications via query params or body
     const url = new URL(req.url);
-    const topic = url.searchParams.get('topic') || url.searchParams.get('type');
-    const id = url.searchParams.get('id') || url.searchParams.get('data.id');
+    let topic = url.searchParams.get('topic') || url.searchParams.get('type');
+    let id = url.searchParams.get('id') || url.searchParams.get('data.id');
+    
+    // Se não veio por query params, tenta ler do body
+    if (!topic || !id) {
+      try {
+        const body = await req.json();
+        topic = topic || body.topic || body.type;
+        id = id || body.id || body.data?.id;
+        console.log('📦 Body recebido:', body);
+      } catch (e) {
+        console.log('⚠️ Não foi possível ler body:', e.message);
+      }
+    }
     
     console.log('📋 Parâmetros extraídos:', { 
       topic, 
