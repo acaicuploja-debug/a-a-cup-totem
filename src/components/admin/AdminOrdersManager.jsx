@@ -357,7 +357,7 @@ Pagamento: ${
   order.payment_method === 'pix' ? 'PIX' :
   order.payment_method === 'credito' ? 'Credito' :
   order.payment_method === 'debito' ? 'Debito' :
-  order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro'
+  order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro - Precisa Receber'
 }
 
 ${loyaltyText ? `\n${loyaltyText}\n` : ''}
@@ -502,7 +502,7 @@ Obrigado pela preferencia!
               order.payment_method === 'pix' ? 'PIX' :
               order.payment_method === 'credito' ? 'Credito' :
               order.payment_method === 'debito' ? 'Debito' :
-              order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro'
+              order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro - Precisa Receber'
             }
           </div>
           
