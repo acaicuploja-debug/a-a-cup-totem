@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
         payment_confirmed_at: new Date().toISOString()
       });
       
-      console.log('Order updated to em_preparo:', orderId);
+      console.log('✅ Order updated to em_preparo:', orderId);
       
       // Update customer loyalty if needed
       if (order.customer_id && !order.reward_redeemed) {
