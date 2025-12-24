@@ -15,7 +15,7 @@ export default function TotemProducts({
   onBack,
   onCartClick 
 }) {
-  const { data: products, isLoading } = useQuery({
+  const { data: rawProducts, isLoading } = useQuery({
     queryKey: ['products', category?.id],
     queryFn: () => base44.entities.Product.filter({ 
       category_id: category?.id, 
@@ -24,6 +24,11 @@ export default function TotemProducts({
     }),
     enabled: !!category?.id
   });
+  
+  const products = React.useMemo(() => {
+    if (!rawProducts) return [];
+    return [...rawProducts].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [rawProducts]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">

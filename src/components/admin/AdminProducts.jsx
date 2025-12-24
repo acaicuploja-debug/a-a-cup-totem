@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,9 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Copy, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductComplementEditor from './ProductComplementEditor';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const badgeOptions = [
   { value: 'promocao', label: 'Promoção' },
@@ -26,6 +27,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [productToDuplicate, setProductToDuplicate] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [formData, setFormData] = useState({
     name: '', description: '', image_url: '', price: 0, promo_price: null,
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
@@ -33,10 +35,18 @@ export default function AdminProducts({ settings, primaryColor }) {
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
   
-  const { data: products, isLoading } = useQuery({
+  const { data: allProducts, isLoading } = useQuery({
     queryKey: ['admin-products'],
     queryFn: () => base44.entities.Product.filter({ is_upsell: false })
   });
+  
+  const products = useMemo(() => {
+    if (!allProducts) return [];
+    const filtered = selectedCategory === 'all' 
+      ? allProducts 
+      : allProducts.filter(p => p.category_id === selectedCategory);
+    return filtered.sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [allProducts, selectedCategory]);
   
   const { data: categories } = useQuery({
     queryKey: ['admin-categories'],
@@ -169,15 +179,46 @@ export default function AdminProducts({ settings, primaryColor }) {
       setProductToDuplicate(null);
     }
   };
+  
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(products);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Update order for all products
+    items.forEach((item, index) => {
+      if (item.order !== index) {
+        updateMutation.mutate({ 
+          id: item.id, 
+          data: { ...item, order: index } 
+        });
+      }
+    });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
-        <Button onClick={() => handleOpenDialog()} style={{ backgroundColor: primaryColor }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Produto
-        </Button>
+        <div className="flex items-center gap-3">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Categorias</SelectItem>
+              {categories?.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={() => handleOpenDialog()} style={{ backgroundColor: primaryColor }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Produto
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
@@ -194,6 +235,108 @@ export default function AdminProducts({ settings, primaryColor }) {
             </Button>
           </CardContent>
         </Card>
+      ) : selectedCategory !== 'all' ? (
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="products">
+            {(provided) => (
+              <div 
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="space-y-4"
+              >
+                {products?.map((product, index) => (
+                  <Draggable key={product.id} draggableId={product.id} index={index}>
+                    {(provided) => (
+                      <Card 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={!product.active ? 'opacity-50' : ''}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-4">
+                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
+                              <GripVertical className="w-5 h-5 text-gray-400" />
+                            </div>
+                            
+                            {product.image_url ? (
+                              <img 
+                                src={product.image_url} 
+                                alt={product.name}
+                                className="w-20 h-20 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <div 
+                                className="w-20 h-20 rounded-xl flex items-center justify-center"
+                                style={{ backgroundColor: `${primaryColor}15` }}
+                              >
+                                <ImageIcon className="w-8 h-8" style={{ color: primaryColor }} />
+                              </div>
+                            )}
+                            
+                            <div className="flex-1">
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                {product.badges?.map(badge => (
+                                  <Badge key={badge} variant="secondary" className="text-xs">
+                                    {badgeOptions.find(b => b.value === badge)?.label}
+                                  </Badge>
+                                ))}
+                              </div>
+                              <h3 className="font-bold text-gray-900">{product.name}</h3>
+                              <p className="text-sm text-gray-500">{getCategoryName(product.category_id)}</p>
+                            </div>
+                            
+                            <div className="text-right">
+                              {product.promo_price ? (
+                                <div>
+                                  <span className="text-lg font-bold block" style={{ color: primaryColor }}>
+                                    R$ {product.promo_price.toFixed(2)}
+                                  </span>
+                                  <span className="text-sm text-gray-400 line-through">
+                                    R$ {product.price.toFixed(2)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-lg font-bold" style={{ color: primaryColor }}>
+                                  R$ {product.price.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDuplicateProduct(product)}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-red-600"
+                                onClick={() => {
+                                  if (confirm('Remover este produto?')) {
+                                    deleteMutation.mutate(product.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {products?.map(product => (
