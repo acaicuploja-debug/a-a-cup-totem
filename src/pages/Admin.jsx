@@ -47,6 +47,12 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: () => base44.auth.me(),
+    retry: false
+  });
+  
   const { data: settings, isLoading } = useQuery({
     queryKey: ['store-settings'],
     queryFn: async () => {
@@ -56,6 +62,48 @@ export default function Admin() {
   });
   
   const primaryColor = settings?.primary_color || '#6B21A8';
+  
+  // Verificar se está carregando
+  if (userLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-gray-200 rounded-full"
+          style={{ borderTopColor: primaryColor }}
+        />
+      </div>
+    );
+  }
+  
+  // Verificar se não está logado
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acesso Restrito</h1>
+          <p className="text-gray-600 mb-6">Você precisa estar logado para acessar o painel admin.</p>
+          <button
+            onClick={() => base44.auth.redirectToLogin('/admin')}
+            className="px-6 py-3 rounded-xl text-white font-medium"
+            style={{ backgroundColor: primaryColor }}
+          >
+            Fazer Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Verificar se não é admin
+  if (user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acesso Negado</h1>
+          <p className="text-gray-600">Você não tem permissão para acessar o painel admin.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
