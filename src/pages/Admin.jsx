@@ -191,27 +191,17 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="lg:ml-64 p-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-10 h-10 border-4 border-gray-200 rounded-full"
-              style={{ borderTopColor: primaryColor }}
-            />
-          </div>
-        ) : (
-          <>
-            {activeTab === 'dashboard' && <AdminDashboard settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'categories' && <AdminCategories settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'products' && <AdminProducts settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'upsell' && <AdminUpsell settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'coupons' && <AdminCoupons settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'orders' && <AdminOrdersManager settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'history' && <AdminOrderHistory settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'customers' && <AdminCustomers settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'loyalty' && <AdminLoyalty settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'whatsapp' && <AdminWhatsApp settings={settings} primaryColor={primaryColor} />}
-            {activeTab === 'settings' && <AdminSettings settings={settings} primaryColor={primaryColor} />}
-          </>
-        )}
+        {activeTab === 'dashboard' && <AdminDashboard settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'categories' && <AdminCategories settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'products' && <AdminProducts settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'upsell' && <AdminUpsell settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'coupons' && <AdminCoupons settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'orders' && <AdminOrdersManager settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'history' && <AdminOrderHistory settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'customers' && <AdminCustomers settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'loyalty' && <AdminLoyalty settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'whatsapp' && <AdminWhatsApp settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'settings' && <AdminSettings settings={settings} primaryColor={primaryColor} />}
       </main>
     </div>
   );
