@@ -43,7 +43,7 @@ export default function TotemSuccess({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          Pedido Confirmado!
+          Muito obrigado(a) pelo pedido{customer?.name ? ` ${customer.name}` : ''}!
         </motion.h1>
         
         {currentOrder?.order_number && (
@@ -69,23 +69,12 @@ export default function TotemSuccess({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          {customer?.name ? (
-            <>
-              <p className="text-xl text-gray-600 mb-2">
-                {currentOrder?.payment_method === 'pix' 
-                  ? 'Pagamento informado. Aguarde a confirmação.'
-                  : `${customer.name}, aguarde ser chamada pelo seu nome para retirar o pedido no balcão.`
-                }
-              </p>
-            </>
-          ) : (
-            <p className="text-xl text-gray-600 mb-2">
-              {currentOrder?.payment_method === 'pix' 
-                ? 'Pagamento informado. Aguarde a confirmação.'
-                : 'Aguarde seu pedido ser preparado.'
-              }
-            </p>
-          )}
+          <p className="text-xl text-gray-600 mb-2">
+            Aguarde ser chamado(a) pelo seu nome.
+          </p>
+          <p className="text-xl text-gray-600">
+            Seu pedido está na fila de preparo!
+          </p>
         </motion.div>
         
         {currentOrder?.reward_redeemed && (
