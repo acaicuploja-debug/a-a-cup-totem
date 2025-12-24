@@ -25,10 +25,20 @@ export default function AdminWhatsApp({ settings, primaryColor }) {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    whatsapp_api_token: settings?.whatsapp_api_token || '',
-    whatsapp_phone_number_id: settings?.whatsapp_phone_number_id || '',
-    whatsapp_automations: settings?.whatsapp_automations || []
+    whatsapp_api_token: '',
+    whatsapp_phone_number_id: '',
+    whatsapp_automations: []
   });
+
+  React.useEffect(() => {
+    if (settings) {
+      setFormData({
+        whatsapp_api_token: settings.whatsapp_api_token || '',
+        whatsapp_phone_number_id: settings.whatsapp_phone_number_id || '',
+        whatsapp_automations: settings.whatsapp_automations || []
+      });
+    }
+  }, [settings]);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async (data) => {
