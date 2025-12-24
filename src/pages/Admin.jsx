@@ -47,7 +47,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading } = useQuery({
     queryKey: ['store-settings'],
     queryFn: async () => {
       const list = await base44.entities.StoreSettings.list();
