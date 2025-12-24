@@ -59,14 +59,12 @@ Deno.serve(async (req) => {
     });
     
     const payment = await paymentResponse.json();
-    console.log('💳 Payment details:', { 
-      id: payment.id, 
-      status: payment.status,
-      external_reference: payment.external_reference,
-      transaction_amount: payment.transaction_amount
-    });
-    
+    console.log('💳 Payment details COMPLETO:', JSON.stringify(payment, null, 2));
+    console.log('💳 Payment status:', payment.status);
+    console.log('💳 External reference:', payment.external_reference);
+
     if (payment.status === 'approved') {
+      console.log('✅ Status APPROVED - Processando...');
       const orderId = payment.external_reference;
       
       if (!orderId) {
@@ -75,23 +73,32 @@ Deno.serve(async (req) => {
       }
       
       console.log('🔍 Looking for order:', orderId);
-      
+
       // Get order
       const orders = await base44.asServiceRole.entities.Order.filter({ id: orderId });
+      console.log('📦 Orders encontrados:', orders.length);
       const order = orders[0];
-      
+
       if (!order) {
-        console.log('Order not found:', orderId);
+        console.log('❌ Order not found:', orderId);
         return Response.json({ status: 'order_not_found' });
       }
+
+      console.log('✅ Order encontrado:', { 
+        id: order.id, 
+        status: order.status, 
+        order_number: order.order_number 
+      });
       
       // Update order status to em_preparo (payment confirmed)
-      await base44.asServiceRole.entities.Order.update(orderId, {
+      console.log('🔄 Atualizando pedido para em_preparo...');
+      const updateResult = await base44.asServiceRole.entities.Order.update(orderId, {
         status: 'em_preparo',
         payment_confirmed_at: new Date().toISOString()
       });
-      
-      console.log('✅ Order updated to em_preparo:', orderId);
+
+      console.log('✅ Order atualizado com sucesso!', updateResult);
+      console.log('✅ Novo status:', updateResult.status);
       
       // Update customer loyalty if needed
       if (order.customer_id && !order.reward_redeemed) {
