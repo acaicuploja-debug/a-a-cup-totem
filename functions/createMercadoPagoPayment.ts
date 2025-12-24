@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     
     // Update order with payment info
     await base44.asServiceRole.entities.Order.update(orderId, {
-      mercadopago_payment_id: data.id,
+      mercadopago_payment_id: String(data.id),
       status: 'aguardando_pix'
     });
     
