@@ -116,30 +116,14 @@ export default function TotemPayment({
   });
   
   const handleSelect = async (method) => {
-    console.log('🟢 PAYMENT SELECT:', method);
-    toast.info('Processando pagamento...');
-
     setPaymentMethod(method);
 
-    // Se for cartão ou dinheiro, cria o pedido direto
     if (method === 'cartao' || method === 'dinheiro') {
-      console.log('🟢 Iniciando criação de pedido para', method);
-      try {
-        const order = await createOrderMutation.mutateAsync(method);
-        console.log('🟢 PEDIDO RETORNADO:', order);
-        toast.success('Pedido #' + order.order_number + ' criado!');
-
-        // Aguardar 1 segundo para garantir que o pedido está no banco
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('🟢 Navegando para próxima tela');
-        onSelectPayment(method);
-      } catch (error) {
-        console.error('🔴 ERRO AO CRIAR PEDIDO:', error);
-        toast.error('Erro ao criar pedido: ' + error.message);
-        return;
-      }
+      toast.info('Criando pedido...');
+      await createOrderMutation.mutateAsync(method);
+      toast.success('Pedido criado!');
+      onSelectPayment(method);
     } else {
-      console.log('🟢 PIX - navegando direto para QR code');
       onSelectPayment(method);
     }
   };
