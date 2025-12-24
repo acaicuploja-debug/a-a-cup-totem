@@ -37,13 +37,20 @@ export default function AdminOrders({ settings, primaryColor }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [dateFilter, setDateFilter] = useState('last7');
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelDetails, setCancelDetails] = useState('');
   const previousOrderCount = useRef(0);
   const audioRef = useRef(null);
   const queryClient = useQueryClient();
   
   const { data: orders, isLoading, refetch } = useQuery({
     queryKey: ['admin-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 100),
+    queryFn: () => base44.entities.Order.list('-created_date'),
     refetchInterval: 5000 // Auto refresh every 5 seconds
   });
   
@@ -131,13 +138,7 @@ export default function AdminOrders({ settings, primaryColor }) {
     });
   };
   
-  const [dateFilter, setDateFilter] = React.useState('today');
-  const [customStartDate, setCustomStartDate] = React.useState(null);
-  const [customEndDate, setCustomEndDate] = React.useState(null);
-  const [showCancelDialog, setShowCancelDialog] = React.useState(false);
-  const [orderToCancel, setOrderToCancel] = React.useState(null);
-  const [cancelReason, setCancelReason] = React.useState('');
-  const [cancelDetails, setCancelDetails] = React.useState('');
+
   
   const getDateRange = () => {
     const now = new Date();
