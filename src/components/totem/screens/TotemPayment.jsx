@@ -121,21 +121,25 @@ export default function TotemPayment({
   });
   
   const handleSelect = async (method) => {
+    console.log('=== PAYMENT SELECT ===', method);
     setPaymentMethod(method);
     
     // Se for cartão ou dinheiro, cria o pedido direto
     if (method === 'cartao' || method === 'dinheiro') {
+      console.log('Criando pedido para', method);
       try {
-        await createOrderMutation.mutateAsync(method);
-        toast.success('Pedido criado!');
+        const order = await createOrderMutation.mutateAsync(method);
+        console.log('Pedido criado:', order);
+        toast.success('Pedido #' + order.data.order_number + ' criado!');
         onSelectPayment(method);
       } catch (error) {
-        console.error('Erro ao criar pedido:', error);
+        console.error('ERRO ao criar pedido:', error);
         toast.error('Erro ao criar pedido: ' + error.message);
         return;
       }
     } else {
       // PIX segue o fluxo normal
+      console.log('PIX - pulando criação');
       onSelectPayment(method);
     }
   };
