@@ -41,6 +41,9 @@ function TotemContent() {
     queryKey: ['store-settings'],
     queryFn: async () => {
       const list = await base44.entities.StoreSettings.list();
+      console.log('🔵 Totem - Settings carregadas:', list[0]);
+      console.log('🔵 Totem - mercadopago_enabled:', list[0]?.mercadopago_enabled);
+      console.log('🔵 Totem - mercadopago_public_key:', list[0]?.mercadopago_public_key);
       return list[0] || {};
     }
   });
