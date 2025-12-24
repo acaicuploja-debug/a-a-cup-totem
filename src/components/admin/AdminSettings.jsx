@@ -280,28 +280,28 @@ export default function AdminSettings({ settings, primaryColor }) {
                             Ajuste (%) • Negativo = Desconto • Positivo = Acréscimo
                           </Label>
                           <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0"
-                            value={formData.payment_adjustments?.[method.id] || 0}
-                            onChange={(e) => {
-                              const adjustments = formData.payment_adjustments || {};
-                              handleChange('payment_adjustments', {
-                                ...adjustments,
-                                [method.id]: parseFloat(e.target.value) || 0
-                              });
-                            }}
-                            className="text-center text-lg font-bold"
+                           type="number"
+                           step="0.01"
+                           placeholder="0"
+                           value={(formData.payment_adjustments && formData.payment_adjustments[method.id]) || 0}
+                           onChange={(e) => {
+                             const adjustments = formData.payment_adjustments || {};
+                             handleChange('payment_adjustments', {
+                               ...adjustments,
+                               [method.id]: parseFloat(e.target.value) || 0
+                             });
+                           }}
+                           className="text-center text-lg font-bold"
                           />
                         </div>
                         <div className="text-center min-w-[120px]">
                           <Label className="text-xs text-gray-500 mb-1 block">Visualização</Label>
                           <div className={`text-2xl font-bold ${
-                            formData.payment_adjustments?.[method.id] > 0 ? 'text-red-600' :
-                            formData.payment_adjustments?.[method.id] < 0 ? 'text-green-600' :
+                            (formData.payment_adjustments && formData.payment_adjustments[method.id]) > 0 ? 'text-red-600' :
+                            (formData.payment_adjustments && formData.payment_adjustments[method.id]) < 0 ? 'text-green-600' :
                             'text-gray-400'
                           }`}>
-                            {formData.payment_adjustments?.[method.id] 
+                            {(formData.payment_adjustments && formData.payment_adjustments[method.id]) 
                               ? (formData.payment_adjustments[method.id] > 0 
                                   ? `+${formData.payment_adjustments[method.id]}%` 
                                   : `${formData.payment_adjustments[method.id]}%`)
@@ -310,7 +310,7 @@ export default function AdminSettings({ settings, primaryColor }) {
                         </div>
                       </div>
                       
-                      {formData.payment_adjustments?.[method.id] !== 0 && (
+                      {(formData.payment_adjustments && formData.payment_adjustments[method.id] !== 0) && (
                         <div className={`mt-3 p-3 rounded-lg ${
                           formData.payment_adjustments[method.id] < 0 
                             ? 'bg-green-50 border border-green-200' 
