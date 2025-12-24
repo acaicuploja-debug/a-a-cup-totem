@@ -112,7 +112,8 @@ Deno.serve(async (req) => {
       return Response.json({ status: 'processed' });
     }
     
-    return Response.json({ status: 'ok' });
+    console.log('⚠️ Payment status not approved:', payment.status);
+    return Response.json({ status: 'ok', payment_status: payment.status });
   } catch (error) {
     console.error('Webhook error:', error);
     return Response.json({ error: error.message }, { status: 500 });
