@@ -33,7 +33,12 @@ Deno.serve(async (req) => {
     });
     
     const payment = await paymentResponse.json();
-    console.log('Payment status:', payment.status);
+    console.log('💳 Payment details:', { 
+      id: payment.id, 
+      status: payment.status,
+      external_reference: payment.external_reference,
+      transaction_amount: payment.transaction_amount
+    });
     
     if (payment.status === 'approved') {
       const orderId = payment.external_reference;
