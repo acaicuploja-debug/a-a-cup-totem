@@ -108,33 +108,46 @@ export default function TotemPix({
   // Create order and Mercado Pago payment on mount if enabled
   useEffect(() => {
     const initPayment = async () => {
+      console.log('🔵 TotemPix - Settings:', settings);
+      console.log('🔵 TotemPix - mercadopago_enabled:', settings?.mercadopago_enabled);
+      console.log('🔵 TotemPix - mercadopago_public_key:', settings?.mercadopago_public_key);
+      
       if (settings?.mercadopago_enabled) {
+        console.log('✅ Mercado Pago está ATIVADO - Iniciando pagamento...');
         setIsLoadingMercadoPago(true);
         try {
           // Create order first
           const order = await createOrderMutation.mutateAsync('aguardando_pix');
+          console.log('✅ Pedido criado:', order.id);
           
           // Create Mercado Pago payment
+          console.log('🔵 Chamando createMercadoPagoPayment...');
           const response = await base44.functions.invoke('createMercadoPagoPayment', {
             orderId: order.id,
             amount: adjustedTotal,
             description: `Pedido #${String(order.order_number).padStart(3, '0')} - ${settings?.store_name || 'Loja'}`
           });
           
+          console.log('🔵 Resposta do Mercado Pago:', response.data);
+          
           if (response.data.error) {
+            console.error('❌ Erro do Mercado Pago:', response.data.error);
             toast.error('Erro ao gerar PIX: ' + response.data.error);
             return;
           }
           
+          console.log('✅ QR Code gerado com sucesso!');
           setMercadoPagoData(response.data);
           
           // Start checking payment status
           startPaymentCheck(order.id);
         } catch (error) {
+          console.error('❌ Erro ao criar pagamento Mercado Pago:', error);
           toast.error('Erro ao criar pagamento');
-          console.error(error);
         }
         setIsLoadingMercadoPago(false);
+      } else {
+        console.log('⚠️ Mercado Pago NÃO está ativado - Usando PIX manual');
       }
     };
     
