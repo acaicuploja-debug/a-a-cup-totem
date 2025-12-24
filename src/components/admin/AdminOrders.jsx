@@ -37,7 +37,7 @@ export default function AdminOrders({ settings, primaryColor }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
-  const [dateFilter, setDateFilter] = useState('last7');
+  const [dateFilter, setDateFilter] = useState('all');
   const [customStartDate, setCustomStartDate] = useState(null);
   const [customEndDate, setCustomEndDate] = useState(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -145,6 +145,8 @@ export default function AdminOrders({ settings, primaryColor }) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     switch (dateFilter) {
+      case 'all':
+        return { start: null, end: null };
       case 'today':
         return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       case 'yesterday':
@@ -159,7 +161,7 @@ export default function AdminOrders({ settings, primaryColor }) {
       case 'custom':
         return { start: customStartDate, end: customEndDate };
       default:
-        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+        return { start: null, end: null };
     }
   };
   
@@ -377,6 +379,7 @@ export default function AdminOrders({ settings, primaryColor }) {
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="today">Hoje</SelectItem>
               <SelectItem value="yesterday">Ontem</SelectItem>
               <SelectItem value="last7">Últimos 7 dias</SelectItem>
