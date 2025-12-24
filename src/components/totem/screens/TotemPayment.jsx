@@ -27,6 +27,13 @@ export default function TotemPayment({
   const { items, total, customer, consumptionType, setPaymentMethod, setCurrentOrder } = useCart();
   const availableMethods = settings?.payment_methods || ['pix', 'cartao'];
   
+  // Garantir que PIX apareça sempre primeiro
+  const sortedMethods = [...availableMethods].sort((a, b) => {
+    if (a === 'pix') return -1;
+    if (b === 'pix') return 1;
+    return 0;
+  });
+  
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
       const now = new Date();
@@ -159,32 +166,37 @@ export default function TotemPayment({
         </div>
         
         <div className="space-y-4">
-          {availableMethods.map((method, index) => {
+          {sortedMethods.map((method, index) => {
             const Icon = paymentIcons[method];
             const label = paymentLabels[method];
-            
+            const isPix = method === 'pix';
+
             if (!Icon || !label) return null;
-            
+
             return (
               <button
                 key={method}
                 onClick={() => handleSelect(method)}
-                className="w-full flex items-center gap-6 p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-gray-300 transition-all active:scale-95"
+                className={`w-full flex items-center gap-6 p-6 bg-white rounded-2xl border-2 transition-all active:scale-95 ${
+                  isPix 
+                    ? 'border-green-400 shadow-lg shadow-green-100' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
               >
                 <div 
                   className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
-                  style={{ backgroundColor: `${primaryColor}15` }}
+                  style={{ backgroundColor: isPix ? '#22c55e15' : `${primaryColor}15` }}
                 >
                   {label.emoji}
                 </div>
-                
+
                 <div className="flex-1 text-left">
                   <div className="flex items-baseline gap-2 mb-1">
                     <h3 className="text-xl font-bold text-gray-900">
                       {label.title}
                     </h3>
                     {label.subtitle && (
-                      <span className="text-sm text-gray-500 font-normal">
+                      <span className={`text-sm font-normal ${isPix ? 'text-green-600' : 'text-gray-500'}`}>
                         {label.subtitle}
                       </span>
                     )}
@@ -193,8 +205,8 @@ export default function TotemPayment({
                     {label.description}
                   </p>
                 </div>
-                
-                <ArrowRight className="w-6 h-6 text-gray-400" />
+
+                <ArrowRight className={`w-6 h-6 ${isPix ? 'text-green-500' : 'text-gray-400'}`} />
               </button>
             );
           })}
