@@ -54,7 +54,8 @@ export default function AdminOrders({ settings, primaryColor }) {
       console.log('🔵 AdminOrders: Buscando pedidos...');
       const result = await base44.entities.Order.list('-created_date');
       console.log('🔵 AdminOrders: Total de pedidos recebidos:', result?.length);
-      console.log('🔵 AdminOrders: Pedidos:', result);
+      console.log('🔵 AdminOrders: IDs dos pedidos:', result?.map(o => `#${o.order_number} (${o.id.substring(0,8)})`));
+      console.log('🔵 AdminOrders: Created_by dos pedidos:', result?.map(o => o.created_by || 'null'));
       return result;
     },
     refetchInterval: 3000
