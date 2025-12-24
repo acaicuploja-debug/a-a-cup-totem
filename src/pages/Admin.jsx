@@ -19,17 +19,19 @@ import { Button } from '@/components/ui/button';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import AdminCategories from '../components/admin/AdminCategories';
 import AdminProducts from '../components/admin/AdminProducts';
-import AdminOrders from '../components/admin/AdminOrders';
+import AdminOrdersManager from '../components/admin/AdminOrdersManager';
+import AdminOrderHistory from '../components/admin/AdminOrderHistory';
 import AdminCustomers from '../components/admin/AdminCustomers';
 import AdminSettings from '../components/admin/AdminSettings';
 import AdminUpsell from '../components/admin/AdminUpsell';
 import AdminLoyalty from '../components/admin/AdminLoyalty';
 import AdminCoupons from '../components/admin/AdminCoupons';
-import { Tag } from 'lucide-react';
+import { Tag, History } from 'lucide-react';
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
+  { id: 'orders', label: 'Gestor de Pedidos', icon: ShoppingBag },
+  { id: 'history', label: 'Histórico de Pedidos', icon: History },
   { id: 'categories', label: 'Categorias', icon: FolderOpen },
   { id: 'products', label: 'Produtos', icon: Package },
   { id: 'upsell', label: 'Upsell', icon: TrendingUp },
@@ -66,7 +68,9 @@ export default function Admin() {
       case 'coupons':
         return <AdminCoupons settings={settings} primaryColor={primaryColor} />;
       case 'orders':
-        return <AdminOrders settings={settings} primaryColor={primaryColor} />;
+        return <AdminOrdersManager settings={settings} primaryColor={primaryColor} />;
+      case 'history':
+        return <AdminOrderHistory settings={settings} primaryColor={primaryColor} />;
       case 'customers':
         return <AdminCustomers settings={settings} primaryColor={primaryColor} />;
       case 'loyalty':
