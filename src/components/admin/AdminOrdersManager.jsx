@@ -364,10 +364,10 @@ Obrigado pela preferencia!
     // Try QZ Tray first (silent printing)
     if (qzConnected && qz.websocket.isActive()) {
       try {
-        const printers = await qz.printers.find();
-        const defaultPrinter = printers[0]; // Use first printer found
+        const defaultPrinter = settings?.default_printer;
+        const printer = defaultPrinter || (await qz.printers.find())[0];
         
-        const config = qz.configs.create(defaultPrinter);
+        const config = qz.configs.create(printer);
         const data = [{
           type: 'raw',
           format: 'plain',
