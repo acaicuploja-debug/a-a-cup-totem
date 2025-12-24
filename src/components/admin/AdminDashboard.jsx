@@ -104,15 +104,15 @@ export default function AdminDashboard({ settings, primaryColor }) {
   
   const stats = useMemo(() => {
     if (!orders || !products) return { revenue: 0, orderCount: 0, avgTicket: 0, totalCost: 0, netProfit: 0 };
-    
+
     const completedOrders = orders.filter(o => 
       o.status !== 'cancelado' && o.status !== 'aguardando_pix'
     );
-    
+
     const revenue = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const orderCount = completedOrders.length;
     const avgTicket = orderCount > 0 ? revenue / orderCount : 0;
-    
+
     // Calcular custo total baseado nos produtos vendidos
     let totalCost = 0;
     completedOrders.forEach(order => {
@@ -123,11 +123,23 @@ export default function AdminDashboard({ settings, primaryColor }) {
         }
       });
     });
-    
-    const netProfit = revenue - totalCost;
-    
+
+    // Calcular desconto dado por forma de pagamento
+    let totalDiscountGiven = 0;
+    completedOrders.forEach(order => {
+      const subtotal = order.subtotal || order.total;
+      const adjustment = settings?.payment_adjustments?.[order.payment_method] || 0;
+      if (adjustment < 0) {
+        // Desconto negativo = valor dado ao cliente
+        const discountAmount = Math.abs(subtotal * (adjustment / 100));
+        totalDiscountGiven += discountAmount;
+      }
+    });
+
+    const netProfit = revenue - totalCost - totalDiscountGiven;
+
     return { revenue, orderCount, avgTicket, totalCost, netProfit };
-  }, [orders, products]);
+  }, [orders, products, settings]);
   
   const paymentData = useMemo(() => {
     if (!orders) return [];
