@@ -14,7 +14,7 @@ const paymentIcons = {
 
 const paymentLabels = {
   pix: { title: 'PIX', subtitle: '(recomendado)', description: 'Pagamento instantâneo via QR Code', emoji: '📱' },
-  cartao: { title: 'Cartão', subtitle: '', description: 'Débito ou crédito na maquininha', emoji: '💳' },
+  cartao: { title: 'Cartão', subtitle: '', description: 'Passe o cartão na Point Smart', emoji: '💳' },
   dinheiro: { title: 'Dinheiro', subtitle: '', description: 'Pagamento em espécie', emoji: '💵' }
 };
 
@@ -133,6 +133,12 @@ export default function TotemPayment({
   
   const handleSelect = async (method) => {
     setPaymentMethod(method);
+
+    // Point usa fluxo especial com tela própria
+    if (method === 'cartao' && settings?.mercadopago_enabled) {
+      onSelectPayment('point');
+      return;
+    }
 
     if (method === 'cartao' || method === 'dinheiro') {
       toast.info('Criando pedido...');
