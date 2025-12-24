@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ChefHat, Package, CheckCircle, Printer, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import PendingOrderNotification from './PendingOrderNotification';
+import qz from 'qz-tray';
 
 const statusConfig = {
   em_preparo: { label: 'Em Preparo', color: 'bg-purple-500', icon: ChefHat },
@@ -29,6 +30,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const isFirstLoad = useRef(true);
   const notificationIntervalRef = useRef(null);
   const previousPreparingOrderIds = useRef(new Set());
+  const [qzConnected, setQzConnected] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allOrders, isLoading } = useQuery({
@@ -44,6 +46,30 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     queryKey: ['admin-customers'],
     queryFn: () => base44.entities.Customer.list()
   });
+
+  // Initialize QZ Tray connection
+  useEffect(() => {
+    const connectQZ = async () => {
+      try {
+        if (!qz.websocket.isActive()) {
+          await qz.websocket.connect();
+          setQzConnected(true);
+          toast.success('QZ Tray conectado! Impressão automática ativada.');
+        }
+      } catch (err) {
+        console.log('QZ Tray não está rodando:', err);
+        setQzConnected(false);
+      }
+    };
+    
+    connectQZ();
+    
+    return () => {
+      if (qz.websocket.isActive()) {
+        qz.websocket.disconnect();
+      }
+    };
+  }, []);
 
   // Filter only today's orders (exclude aguardando_pix)
   const todayOrders = React.useMemo(() => {
@@ -280,7 +306,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     }
   };
 
-  const handlePrint = (order) => {
+  const handlePrint = async (order) => {
     const customerInfo = getCustomerInfo(order.customer_phone);
     const loyaltyTarget = settings?.loyalty_target || 10;
     const customerOrders = allOrders?.filter(o => 
@@ -297,7 +323,67 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
         ? `🎁 Voce tem um premio disponivel!`
         : `Faltam ${remaining} pedido(s) para ganhar premio!`;
     }
-    
+
+    // Generate print content
+    const printContent = `
+================================
+${settings?.store_name || 'Loja'}
+PEDIDO #${String(order.order_number || '').padStart(3, '0')}
+${order.order_datetime || new Date().toLocaleString('pt-BR')}
+================================
+
+Cliente:
+${order.customer_name || 'N/A'}
+${order.customer_phone || ''}
+Total de pedidos: ${customerOrders}
+
+--------------------------------
+Itens:
+${order.items?.map(item => `
+${item.quantity}x ${item.product_name}
+R$ ${item.total.toFixed(2)}${item.complements?.length > 0 ? `
+${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || ''}
+
+================================
+TOTAL: R$ ${order.total.toFixed(2)}
+================================
+
+Consumo: ${order.consumption_type === 'local' ? 'No local' : 'Para viagem'}
+Pagamento: ${
+  order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
+  order.payment_method === 'pix' ? 'PIX' :
+  order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro'
+}
+
+${loyaltyText ? `\n${loyaltyText}\n` : ''}
+--------------------------------
+Obrigado pela preferencia!
+================================
+`;
+
+    // Try QZ Tray first (silent printing)
+    if (qzConnected && qz.websocket.isActive()) {
+      try {
+        const printers = await qz.printers.find();
+        const defaultPrinter = printers[0]; // Use first printer found
+        
+        const config = qz.configs.create(defaultPrinter);
+        const data = [{
+          type: 'raw',
+          format: 'plain',
+          data: printContent
+        }];
+        
+        await qz.print(config, data);
+        console.log('✅ Impresso via QZ Tray');
+        return;
+      } catch (err) {
+        console.log('Erro ao imprimir via QZ Tray:', err);
+        toast.error('Erro na impressão automática, usando método padrão');
+      }
+    }
+
+    // Fallback to browser print dialog
     const printWindow = window.open('', '', 'width=300,height=600');
     printWindow.document.write(`
       <html>
@@ -461,10 +547,28 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
         primaryColor={primaryColor}
       />
       
+      {!qzConnected && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="text-amber-600">⚠️</div>
+          <div>
+            <p className="font-medium text-amber-900">QZ Tray não está conectado</p>
+            <p className="text-sm text-amber-700">
+              Para impressão automática silenciosa, baixe e instale o QZ Tray em: 
+              <a href="https://qz.io/download/" target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                qz.io/download
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestor de Pedidos</h1>
-          <p className="text-gray-500 mt-1">Pedidos de hoje • {todayOrders.length} total</p>
+          <p className="text-gray-500 mt-1">
+            Pedidos de hoje • {todayOrders.length} total
+            {qzConnected && <span className="ml-2 text-green-600">• 🖨️ Impressão automática ativa</span>}
+          </p>
         </div>
         <Button 
           variant="outline" 
