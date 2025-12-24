@@ -87,27 +87,19 @@ export default function TotemCustomer({
   
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    
+
     const cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length < 10) {
       toast.error('Telefone inválido');
       return;
     }
-    
-    console.log('🔵 Salvando cliente:', { name, phone: cleanPhone, cpf });
-    
-    try {
-      const savedCustomer = await createCustomerMutation.mutateAsync({
-        name,
-        phone: cleanPhone,
-        cpf: cpf.replace(/\D/g, '')
-      });
-      console.log('✅ Cliente salvo:', savedCustomer);
-      onComplete();
-    } catch (error) {
-      console.error('❌ Erro ao salvar cliente:', error);
-      toast.error('Erro ao salvar dados: ' + error.message);
-    }
+
+    await createCustomerMutation.mutateAsync({
+      name,
+      phone: cleanPhone,
+      cpf: cpf.replace(/\D/g, '')
+    });
+    onComplete();
   };
   
   const handleRedeemReward = () => {
