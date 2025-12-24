@@ -44,17 +44,20 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     queryFn: () => base44.entities.Customer.list()
   });
 
-  // Filter only today's orders
+  // Filter only today's orders (exclude aguardando_pix)
   const todayOrders = React.useMemo(() => {
     if (!allOrders) return [];
-    
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-    
+
     return allOrders.filter(order => {
       const orderDate = new Date(order.created_date);
-      return orderDate >= today && orderDate < tomorrow && order.status !== 'cancelado';
+      return orderDate >= today && 
+             orderDate < tomorrow && 
+             order.status !== 'cancelado' && 
+             order.status !== 'aguardando_pix';
     });
   }, [allOrders]);
 
@@ -373,6 +376,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           <div class="section">
             <strong>Consumo:</strong> ${order.consumption_type === 'local' ? '🍽 No local' : '📦 Para viagem'}<br/>
             <strong>Pagamento:</strong> ${
+              order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
               order.payment_method === 'pix' ? 'PIX' :
               order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro'
             }
