@@ -119,13 +119,16 @@ export default function TotemPayment({
       try {
         await createOrderMutation.mutateAsync(method);
         toast.success('Pedido criado!');
+        onSelectPayment(method);
       } catch (error) {
-        toast.error('Erro ao criar pedido');
+        console.error('Erro ao criar pedido:', error);
+        toast.error('Erro ao criar pedido: ' + error.message);
         return;
       }
+    } else {
+      // PIX segue o fluxo normal
+      onSelectPayment(method);
     }
-    
-    onSelectPayment(method);
   };
   
 
