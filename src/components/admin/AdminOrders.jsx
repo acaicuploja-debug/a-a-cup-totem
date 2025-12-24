@@ -481,12 +481,9 @@ export default function AdminOrders({ settings, primaryColor }) {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {(() => {
-            console.log('🟢 RENDERIZANDO PEDIDOS. Total:', filteredOrders.length);
-            console.log('🟢 Primeiros 3 pedidos:', filteredOrders.slice(0, 3));
-            return null;
-          })()}
-          {filteredOrders.map(order => {
+          {filteredOrders.map((order, index) => {
+            console.log(`🔴 Renderizando pedido ${index + 1}/${filteredOrders.length}:`, order.order_number, order.status);
+
             const status = statusConfig[order.status] || statusConfig.em_preparo;
             const StatusIcon = status.icon;
             const nextStatus = 
