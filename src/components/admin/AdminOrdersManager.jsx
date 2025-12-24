@@ -26,6 +26,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelDetails, setCancelDetails] = useState('');
   const previousPendingOrderIds = useRef(new Set());
+  const isFirstLoad = useRef(true);
   const notificationIntervalRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -72,8 +73,8 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     // Detect truly NEW orders (IDs that didn't exist before)
     const newOrderIds = [...currentPendingIds].filter(id => !previousPendingOrderIds.current.has(id));
     
-    if (newOrderIds.length > 0 && previousPendingOrderIds.current.size > 0) {
-      // Only notify for truly NEW orders
+    if (newOrderIds.length > 0 && !isFirstLoad.current) {
+      // Only notify for truly NEW orders (not on first load)
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
@@ -92,6 +93,10 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
       
       // Play sound only for NEW orders
       playNotificationSound();
+    }
+    
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
     }
     
     previousPendingOrderIds.current = currentPendingIds;
