@@ -107,12 +107,14 @@ export default function TotemPix({
   
   // Create order and Mercado Pago payment on mount if enabled
   useEffect(() => {
+    if (!settings) return; // Wait for settings to load
+    
     const initPayment = async () => {
       console.log('🔵 TotemPix - Settings:', settings);
       console.log('🔵 TotemPix - mercadopago_enabled:', settings?.mercadopago_enabled);
       console.log('🔵 TotemPix - mercadopago_public_key:', settings?.mercadopago_public_key);
       
-      if (settings?.mercadopago_enabled) {
+      if (settings?.mercadopago_enabled === true) {
         console.log('✅ Mercado Pago está ATIVADO - Iniciando pagamento...');
         setIsLoadingMercadoPago(true);
         try {
@@ -152,7 +154,7 @@ export default function TotemPix({
     };
     
     initPayment();
-  }, []);
+  }, [settings]);
   
   // Check payment status periodically
   const startPaymentCheck = (orderId) => {
