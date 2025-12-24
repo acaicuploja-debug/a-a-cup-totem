@@ -66,7 +66,9 @@ export default function TotemPayment({
         reward_redeemed: customer?.redeeming_reward || false
       };
       
+      console.log('>>> Criando pedido no banco:', orderData);
       const order = await base44.entities.Order.create(orderData);
+      console.log('>>> PEDIDO SALVO NO BANCO:', order);
       
       // Update loyalty only if customer exists
       if (customer?.id) {
