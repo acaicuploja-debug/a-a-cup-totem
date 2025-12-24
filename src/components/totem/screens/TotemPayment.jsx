@@ -120,8 +120,8 @@ export default function TotemPayment({
   });
   
   const handleSelect = async (method) => {
-    toast.info('Processando pagamento...');
     console.log('=== PAYMENT SELECT START ===', method);
+    toast.info('Processando pagamento...');
     
     setPaymentMethod(method);
     
