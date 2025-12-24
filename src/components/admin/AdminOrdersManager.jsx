@@ -322,25 +322,26 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   };
 
   const handlePrint = async (order) => {
-    const customerInfo = getCustomerInfo(order.customer_phone);
-    const loyaltyTarget = settings?.loyalty_target || 10;
-    const customerOrders = allOrders?.filter(o => 
-      o.customer_phone === order.customer_phone && 
-      o.status !== 'cancelado'
-    ).length || 0;
-    
-    let loyaltyText = '';
-    if (order.reward_redeemed) {
-      loyaltyText = '🎁 PREMIO RESGATADO NESTE PEDIDO!';
-    } else if (customerInfo) {
-      const remaining = loyaltyTarget - (customerInfo.loyalty_count || 0);
-      loyaltyText = remaining <= 0 
-        ? `🎁 Voce tem um premio disponivel!`
-        : `Faltam ${remaining} pedido(s) para ganhar premio!`;
-    }
+    try {
+      const customerInfo = getCustomerInfo(order.customer_phone);
+      const loyaltyTarget = settings?.loyalty_target || 10;
+      const customerOrders = allOrders?.filter(o => 
+        o.customer_phone === order.customer_phone && 
+        o.status !== 'cancelado'
+      ).length || 0;
+      
+      let loyaltyText = '';
+      if (order.reward_redeemed) {
+        loyaltyText = '🎁 PREMIO RESGATADO NESTE PEDIDO!';
+      } else if (customerInfo) {
+        const remaining = loyaltyTarget - (customerInfo.loyalty_count || 0);
+        loyaltyText = remaining <= 0 
+          ? `🎁 Voce tem um premio disponivel!`
+          : `Faltam ${remaining} pedido(s) para ganhar premio!`;
+      }
 
-    // Generate print content
-    const printContent = `
+      // Generate print content
+      const printContent = `
 ================================
 ${settings?.store_name || 'Loja'}
 PEDIDO #${String(order.order_number || '').padStart(3, '0')}
