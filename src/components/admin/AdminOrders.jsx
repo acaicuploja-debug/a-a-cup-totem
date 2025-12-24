@@ -373,14 +373,6 @@ export default function AdminOrders({ settings, primaryColor }) {
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Pedidos</h1>
         
-        {/* Debug Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
-          <p><strong>Debug:</strong> Total de pedidos no banco: {orders?.length || 0}</p>
-          <p>Pedidos filtrados: {filteredOrders?.length || 0}</p>
-          <p>Filtro de período: {dateFilter}</p>
-          <p>Filtro de status: {statusFilter}</p>
-        </div>
-        
         <div className="flex flex-wrap items-center gap-3">
           <Select value={dateFilter} onValueChange={setDateFilter}>
             <SelectTrigger className="w-40">
