@@ -257,7 +257,7 @@ export default function AdminSettings({ settings, primaryColor }) {
               </div>
               
               <div className="border-t pt-6">
-                <h3 className="font-bold text-gray-900 mb-4">Configuração do PIX</h3>
+                <h3 className="font-bold text-gray-900 mb-4">PIX Manual (QR Code Estático)</h3>
                 
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -300,6 +300,59 @@ export default function AdminSettings({ settings, primaryColor }) {
                       Qualquer diferença (maiúsculas, acentos, espaços) pode causar erro no pagamento.
                     </p>
                   </div>
+                </div>
+              </div>
+              
+              <div className="border-t pt-6">
+                <h3 className="font-bold text-gray-900 mb-4">Mercado Pago (Confirmação Automática)</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">Ativar Mercado Pago</p>
+                      <p className="text-sm text-gray-600">PIX com confirmação automática</p>
+                    </div>
+                    <Switch
+                      checked={formData.mercadopago_enabled || false}
+                      onCheckedChange={(value) => handleChange('mercadopago_enabled', value)}
+                    />
+                  </div>
+                  
+                  {formData.mercadopago_enabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Public Key</Label>
+                        <Input
+                          value={formData.mercadopago_public_key || ''}
+                          onChange={(e) => handleChange('mercadopago_public_key', e.target.value)}
+                          placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Encontre em: Mercado Pago → Seu negócio → Configurações → Credenciais
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Access Token (Secreto)</Label>
+                        <p className="text-sm text-amber-600 mb-2">
+                          ⚠️ Configure o Access Token nas <strong>Variáveis de Ambiente</strong> do painel Admin:
+                        </p>
+                        <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-sm">
+                          MERCADOPAGO_ACCESS_TOKEN
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Valor: APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (Access Token do Mercado Pago)
+                        </p>
+                      </div>
+                      
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <p className="text-sm text-green-800">
+                          ✅ <strong>Benefícios:</strong> Pedidos são confirmados automaticamente quando o PIX é pago. 
+                          Nenhuma ação manual necessária!
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>

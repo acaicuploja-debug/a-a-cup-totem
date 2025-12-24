@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
 import TotemHeader from '../TotemHeader';
 import PixQRCode from '../PixQRCode';
 import { useCart } from '../CartContext';
 import { toast } from 'sonner';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 export default function TotemPix({ 
   settings, 
@@ -13,6 +14,10 @@ export default function TotemPix({
   onChangePaymentMethod 
 }) {
   const { items, total, customer, consumptionType, setCurrentOrder } = useCart();
+  const [mercadoPagoData, setMercadoPagoData] = useState(null);
+  const [isLoadingMercadoPago, setIsLoadingMercadoPago] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
   
   const createOrderMutation = useMutation({
     mutationFn: async (status) => {
@@ -46,10 +51,10 @@ export default function TotemPix({
       
       const order = await base44.entities.Order.create(orderData);
       
-      // Update loyalty only if customer exists and order is not cancelled
-      if (status !== 'cancelado' && customer?.id) {
+      // Update loyalty only if customer exists, order is not cancelled, and not using Mercado Pago
+      // (Mercado Pago will update loyalty via webhook when payment is confirmed)
+      if (status !== 'cancelado' && customer?.id && !settings?.mercadopago_enabled) {
         if (customer.redeeming_reward) {
-          // Resgatando prêmio
           await base44.entities.Customer.update(customer.id, {
             loyalty_count: 0,
             has_pending_reward: false,
@@ -66,7 +71,6 @@ export default function TotemPix({
             datetime_brasilia: brasiliaTime
           });
         } else {
-          // Contando pedido normal
           const currentCount = customer.loyalty_count || 0;
           const newCount = currentCount + 1;
           const loyaltyTarget = settings?.loyalty_target || 10;
@@ -97,6 +101,73 @@ export default function TotemPix({
     }
   });
   
+  // Create order and Mercado Pago payment on mount if enabled
+  useEffect(() => {
+    const initPayment = async () => {
+      if (settings?.mercadopago_enabled) {
+        setIsLoadingMercadoPago(true);
+        try {
+          // Create order first
+          const order = await createOrderMutation.mutateAsync('aguardando_pix');
+          
+          // Create Mercado Pago payment
+          const response = await base44.functions.invoke('createMercadoPagoPayment', {
+            orderId: order.id,
+            amount: total,
+            description: `Pedido #${String(order.order_number).padStart(3, '0')} - ${settings?.store_name || 'Loja'}`
+          });
+          
+          if (response.data.error) {
+            toast.error('Erro ao gerar PIX: ' + response.data.error);
+            return;
+          }
+          
+          setMercadoPagoData(response.data);
+          
+          // Start checking payment status
+          startPaymentCheck(order.id);
+        } catch (error) {
+          toast.error('Erro ao criar pagamento');
+          console.error(error);
+        }
+        setIsLoadingMercadoPago(false);
+      }
+    };
+    
+    initPayment();
+  }, []);
+  
+  // Check payment status periodically
+  const startPaymentCheck = (orderId) => {
+    setCheckingPayment(true);
+    const interval = setInterval(async () => {
+      try {
+        const orders = await base44.entities.Order.filter({ id: orderId });
+        const order = orders[0];
+        
+        if (order?.status === 'em_preparo') {
+          clearInterval(interval);
+          setPaymentConfirmed(true);
+          setCheckingPayment(false);
+          
+          toast.success('Pagamento confirmado!');
+          
+          setTimeout(() => {
+            onConfirmPayment();
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error checking payment:', error);
+      }
+    }, 2000); // Check every 2 seconds
+    
+    // Stop checking after 10 minutes
+    setTimeout(() => {
+      clearInterval(interval);
+      setCheckingPayment(false);
+    }, 600000);
+  };
+  
   const handleConfirmPayment = async () => {
     try {
       await createOrderMutation.mutateAsync('em_preparo');
@@ -109,6 +180,40 @@ export default function TotemPix({
   
   const handleExpired = () => {};
 
+  // Show loading while creating Mercado Pago payment
+  if (settings?.mercadopago_enabled && isLoadingMercadoPago) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: primaryColor }} />
+          <p className="text-xl font-bold text-gray-900">Gerando PIX...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show payment confirmed screen
+  if (paymentConfirmed) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div 
+            className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
+            style={{ backgroundColor: `${primaryColor}20` }}
+          >
+            <CheckCircle className="w-16 h-16 text-green-500" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Pagamento Confirmado!
+          </h2>
+          <p className="text-gray-600">
+            Seu pedido está sendo preparado...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <TotemHeader 
@@ -117,14 +222,81 @@ export default function TotemPix({
       />
       
       <main className="max-w-xl mx-auto">
-        <PixQRCode
-          settings={settings}
-          total={total}
-          onConfirmPayment={handleConfirmPayment}
-          onChangePaymentMethod={onChangePaymentMethod}
-          onExpired={handleExpired}
-          primaryColor={primaryColor}
-        />
+        {settings?.mercadopago_enabled && mercadoPagoData ? (
+          <div className="p-6 space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Escaneie o QR Code
+              </h2>
+              <p className="text-gray-600">
+                O pagamento será confirmado automaticamente
+              </p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <img 
+                src={`data:image/png;base64,${mercadoPagoData.qr_code_base64}`}
+                alt="QR Code PIX"
+                className="w-full max-w-sm mx-auto"
+              />
+            </div>
+            
+            <div className="bg-white rounded-2xl p-4">
+              <p className="text-sm text-gray-500 mb-2 text-center">
+                Ou copie o código PIX:
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={mercadoPagoData.qr_code}
+                  readOnly
+                  className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-sm font-mono"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(mercadoPagoData.qr_code);
+                    toast.success('Código copiado!');
+                  }}
+                  className="px-6 py-3 rounded-xl text-white font-bold"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+            
+            <div 
+              className="text-center py-6 rounded-2xl"
+              style={{ backgroundColor: `${primaryColor}10` }}
+            >
+              <p className="text-2xl font-bold mb-2" style={{ color: primaryColor }}>
+                R$ {total.toFixed(2)}
+              </p>
+              {checkingPayment && (
+                <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Aguardando pagamento...
+                </p>
+              )}
+            </div>
+            
+            <button
+              onClick={onChangePaymentMethod}
+              className="w-full py-4 text-gray-600 font-medium"
+            >
+              Escolher outra forma de pagamento
+            </button>
+          </div>
+        ) : (
+          <PixQRCode
+            settings={settings}
+            total={total}
+            onConfirmPayment={handleConfirmPayment}
+            onChangePaymentMethod={onChangePaymentMethod}
+            onExpired={handleExpired}
+            primaryColor={primaryColor}
+          />
+        )}
       </main>
     </div>
   );
