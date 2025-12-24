@@ -25,7 +25,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const [orderToCancel, setOrderToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelDetails, setCancelDetails] = useState('');
-  const previousOrderCount = useRef(0);
+  const previousPendingOrderIds = useRef(new Set());
   const notificationIntervalRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -61,36 +61,43 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   useEffect(() => {
     if (!allOrders) return;
     
-    const newPendingOrders = allOrders.filter(o => 
+    const currentPendingOrders = allOrders.filter(o => 
       o.status === 'aguardando_pix' || 
       o.status === 'pagamento_informado' ||
       (!o.status)
     );
     
-    const hasNewOrders = newPendingOrders.length > previousOrderCount.current;
+    const currentPendingIds = new Set(currentPendingOrders.map(o => o.id));
     
-    if (hasNewOrders && previousOrderCount.current > 0) {
+    // Detect truly NEW orders (IDs that didn't exist before)
+    const newOrderIds = [...currentPendingIds].filter(id => !previousPendingOrderIds.current.has(id));
+    
+    if (newOrderIds.length > 0 && previousPendingOrderIds.current.size > 0) {
+      // Only notify for truly NEW orders
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
       
       if ('Notification' in window && Notification.permission === 'granted') {
-        const count = newPendingOrders.length;
+        const newOrders = currentPendingOrders.filter(o => newOrderIds.includes(o.id));
         new Notification('Novo Pedido!', {
-          body: count === 1 
-            ? `Pedido #${newPendingOrders[0].order_number} - R$ ${newPendingOrders[0].total?.toFixed(2)}`
-            : `${count} novos pedidos aguardando`,
+          body: newOrders.length === 1 
+            ? `Pedido #${newOrders[0].order_number} - R$ ${newOrders[0].total?.toFixed(2)}`
+            : `${newOrders.length} novos pedidos aguardando`,
           icon: settings?.logo_url || '/favicon.ico',
           tag: 'new-order',
           requireInteraction: true
         });
       }
+      
+      // Play sound only for NEW orders
+      playNotificationSound();
     }
     
-    previousOrderCount.current = allOrders.length;
-    setPendingOrders(newPendingOrders);
+    previousPendingOrderIds.current = currentPendingIds;
+    setPendingOrders(currentPendingOrders);
     
-    if (newPendingOrders.length > 0) {
+    if (currentPendingOrders.length > 0) {
       startNotificationLoop();
     } else {
       stopNotificationLoop();
@@ -119,7 +126,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const startNotificationLoop = () => {
     if (notificationIntervalRef.current) return;
     
-    playNotificationSound();
+    // Start interval without playing sound immediately (sound only on NEW orders)
     notificationIntervalRef.current = setInterval(() => {
       playNotificationSound();
     }, 5000);
@@ -134,6 +141,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handleAcceptPendingOrders = () => {
     stopNotificationLoop();
+    // Keep the IDs in memory so they won't trigger notifications again
     setPendingOrders([]);
   };
 
