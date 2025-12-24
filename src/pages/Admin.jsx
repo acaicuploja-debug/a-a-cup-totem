@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -183,14 +182,7 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="lg:ml-64 p-6">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {renderContent()}
-        </motion.div>
+        {renderContent()}
       </main>
     </div>
   );
