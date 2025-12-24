@@ -34,6 +34,13 @@ export default function TotemPayment({
     return 0;
   });
   
+  // Calcular total ajustado para cada forma de pagamento
+  const calculateAdjustedTotal = (method) => {
+    const adjustment = settings?.payment_adjustments?.[method] || 0;
+    if (adjustment === 0) return total;
+    return total * (1 + adjustment / 100);
+  };
+  
   const createOrderMutation = useMutation({
     mutationFn: async (paymentMethod) => {
       const now = new Date();
@@ -51,6 +58,8 @@ export default function TotemPayment({
       const orders = await base44.entities.Order.list('-order_number', 1);
       const nextNumber = orders.length > 0 ? (orders[0].order_number || 0) + 1 : 1;
 
+      const finalTotal = calculateAdjustedTotal(paymentMethod);
+
       const order = await base44.entities.Order.create({
         order_number: nextNumber,
         customer_id: customer?.id || null,
@@ -65,7 +74,7 @@ export default function TotemPayment({
           total: item.total
         })),
         subtotal: total,
-        total: total,
+        total: finalTotal,
         consumption_type: consumptionType,
         payment_method: paymentMethod,
         status: 'em_preparo',
@@ -170,6 +179,10 @@ export default function TotemPayment({
             const Icon = paymentIcons[method];
             const label = paymentLabels[method];
             const isPix = method === 'pix';
+            const adjustment = settings?.payment_adjustments?.[method] || 0;
+            const adjustedTotal = calculateAdjustedTotal(method);
+            const hasDiscount = adjustment < 0;
+            const hasSurcharge = adjustment > 0;
 
             if (!Icon || !label) return null;
 
@@ -201,9 +214,27 @@ export default function TotemPayment({
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 mb-1">
                     {label.description}
                   </p>
+                  {hasDiscount && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-semibold text-green-600">
+                        💰 {Math.abs(adjustment)}% de desconto
+                      </span>
+                      <span className="text-sm text-gray-400 line-through ml-2">
+                        R$ {total.toFixed(2)}
+                      </span>
+                      <span className="text-sm font-bold text-green-600 ml-1">
+                        R$ {adjustedTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  {hasSurcharge && (
+                    <div className="text-sm text-amber-600">
+                      +{adjustment}% • Total: R$ {adjustedTotal.toFixed(2)}
+                    </div>
+                  )}
                 </div>
 
                 <ArrowRight className={`w-6 h-6 ${isPix ? 'text-green-500' : 'text-gray-400'}`} />

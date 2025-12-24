@@ -242,15 +242,54 @@ export default function AdminSettings({ settings, primaryColor }) {
                     { id: 'cartao', label: 'Cartão (Maquininha)', emoji: '💳' },
                     { id: 'dinheiro', label: 'Dinheiro', emoji: '💵' }
                   ].map(method => (
-                    <div key={method.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{method.emoji}</span>
-                        <span className="font-medium">{method.label}</span>
+                    <div key={method.id} className="p-4 bg-gray-50 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{method.emoji}</span>
+                          <span className="font-medium">{method.label}</span>
+                        </div>
+                        <Switch
+                          checked={(formData.payment_methods || ['pix', 'cartao']).includes(method.id)}
+                          onCheckedChange={() => togglePaymentMethod(method.id)}
+                        />
                       </div>
-                      <Switch
-                        checked={(formData.payment_methods || ['pix', 'cartao']).includes(method.id)}
-                        onCheckedChange={() => togglePaymentMethod(method.id)}
-                      />
+                      
+                      {(formData.payment_methods || ['pix', 'cartao']).includes(method.id) && (
+                        <div className="space-y-2 pt-2 border-t">
+                          <Label className="text-sm text-gray-600">
+                            Ajuste de Preço (% - Negativo = Desconto, Positivo = Acréscimo)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={formData.payment_adjustments?.[method.id] || 0}
+                              onChange={(e) => {
+                                const adjustments = formData.payment_adjustments || {};
+                                handleChange('payment_adjustments', {
+                                  ...adjustments,
+                                  [method.id]: parseFloat(e.target.value) || 0
+                                });
+                              }}
+                              className="text-center"
+                            />
+                            <span className="text-sm text-gray-500 min-w-[80px]">
+                              {formData.payment_adjustments?.[method.id] 
+                                ? (formData.payment_adjustments[method.id] > 0 
+                                    ? `+${formData.payment_adjustments[method.id]}%` 
+                                    : `${formData.payment_adjustments[method.id]}%`)
+                                : '0%'}
+                            </span>
+                          </div>
+                          {formData.payment_adjustments?.[method.id] !== 0 && (
+                            <p className="text-xs text-amber-600">
+                              {formData.payment_adjustments[method.id] < 0 
+                                ? `💰 Desconto de ${Math.abs(formData.payment_adjustments[method.id])}% aplicado`
+                                : `💳 Acréscimo de ${formData.payment_adjustments[method.id]}% aplicado`}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
