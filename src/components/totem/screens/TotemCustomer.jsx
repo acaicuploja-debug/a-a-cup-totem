@@ -94,15 +94,19 @@ export default function TotemCustomer({
       return;
     }
     
+    console.log('🔵 Salvando cliente:', { name, phone: cleanPhone, cpf });
+    
     try {
-      await createCustomerMutation.mutateAsync({
+      const savedCustomer = await createCustomerMutation.mutateAsync({
         name,
         phone: cleanPhone,
         cpf: cpf.replace(/\D/g, '')
       });
+      console.log('✅ Cliente salvo:', savedCustomer);
       onComplete();
     } catch (error) {
-      toast.error('Erro ao salvar dados');
+      console.error('❌ Erro ao salvar cliente:', error);
+      toast.error('Erro ao salvar dados: ' + error.message);
     }
   };
   
