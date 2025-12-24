@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Gift,
   Menu,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AdminDashboard from '../components/admin/AdminDashboard';
@@ -25,6 +26,7 @@ import AdminSettings from '../components/admin/AdminSettings';
 import AdminUpsell from '../components/admin/AdminUpsell';
 import AdminLoyalty from '../components/admin/AdminLoyalty';
 import AdminCoupons from '../components/admin/AdminCoupons';
+import AdminWhatsApp from '../components/admin/AdminWhatsApp';
 import { Tag, History } from 'lucide-react';
 
 const menuItems = [
@@ -37,6 +39,7 @@ const menuItems = [
   { id: 'coupons', label: 'Cupons', icon: Tag },
   { id: 'customers', label: 'Clientes', icon: Users },
   { id: 'loyalty', label: 'Fidelidade', icon: Gift },
+  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'settings', label: 'Configurações', icon: Settings }
 ];
 
@@ -149,6 +152,7 @@ export default function Admin() {
         {activeTab === 'history' && <AdminOrderHistory settings={settings} primaryColor={primaryColor} />}
         {activeTab === 'customers' && <AdminCustomers settings={settings} primaryColor={primaryColor} />}
         {activeTab === 'loyalty' && <AdminLoyalty settings={settings} primaryColor={primaryColor} />}
+        {activeTab === 'whatsapp' && <AdminWhatsApp settings={settings} primaryColor={primaryColor} />}
         {activeTab === 'settings' && <AdminSettings settings={settings} primaryColor={primaryColor} />}
       </main>
     </div>
