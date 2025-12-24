@@ -129,8 +129,8 @@ export default function TotemPayment({
       console.log('Criando pedido para', method);
       try {
         const order = await createOrderMutation.mutateAsync(method);
-        console.log('Pedido criado:', order);
-        toast.success('Pedido #' + order.data.order_number + ' criado!');
+        console.log('Pedido criado com sucesso:', order);
+        toast.success('Pedido #' + String(order.order_number).padStart(3, '0') + ' criado!');
         onSelectPayment(method);
       } catch (error) {
         console.error('ERRO ao criar pedido:', error);
