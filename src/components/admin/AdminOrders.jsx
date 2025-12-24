@@ -48,11 +48,26 @@ export default function AdminOrders({ settings, primaryColor }) {
   const audioRef = useRef(null);
   const queryClient = useQueryClient();
   
-  const { data: orders, isLoading, refetch } = useQuery({
+  const { data: orders, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date'),
-    refetchInterval: 5000 // Auto refresh every 5 seconds
+    queryFn: async () => {
+      console.log('🔄 Buscando pedidos...');
+      const result = await base44.entities.Order.list('-created_date');
+      console.log('✅ Pedidos recebidos:', result?.length, result);
+      return result;
+    },
+    refetchInterval: 5000, // Auto refresh every 5 seconds
+    onError: (err) => {
+      console.error('❌ ERRO ao buscar pedidos:', err);
+    }
   });
+  
+  React.useEffect(() => {
+    if (error) {
+      console.error('❌ Query error:', error);
+      toast.error('Erro ao carregar pedidos: ' + error.message);
+    }
+  }, [error]);
   
   // Play sound on new order
   useEffect(() => {
