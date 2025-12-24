@@ -25,6 +25,12 @@ Deno.serve(async (req) => {
       notification_url: `${Deno.env.get('BASE44_APP_URL')}/functions/mercadoPagoWebhook`
     };
 
+    // Crédito: forçar pagamento à vista (sem parcelamento)
+    if (paymentType === 'credito') {
+      paymentData.installments = 1;
+      paymentData.installments_cost = 'buyer';
+    }
+
     const response = await fetch('https://api.mercadopago.com/point/integration-api/devices', {
       method: 'GET',
       headers: {
