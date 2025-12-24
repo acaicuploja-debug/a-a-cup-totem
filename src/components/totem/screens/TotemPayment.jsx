@@ -155,11 +155,7 @@ export default function TotemPayment({
       />
       
       <main className="max-w-xl mx-auto px-4 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Como você vai pagar?
           </h2>
@@ -175,7 +171,7 @@ export default function TotemPayment({
               R$ {total.toFixed(2)}
             </p>
           </div>
-        </motion.div>
+        </div>
         
         <div className="space-y-4">
           {availableMethods.map((method, index) => {
