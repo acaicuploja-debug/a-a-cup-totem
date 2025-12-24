@@ -210,7 +210,7 @@ export default function TotemPayment({
                 </div>
                 
                 <ArrowRight className="w-6 h-6 text-gray-400" />
-              </motion.button>
+              </button>
             );
           })}
         </div>
