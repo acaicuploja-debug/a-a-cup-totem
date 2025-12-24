@@ -37,6 +37,30 @@ export default function AdminDashboard({ settings, primaryColor }) {
         return { start: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000), end: new Date() };
       case 'last30':
         return { start: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), end: new Date() };
+      case 'january':
+        return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 1, 1) };
+      case 'february':
+        return { start: new Date(now.getFullYear(), 1, 1), end: new Date(now.getFullYear(), 2, 1) };
+      case 'march':
+        return { start: new Date(now.getFullYear(), 2, 1), end: new Date(now.getFullYear(), 3, 1) };
+      case 'april':
+        return { start: new Date(now.getFullYear(), 3, 1), end: new Date(now.getFullYear(), 4, 1) };
+      case 'may':
+        return { start: new Date(now.getFullYear(), 4, 1), end: new Date(now.getFullYear(), 5, 1) };
+      case 'june':
+        return { start: new Date(now.getFullYear(), 5, 1), end: new Date(now.getFullYear(), 6, 1) };
+      case 'july':
+        return { start: new Date(now.getFullYear(), 6, 1), end: new Date(now.getFullYear(), 7, 1) };
+      case 'august':
+        return { start: new Date(now.getFullYear(), 7, 1), end: new Date(now.getFullYear(), 8, 1) };
+      case 'september':
+        return { start: new Date(now.getFullYear(), 8, 1), end: new Date(now.getFullYear(), 9, 1) };
+      case 'october':
+        return { start: new Date(now.getFullYear(), 9, 1), end: new Date(now.getFullYear(), 10, 1) };
+      case 'november':
+        return { start: new Date(now.getFullYear(), 10, 1), end: new Date(now.getFullYear(), 11, 1) };
+      case 'december':
+        return { start: new Date(now.getFullYear(), 11, 1), end: new Date(now.getFullYear() + 1, 0, 1) };
       case 'custom':
         return { start: customStartDate, end: customEndDate };
       default:
@@ -51,6 +75,11 @@ export default function AdminDashboard({ settings, primaryColor }) {
   const { data: allCustomers } = useQuery({
     queryKey: ['admin-customers'],
     queryFn: () => base44.entities.Customer.list()
+  });
+  
+  const { data: products } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: () => base44.entities.Product.list()
   });
   
   const orders = useMemo(() => {
@@ -74,7 +103,7 @@ export default function AdminDashboard({ settings, primaryColor }) {
   }, [allCustomers, dateFilter, customStartDate, customEndDate]);
   
   const stats = useMemo(() => {
-    if (!orders) return { revenue: 0, orderCount: 0, avgTicket: 0, todayOrders: 0 };
+    if (!orders || !products) return { revenue: 0, orderCount: 0, avgTicket: 0, totalCost: 0, netProfit: 0 };
     
     const completedOrders = orders.filter(o => 
       o.status !== 'cancelado' && o.status !== 'aguardando_pix'
@@ -84,8 +113,21 @@ export default function AdminDashboard({ settings, primaryColor }) {
     const orderCount = completedOrders.length;
     const avgTicket = orderCount > 0 ? revenue / orderCount : 0;
     
-    return { revenue, orderCount, avgTicket };
-  }, [orders]);
+    // Calcular custo total baseado nos produtos vendidos
+    let totalCost = 0;
+    completedOrders.forEach(order => {
+      order.items?.forEach(item => {
+        const product = products.find(p => p.id === item.product_id);
+        if (product && product.cost_price) {
+          totalCost += product.cost_price * item.quantity;
+        }
+      });
+    });
+    
+    const netProfit = revenue - totalCost;
+    
+    return { revenue, orderCount, avgTicket, totalCost, netProfit };
+  }, [orders, products]);
   
   const paymentData = useMemo(() => {
     if (!orders) return [];
@@ -139,6 +181,18 @@ export default function AdminDashboard({ settings, primaryColor }) {
               <SelectItem value="last7">Últimos 7 dias</SelectItem>
               <SelectItem value="last15">Últimos 15 dias</SelectItem>
               <SelectItem value="last30">Últimos 30 dias</SelectItem>
+              <SelectItem value="january">Janeiro</SelectItem>
+              <SelectItem value="february">Fevereiro</SelectItem>
+              <SelectItem value="march">Março</SelectItem>
+              <SelectItem value="april">Abril</SelectItem>
+              <SelectItem value="may">Maio</SelectItem>
+              <SelectItem value="june">Junho</SelectItem>
+              <SelectItem value="july">Julho</SelectItem>
+              <SelectItem value="august">Agosto</SelectItem>
+              <SelectItem value="september">Setembro</SelectItem>
+              <SelectItem value="october">Outubro</SelectItem>
+              <SelectItem value="november">Novembro</SelectItem>
+              <SelectItem value="december">Dezembro</SelectItem>
               <SelectItem value="custom">Personalizado</SelectItem>
             </SelectContent>
           </Select>
@@ -176,12 +230,12 @@ export default function AdminDashboard({ settings, primaryColor }) {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Faturamento Total</p>
+                <p className="text-sm text-gray-500">Faturamento Bruto</p>
                 <p className="text-2xl font-bold text-gray-900">
                   R$ {stats.revenue.toFixed(2)}
                 </p>
@@ -200,13 +254,29 @@ export default function AdminDashboard({ settings, primaryColor }) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-500">Lucro Líquido</p>
+                <p className="text-2xl font-bold text-green-600">
+                  R$ {stats.netProfit.toFixed(2)}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-gray-500">Total de Pedidos</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {stats.orderCount}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50">
-                <ShoppingBag className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50">
+                <ShoppingBag className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -237,8 +307,8 @@ export default function AdminDashboard({ settings, primaryColor }) {
                   {customers?.length || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-50">
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
