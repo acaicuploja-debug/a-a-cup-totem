@@ -382,160 +382,29 @@ Obrigado pela preferencia!
 ================================
 `;
 
-    // Try QZ Tray first (silent printing)
-    if (qzConnected && qz.websocket.isActive()) {
-      try {
-        const defaultPrinter = settings?.default_printer;
-        const printer = defaultPrinter || (await qz.printers.find())[0];
-        
-        const config = qz.configs.create(printer);
-        const data = [{
-          type: 'raw',
-          format: 'plain',
-          data: printContent
-        }];
-        
-        await qz.print(config, data);
-        console.log('✅ Impresso via QZ Tray');
-        return;
-      } catch (err) {
-        console.log('Erro ao imprimir via QZ Tray:', err);
-        toast.error('Erro na impressão automática, usando método padrão');
-      }
+    // Impressão via QZ Tray
+    if (!qzConnected || !qz.websocket.isActive()) {
+      toast.error('QZ Tray não está conectado. Instale em qz.io/download');
+      return;
     }
 
-    // Fallback to browser print dialog
-    const printWindow = window.open('', '', 'width=300,height=600');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Pedido #${String(order.order_number || '').padStart(3, '0')}</title>
-          <style>
-            @page { margin: 0; size: 80mm auto; }
-            @media print {
-              * { margin: 0; padding: 0; }
-              body { 
-                margin: 0; 
-                padding: 0; 
-                font-family: Arial, Helvetica, sans-serif; 
-                font-size: 16px;
-                font-weight: bold;
-                width: 80mm;
-                max-width: 80mm;
-              }
-              .header { 
-                text-align: center; 
-                border-bottom: 2px dashed #000; 
-                padding: 10px 0; 
-                margin-bottom: 10px; 
-              }
-              .header h2 { margin: 0 0 5px 0; font-size: 20px; font-weight: bold; }
-              .header p { margin: 3px 0; font-size: 15px; font-weight: bold; }
-              .section { margin-bottom: 15px; font-weight: bold; }
-              .item { 
-                margin-bottom: 10px; 
-                line-height: 1.5;
-                font-weight: bold;
-              }
-              .complements {
-                margin-left: 0;
-                margin-top: 4px;
-              }
-              .complement-item {
-                display: block;
-                margin: 3px 0;
-                font-weight: bold;
-              }
-              .total { 
-                border-top: 2px dashed #000; 
-                padding-top: 10px; 
-                margin-top: 10px; 
-                font-weight: bold; 
-                font-size: 18px;
-                text-align: center;
-              }
-              .loyalty {
-                background: #f0f0f0;
-                padding: 8px;
-                margin: 10px 0;
-                text-align: center;
-                font-size: 14px;
-              }
-              .footer { 
-                text-align: center; 
-                margin-top: 15px; 
-                border-top: 2px dashed #000; 
-                padding-top: 10px;
-                font-weight: bold;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>${settings?.store_name || 'Loja'}</h2>
-            <p>PEDIDO #${String(order.order_number || '').padStart(3, '0')}</p>
-            <p>${order.order_datetime || new Date().toLocaleString('pt-BR')}</p>
-          </div>
-          
-          <div class="section">
-            <strong>Cliente:</strong><br/>
-            ${order.customer_name || 'N/A'}<br/>
-            ${order.customer_phone || ''}<br/>
-            <div style="margin-top: 5px;">Total de pedidos: ${customerOrders}</div>
+    try {
+      const defaultPrinter = settings?.default_printer;
+      const printer = defaultPrinter || (await qz.printers.find())[0];
 
-            <div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border: 2px solid #000; text-align: center;">
-              <strong style="font-size: 18px;">
-                ${order.consumption_type === 'local' ? '🍽 COMER NO LOCAL' : '📦 EMBALAR P/ VIAGEM'}
-              </strong>
-            </div>
-          </div>
-          
-          <div class="section">
-            <strong>Itens:</strong><br/>
-            ${order.items?.map(item => `
-              <div class="item">
-                <div>${item.quantity}x ${item.product_name}</div>
-                <div>R$ ${item.total.toFixed(2)}</div>
-                ${item.complements?.length > 0 ? `
-                  <div class="complements">
-                    ${item.complements.map(c => `<div class="complement-item">+ ${c.name}</div>`).join('')}
-                  </div>
-                ` : ''}
-              </div>
-            `).join('') || ''}
-          </div>
-          
-          <div class="total">
-            TOTAL: R$ ${order.total.toFixed(2)}
-          </div>
+      const config = qz.configs.create(printer);
+      const data = [{
+        type: 'raw',
+        format: 'plain',
+        data: printContent
+      }];
 
-          <div class="section">
-            <strong>Pagamento:</strong> ${
-              order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
-              order.payment_method === 'credito' && order.mercadopago_payment_id ? 'Credito Online - Pago' :
-              order.payment_method === 'debito' && order.mercadopago_payment_id ? 'Debito Online - Pago' :
-              order.payment_method === 'pix' ? 'PIX' :
-              order.payment_method === 'credito' ? 'Credito' :
-              order.payment_method === 'debito' ? 'Debito' :
-              order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro - Precisa Receber'
-            }
-          </div>
-          
-          ${loyaltyText ? `<div class="loyalty">${loyaltyText}</div>` : ''}
-          
-          <div class="footer">
-            <p>Obrigado pela preferencia!</p>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+      await qz.print(config, data);
+      toast.success('Pedido impresso!');
+    } catch (err) {
+      console.error('Erro ao imprimir via QZ Tray:', err);
+      toast.error('Erro ao imprimir: ' + err.message);
+    }
   } catch (error) {
     console.error('Erro ao imprimir:', error);
     toast.error('Erro ao imprimir pedido');
