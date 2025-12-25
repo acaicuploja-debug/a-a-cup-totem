@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import TotemHeader from '../TotemHeader';
 import CategoryCard from '../CategoryCard';
 import CartButton from '../CartButton';
+import PromoBanner from '../PromoBanner';
 import { Loader2 } from 'lucide-react';
 
 export default function TotemCategories({ 
@@ -29,6 +30,8 @@ export default function TotemCategories({
       />
       
       <main className="max-w-xl mx-auto px-4 py-6">
+        <PromoBanner settings={settings} />
+        
         <motion.h2 
           className="text-2xl font-bold text-gray-900 mb-6"
           initial={{ opacity: 0, y: 10 }}
