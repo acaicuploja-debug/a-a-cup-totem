@@ -24,9 +24,10 @@ export default function TotemProductDetail({
       const firstRequiredGroup = product.complements.findIndex(g => g.required);
       if (firstRequiredGroup >= 0) {
         setTimeout(() => {
-          const element = document.getElementById(`complement-group-${firstRequiredGroup}`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const priceElement = document.querySelector('.product-price-section');
+          if (priceElement) {
+            const offsetTop = priceElement.offsetTop - 80;
+            window.scrollTo({ top: offsetTop, behavior: 'smooth' });
           }
         }, 300);
       }
@@ -133,7 +134,7 @@ export default function TotemProductDetail({
             </p>
           )}
           
-          <div className="flex items-center gap-2 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 mb-6 flex-wrap product-price-section">
             {product.promo_price && product.promo_price < product.price ? (
               <>
                 <span 
