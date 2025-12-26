@@ -528,6 +528,12 @@ Obrigado pela preferencia!
                 step="0.001"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddWeight();
+                  }
+                }}
                 placeholder="0.000"
                 autoFocus
               />
