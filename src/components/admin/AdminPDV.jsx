@@ -122,7 +122,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     const weightKg = parseFloat(weight);
     const pricePerKg = weightProduct.price_per_kg || weightProduct.price;
     const total = weightKg * pricePerKg;
-    
+
     // Calcular custo baseado em porcentagem para produtos por peso
     let itemCost = 0;
     if (weightProduct.cost_percentage && weightProduct.cost_percentage > 0) {
@@ -132,22 +132,27 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
         peso: weightKg,
         total: total,
         costPercentage: weightProduct.cost_percentage,
-        custoCalculado: itemCost
+        custoCalculado: itemCost,
+        tipoCusto: typeof itemCost
       });
     } else if (weightProduct.cost_price) {
       itemCost = weightProduct.cost_price * weightKg;
     }
 
-    const newCart = [...cart, {
+    const newItem = {
       product_id: weightProduct.id,
       product_name: weightProduct.name,
       quantity: 1,
       weight: weightKg,
       unit_price: total,
       total: total,
-      cost_price: itemCost,
+      cost_price: parseFloat(itemCost),
       sold_by_weight: true
-    }];
+    };
+
+    console.log('DEBUG Item criado:', newItem);
+
+    const newCart = [...cart, newItem];
 
     setCart(newCart);
 
