@@ -315,6 +315,18 @@ Obrigado pela preferencia!
     createOrderMutation.mutate(paymentMethod);
   };
 
+  // Atalho ENTER para abrir pagamento
+  React.useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Enter' && cart.length > 0 && !showPayment && !showWeightDialog) {
+        setShowPayment(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [cart.length, showPayment, showWeightDialog]);
+
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-auto">
       <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
