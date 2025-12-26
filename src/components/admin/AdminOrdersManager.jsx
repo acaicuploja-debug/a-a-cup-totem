@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ChefHat, Package, CheckCircle, Printer, Eye, X } from 'lucide-react';
+import { ChefHat, Package, CheckCircle, Printer, Eye, X, ShoppingCart } from 'lucide-react';
+import AdminPDV from './AdminPDV';
 import { toast } from 'sonner';
 import PendingOrderNotification from './PendingOrderNotification';
 import qz from 'qz-tray';
@@ -31,6 +32,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const notificationIntervalRef = useRef(null);
   const previousPreparingOrderIds = useRef(new Set());
   const [qzConnected, setQzConnected] = useState(false);
+  const [showPDV, setShowPDV] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allOrders, isLoading } = useQuery({
@@ -457,6 +459,10 @@ const getCustomerInfo = (phone) => {
     );
   }
 
+  if (showPDV) {
+    return <AdminPDV settings={settings} primaryColor={primaryColor} onClose={() => setShowPDV(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       <PendingOrderNotification
@@ -488,14 +494,23 @@ const getCustomerInfo = (phone) => {
             {qzConnected && <span className="ml-2 text-green-600">• 🖨️ Impressão automática ativa</span>}
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleFinalizeAll}
-          className="bg-green-50 hover:bg-green-100 text-green-700"
-        >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Finalizar Todos
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowPDV(true)}
+            style={{ backgroundColor: primaryColor }}
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            PDV - Loja
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleFinalizeAll}
+            className="bg-green-50 hover:bg-green-100 text-green-700"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Finalizar Todos
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
