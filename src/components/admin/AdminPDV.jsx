@@ -307,7 +307,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   <head>
   <meta charset="UTF-8">
   <style>
-  body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
+  body { font-family: Arial, sans-serif; font-size: 14px; max-width: 300px; margin: 0 auto; }
   .center { text-align: center; }
   .bold { font-weight: bold; }
   .line { border-top: 1px dashed #000; margin: 10px 0; }
