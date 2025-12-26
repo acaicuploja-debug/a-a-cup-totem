@@ -319,17 +319,16 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           : `Faltam ${remaining} pedido(s) para ganhar premio!`;
       }
 
-      // Generate print content (HTML)
       const printHTML = `
   <!DOCTYPE html>
   <html>
   <head>
   <meta charset="UTF-8">
   <style>
-    body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    .line { border-top: 1px dashed #000; margin: 10px 0; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .line { border-top: 1px dashed #000; margin: 10px 0; }
   </style>
   </head>
   <body>
@@ -347,11 +346,11 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   <div class="line"></div>
   <div class="bold">Itens:</div>
   ${order.items?.map(item => `
-    <div style="margin: 5px 0;">
-      <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
-      <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
-      ${item.complements?.length > 0 ? item.complements.map(c => `<div style="margin-left: 20px;">+ ${c.name}</div>`).join('') : ''}
-    </div>
+  <div style="margin: 5px 0;">
+    <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
+    <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
+    ${item.complements?.length > 0 ? item.complements.map(c => `<div style="margin-left: 20px;">+ ${c.name}</div>`).join('') : ''}
+  </div>
   `).join('') || ''}
 
   <div class="line"></div>
@@ -359,10 +358,10 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   <div class="line"></div>
 
   <div><strong>Pagamento:</strong> ${
-    order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
-    order.payment_method === 'pix' ? 'PIX' :
-    order.payment_method === 'cartao' ? 'Cartão' :
-    order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+  order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
+  order.payment_method === 'pix' ? 'PIX' :
+  order.payment_method === 'cartao' ? 'Cartão' :
+  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
   }</div>
 
   ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}</div>` : ''}

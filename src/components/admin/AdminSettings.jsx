@@ -647,19 +647,19 @@ Impressora: ${printer}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-amber-900 text-lg mb-2">
-                          QZ Tray não está instalado
+                          🚀 QZ Tray não detectado
                         </h3>
                         <p className="text-amber-700 mb-4">
-                          Para ativar a impressão automática silenciosa (sem precisar clicar), você precisa instalar o QZ Tray no seu computador.
+                          Para impressão automática e silenciosa, instale o QZ Tray:
                         </p>
                         <div className="space-y-3">
                           <div className="bg-white rounded-lg p-4">
-                            <p className="font-semibold text-gray-900 mb-2">Como funciona:</p>
+                            <p className="font-semibold text-gray-900 mb-2">✨ Benefícios:</p>
                             <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                              <li>✅ Impressão totalmente automática</li>
+                              <li>✅ Imprime automaticamente sem confirmação</li>
                               <li>✅ Funciona mesmo em outra aba</li>
                               <li>✅ Não precisa clicar em nada</li>
-                              <li>✅ Ideal para deixar rodando sozinho</li>
+                              <li>✅ Ideal para operação autônoma</li>
                             </ul>
                           </div>
                           <a
@@ -669,26 +669,66 @@ Impressora: ${printer}
                             className="block"
                           >
                             <Button className="w-full" size="lg" style={{ backgroundColor: primaryColor }}>
-                              🔽 Baixar QZ Tray Grátis
+                              📥 Baixar QZ Tray (Grátis)
                             </Button>
                           </a>
-                          <p className="text-xs text-amber-600 text-center">
-                            Após instalar, abra o QZ Tray e recarregue esta página
-                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">📋 Instruções de Instalação</h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                      <li>Baixe o QZ Tray no link acima (compatível com Windows, Mac e Linux)</li>
-                      <li>Execute o instalador e siga as instruções</li>
-                      <li>Abra o QZ Tray (um ícone aparecerá na bandeja do sistema)</li>
-                      <li>Recarregue esta página</li>
-                      <li>A impressora será detectada automaticamente!</li>
-                    </ol>
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                    <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                      <span className="text-2xl">🛠️</span>
+                      Guia de Instalação Passo a Passo
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                        <p className="font-bold text-gray-900 mb-2">1️⃣ Baixar o Instalador</p>
+                        <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>• Clique no botão acima "Baixar QZ Tray"</li>
+                          <li>• Escolha a versão para seu sistema (Windows/Mac/Linux)</li>
+                          <li>• Aguarde o download terminar</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                        <p className="font-bold text-gray-900 mb-2">2️⃣ Instalar o Programa</p>
+                        <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>• <strong>Windows:</strong> Abra o arquivo .exe e siga as instruções</li>
+                          <li>• <strong>Mac:</strong> Abra o arquivo .dmg e arraste para Applications</li>
+                          <li>• Aceite as permissões quando solicitado</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                        <p className="font-bold text-gray-900 mb-2">3️⃣ Abrir o QZ Tray</p>
+                        <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>• Procure "QZ Tray" no menu Iniciar/Spotlight</li>
+                          <li>• Um ícone 🖨️ aparecerá na bandeja do sistema (canto inferior direito no Windows)</li>
+                          <li>• Mantenha o programa aberto</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                        <p className="font-bold text-gray-900 mb-2">4️⃣ Conectar ao Sistema</p>
+                        <ul className="text-sm text-gray-700 space-y-1 ml-4">
+                          <li>• <strong>Recarregue esta página</strong> (F5)</li>
+                          <li>• Se aparecer um popup, clique em "Permitir"</li>
+                          <li>• Você verá ✅ "QZ Tray Conectado!"</li>
+                          <li>• Selecione sua impressora e faça um teste</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <h4 className="font-semibold text-red-900 mb-2">⚠️ Problemas Comuns:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                      <li><strong>Não conecta?</strong> Certifique-se que o QZ Tray está aberto (ícone na bandeja)</li>
+                      <li><strong>Bloqueado pelo antivírus?</strong> Adicione uma exceção de segurança</li>
+                      <li><strong>Mac não abre?</strong> Vá em Preferências → Segurança e clique em "Abrir mesmo assim"</li>
+                    </ul>
                   </div>
                 </div>
               ) : (

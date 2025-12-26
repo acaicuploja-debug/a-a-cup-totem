@@ -307,10 +307,10 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   <head>
   <meta charset="UTF-8">
   <style>
-    body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    .line { border-top: 1px dashed #000; margin: 10px 0; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .line { border-top: 1px dashed #000; margin: 10px 0; }
   </style>
   </head>
   <body>
@@ -324,10 +324,10 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   <div class="line"></div>
   <div class="bold">Itens:</div>
   ${order.items?.map(item => `
-    <div style="margin: 5px 0;">
-      <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
-      <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
-    </div>
+  <div style="margin: 5px 0;">
+    <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
+    <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
+  </div>
   `).join('') || ''}
 
   <div class="line"></div>
@@ -335,9 +335,9 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   <div class="line"></div>
 
   <div><strong>Pagamento:</strong> ${
-    order.payment_method === 'pix' ? 'PIX' :
-    order.payment_method === 'cartao' ? 'Cartão' :
-    order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+  order.payment_method === 'pix' ? 'PIX' :
+  order.payment_method === 'cartao' ? 'Cartão' :
+  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
   }</div>
 
   <div class="line"></div>
