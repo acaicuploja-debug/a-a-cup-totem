@@ -302,6 +302,21 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handlePrint = async (order, showToast = true) => {
     try {
+      // Tentar PrintNode primeiro
+      const { data } = await base44.functions.invoke('printWithPrintNode', {
+        orderId: order.id,
+        printerName: settings?.default_printer
+      });
+
+      if (data.success) {
+        console.log('✅ Impresso via PrintNode:', data.printer);
+        if (showToast) toast.success('Pedido impresso!');
+        return;
+      }
+    } catch (printNodeError) {
+      console.log('⚠️ PrintNode falhou, tentando fallback:', printNodeError.message);
+      
+      // Fallback: Impressão do navegador
       const customerInfo = getCustomerInfo(order.customer_phone);
       const loyaltyTarget = settings?.loyalty_target || 10;
       const customerOrders = allOrders?.filter(o => 
@@ -372,33 +387,16 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   </html>
   `;
 
-      // Tentar QZ Tray primeiro (se disponível)
-      if (typeof qz !== 'undefined' && qz.websocket.isActive() && settings?.default_printer) {
-        const config = qz.configs.create(settings.default_printer);
-        const data = [{
-          type: 'pixel',
-          format: 'html',
-          data: printHTML
-        }];
-        await qz.print(config, data);
-        console.log('✅ Impresso via QZ Tray');
-        if (showToast) toast.success('Pedido impresso!');
-      } else {
-        // Fallback: Impressão do navegador
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 250);
-        console.log('✅ Impresso via navegador');
-        if (showToast) toast.success('Abrindo impressão...');
-      }
-    } catch (error) {
-      console.error('❌ Erro ao imprimir:', error);
-      if (showToast) toast.error('Erro ao imprimir: ' + error.message);
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      console.log('✅ Impresso via navegador');
+      if (showToast) toast.success('Abrindo impressão...');
     }
   };
 

@@ -301,6 +301,20 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
 
   const handlePrintOrder = async (order) => {
     try {
+      // Tentar PrintNode primeiro
+      const { data } = await base44.functions.invoke('printWithPrintNode', {
+        orderId: order.id,
+        printerName: settings?.default_printer
+      });
+
+      if (data.success) {
+        console.log('✅ Impresso via PrintNode:', data.printer);
+        return;
+      }
+    } catch (printNodeError) {
+      console.log('⚠️ PrintNode falhou, tentando fallback:', printNodeError.message);
+      
+      // Fallback: Impressão do navegador
       const printHTML = `
   <!DOCTYPE html>
   <html>
@@ -346,30 +360,15 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   </html>
   `;
 
-      // Tentar QZ Tray primeiro (se disponível)
-      if (typeof qz !== 'undefined' && qz.websocket.isActive() && settings?.default_printer) {
-        const config = qz.configs.create(settings.default_printer);
-        const data = [{
-          type: 'pixel',
-          format: 'html',
-          data: printHTML
-        }];
-        await qz.print(config, data);
-        console.log('✅ Impresso via QZ Tray');
-      } else {
-        // Fallback: Impressão do navegador
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 250);
-        console.log('✅ Impresso via navegador');
-      }
-    } catch (error) {
-      console.error('Erro ao imprimir:', error);
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      console.log('✅ Impresso via navegador');
     }
   };
 
