@@ -301,70 +301,73 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
 
   const handlePrintOrder = async (order) => {
     try {
-      const printContent = `
-================================
-${settings?.store_name || 'Loja'}
-PEDIDO #${String(order.order_number || '').padStart(3, '0')}
-${order.order_datetime || new Date().toLocaleString('pt-BR')}
-================================
+      const printHTML = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .line { border-top: 1px dashed #000; margin: 10px 0; }
+  </style>
+  </head>
+  <body>
+  <div class="center bold">${settings?.store_name || 'Loja'}</div>
+  <div class="center bold">PEDIDO #${String(order.order_number || '').padStart(3, '0')}</div>
+  <div class="center">${order.order_datetime || new Date().toLocaleString('pt-BR')}</div>
+  <div class="line"></div>
 
->>> VENDA BALCAO - PDV <<<
+  <div class="center bold">VENDA BALCAO - PDV</div>
 
---------------------------------
-Itens:
-${order.items?.map(item => `
-${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}
-R$ ${item.total.toFixed(2)}`).join('\n') || ''}
+  <div class="line"></div>
+  <div class="bold">Itens:</div>
+  ${order.items?.map(item => `
+    <div style="margin: 5px 0;">
+      <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
+      <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
+    </div>
+  `).join('') || ''}
 
-================================
-TOTAL: R$ ${order.total.toFixed(2)}
-================================
+  <div class="line"></div>
+  <div class="center bold" style="font-size: 16px;">TOTAL: R$ ${order.total.toFixed(2)}</div>
+  <div class="line"></div>
 
-Pagamento: ${
-  order.payment_method === 'pix' ? 'PIX' :
-  order.payment_method === 'cartao' ? 'Cartao' :
-  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartao'
-}
+  <div><strong>Pagamento:</strong> ${
+    order.payment_method === 'pix' ? 'PIX' :
+    order.payment_method === 'cartao' ? 'Cartão' :
+    order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+  }</div>
 
---------------------------------
-Obrigado pela preferencia!
-================================
-`;
+  <div class="line"></div>
+  <div class="center">Obrigado pela preferencia!</div>
+  </body>
+  </html>
+  `;
 
-      // Verificar QZ Tray primeiro
-      if (typeof qz === 'undefined') {
-        console.error('QZ Tray não carregado');
-        return;
+      // Tentar QZ Tray primeiro (se disponível)
+      if (typeof qz !== 'undefined' && qz.websocket.isActive() && settings?.default_printer) {
+        const config = qz.configs.create(settings.default_printer);
+        const data = [{
+          type: 'pixel',
+          format: 'html',
+          data: printHTML
+        }];
+        await qz.print(config, data);
+        console.log('✅ Impresso via QZ Tray');
+      } else {
+        // Fallback: Impressão do navegador
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+        console.log('✅ Impresso via navegador');
       }
-
-      if (!qz.websocket.isActive()) {
-        console.error('QZ Tray não está conectado');
-        return;
-      }
-
-      const defaultPrinter = settings?.default_printer;
-      
-      if (!defaultPrinter) {
-        console.error('❌ Nenhuma impressora padrão configurada');
-        return;
-      }
-
-      console.log(`🖨️ Usando impressora: ${defaultPrinter}`);
-      
-      const config = qz.configs.create(defaultPrinter, { 
-        encoding: 'UTF-8',
-        margins: { top: 0, right: 0, bottom: 0, left: 0 }
-      });
-      
-      const data = [{
-        type: 'raw',
-        format: 'plain',
-        data: printContent,
-        options: { encoding: 'UTF-8' }
-      }];
-
-      await qz.print(config, data);
-      console.log('✅ Impressão automática enviada com sucesso');
     } catch (error) {
       console.error('Erro ao imprimir:', error);
     }

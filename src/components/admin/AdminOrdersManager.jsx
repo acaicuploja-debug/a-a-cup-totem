@@ -302,19 +302,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handlePrint = async (order, showToast = true) => {
     try {
-      // Verificar QZ Tray primeiro
-      if (typeof qz === 'undefined') {
-        console.error('QZ Tray não carregado');
-        if (showToast) toast.error('QZ Tray não está instalado');
-        return;
-      }
-
-      if (!qz.websocket.isActive()) {
-        console.error('QZ Tray não está conectado');
-        if (showToast) toast.error('QZ Tray não está conectado');
-        return;
-      }
-
       const customerInfo = getCustomerInfo(order.customer_phone);
       const loyaltyTarget = settings?.loyalty_target || 10;
       const customerOrders = allOrders?.filter(o => 
@@ -332,70 +319,84 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           : `Faltam ${remaining} pedido(s) para ganhar premio!`;
       }
 
-      // Generate print content
-      const printContent = `
-  ================================
-  ${settings?.store_name || 'Loja'}
-  PEDIDO #${String(order.order_number || '').padStart(3, '0')}
-  ${order.order_datetime || new Date().toLocaleString('pt-BR')}
-  ================================
+      // Generate print content (HTML)
+      const printHTML = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Courier New', monospace; font-size: 12px; max-width: 300px; margin: 0 auto; }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .line { border-top: 1px dashed #000; margin: 10px 0; }
+  </style>
+  </head>
+  <body>
+  <div class="center bold">${settings?.store_name || 'Loja'}</div>
+  <div class="center bold">PEDIDO #${String(order.order_number || '').padStart(3, '0')}</div>
+  <div class="center">${order.order_datetime || new Date().toLocaleString('pt-BR')}</div>
+  <div class="line"></div>
 
-  Cliente:
-  ${order.customer_name || 'N/A'}
-  ${order.customer_phone || ''}
-  Total de pedidos: ${customerOrders}
+  <div><strong>Cliente:</strong> ${order.customer_name || 'N/A'}</div>
+  <div>${order.customer_phone || ''}</div>
+  <div>Total de pedidos: ${customerOrders}</div>
 
-  >>> ${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'} <<<
+  <div class="center bold" style="margin: 10px 0;">${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'}</div>
 
-  --------------------------------
-  Itens:
+  <div class="line"></div>
+  <div class="bold">Itens:</div>
   ${order.items?.map(item => `
-  ${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}
-  R$ ${item.total.toFixed(2)}${item.complements?.length > 0 ? `
-  ${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || ''}
+    <div style="margin: 5px 0;">
+      <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
+      <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
+      ${item.complements?.length > 0 ? item.complements.map(c => `<div style="margin-left: 20px;">+ ${c.name}</div>`).join('') : ''}
+    </div>
+  `).join('') || ''}
 
-  ================================
-  TOTAL: R$ ${order.total.toFixed(2)}
-  ================================
+  <div class="line"></div>
+  <div class="center bold" style="font-size: 16px;">TOTAL: R$ ${order.total.toFixed(2)}</div>
+  <div class="line"></div>
 
-  Pagamento: ${
+  <div><strong>Pagamento:</strong> ${
     order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
     order.payment_method === 'pix' ? 'PIX' :
-    order.payment_method === 'cartao' ? 'Cartao - Cobrar do Cliente' :
-    order.payment_method === 'dinheiro' ? 'Dinheiro - Cobrar do Cliente' : 'Cartao - Cobrar do Cliente'
-  }
+    order.payment_method === 'cartao' ? 'Cartão' :
+    order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+  }</div>
 
-  ${loyaltyText ? `\n${loyaltyText}\n` : ''}
-  --------------------------------
-  Obrigado pela preferencia!
-  ================================
+  ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}</div>` : ''}
+
+  <div class="line"></div>
+  <div class="center">Obrigado pela preferencia!</div>
+  </body>
+  </html>
   `;
 
-      const defaultPrinter = settings?.default_printer;
-
-      if (!defaultPrinter) {
-        console.error('❌ Nenhuma impressora padrão configurada');
-        if (showToast) toast.error('Configure uma impressora padrão nas configurações');
-        return;
+      // Tentar QZ Tray primeiro (se disponível)
+      if (typeof qz !== 'undefined' && qz.websocket.isActive() && settings?.default_printer) {
+        const config = qz.configs.create(settings.default_printer);
+        const data = [{
+          type: 'pixel',
+          format: 'html',
+          data: printHTML
+        }];
+        await qz.print(config, data);
+        console.log('✅ Impresso via QZ Tray');
+        if (showToast) toast.success('Pedido impresso!');
+      } else {
+        // Fallback: Impressão do navegador
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+        console.log('✅ Impresso via navegador');
+        if (showToast) toast.success('Abrindo impressão...');
       }
-
-      console.log(`🖨️ Usando impressora: ${defaultPrinter}`);
-
-      const config = qz.configs.create(defaultPrinter, { 
-        encoding: 'UTF-8',
-        margins: { top: 0, right: 0, bottom: 0, left: 0 }
-      });
-
-      const data = [{
-        type: 'raw',
-        format: 'plain',
-        data: printContent,
-        options: { encoding: 'UTF-8' }
-      }];
-
-      await qz.print(config, data);
-      console.log('✅ Pedido impresso com sucesso');
-      if (showToast) toast.success('Pedido impresso!');
     } catch (error) {
       console.error('❌ Erro ao imprimir:', error);
       if (showToast) toast.error('Erro ao imprimir: ' + error.message);
@@ -445,16 +446,13 @@ const getCustomerInfo = (phone) => {
 
   return (
     <div className="space-y-6">
-      {!qzConnected && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="text-amber-600">⚠️</div>
+      {qzConnected && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="text-green-600">✅</div>
           <div>
-            <p className="font-medium text-amber-900">QZ Tray não está conectado</p>
-            <p className="text-sm text-amber-700">
-              Para impressão automática silenciosa, baixe e instale o QZ Tray em: 
-              <a href="https://qz.io/download/" target="_blank" rel="noopener noreferrer" className="underline ml-1">
-                qz.io/download
-              </a>
+            <p className="font-medium text-green-900">QZ Tray conectado</p>
+            <p className="text-sm text-green-700">
+              Impressão automática silenciosa ativada!
             </p>
           </div>
         </div>
