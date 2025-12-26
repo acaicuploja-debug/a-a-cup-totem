@@ -30,6 +30,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [formData, setFormData] = useState({
     name: '', description: '', image_url: '', price: 0, promo_price: null,
+    cost_price: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
   });
   const [uploading, setUploading] = useState(false);
@@ -88,6 +89,10 @@ export default function AdminProducts({ settings, primaryColor }) {
         image_url: product.image_url || '',
         price: product.price,
         promo_price: product.promo_price || null,
+        cost_price: product.cost_price || null,
+        price_per_kg: product.price_per_kg || null,
+        pdv_only: product.pdv_only || false,
+        sold_by_weight: product.sold_by_weight || false,
         category_id: product.category_id,
         badges: product.badges || [],
         complements: product.complements || [],
@@ -98,6 +103,7 @@ export default function AdminProducts({ settings, primaryColor }) {
       setEditingProduct(null);
       setFormData({
         name: '', description: '', image_url: '', price: 0, promo_price: null,
+        cost_price: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
         category_id: '', badges: [], complements: [], active: true, is_upsell: false
       });
     }
@@ -497,6 +503,54 @@ export default function AdminProducts({ settings, primaryColor }) {
                   onChange={(e) => setFormData(prev => ({ ...prev, promo_price: e.target.value || null }))}
                   placeholder="Deixe vazio se não houver"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Preço de Custo (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.cost_price || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value || null }))}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Preço por Kg (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.price_per_kg || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_kg: e.target.value || null }))}
+                  placeholder="Para produtos vendidos por peso"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.pdv_only || false}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, pdv_only: checked }))}
+                  id="pdv-only"
+                />
+                <Label htmlFor="pdv-only" className="cursor-pointer">
+                  Produto exclusivo do PDV (não aparece no totem)
+                </Label>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.sold_by_weight || false}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sold_by_weight: checked }))}
+                  id="sold-by-weight"
+                />
+                <Label htmlFor="sold-by-weight" className="cursor-pointer">
+                  Produto vendido por quilo (usar balança)
+                </Label>
               </div>
             </div>
             
