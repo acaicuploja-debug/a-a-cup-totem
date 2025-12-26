@@ -315,10 +315,11 @@ Obrigado pela preferencia!
     createOrderMutation.mutate(paymentMethod);
   };
 
-  // Atalho ENTER para abrir pagamento
+  // Atalho ENTER para abrir pagamento (mas não finalizar)
   React.useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.key === 'Enter' && cart.length > 0 && !showPayment && !showWeightDialog) {
+        e.preventDefault();
         setShowPayment(true);
       }
     };
