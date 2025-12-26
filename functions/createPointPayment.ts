@@ -75,17 +75,10 @@ Deno.serve(async (req) => {
 
     const intentData = await intentResponse.json();
 
-    // Atualizar pedido com payment intent ID usando service role direto
-    const updateResponse = await fetch(`https://api.base44.com/v1/entities/Order/${orderId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        status: 'aguardando_point',
-        mercadopago_payment_id: intentData.id
-      })
+    // Atualizar pedido com payment intent ID
+    await base44.asServiceRole.entities.Order.update(orderId, {
+      status: 'aguardando_point',
+      mercadopago_payment_id: intentData.id
     });
 
     return Response.json({ 
