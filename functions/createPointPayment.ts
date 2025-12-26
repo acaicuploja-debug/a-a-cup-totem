@@ -25,33 +25,18 @@ Deno.serve(async (req) => {
       paymentData.installments_cost = 'buyer';
     }
 
-    const response = await fetch('https://api.mercadopago.com/point/integration-api/devices', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    // Buscar device ID vinculado nas configurações
+    const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
+    const settings = settingsList[0];
 
-    if (!response.ok) {
-      console.error('Erro ao buscar devices Point:', await response.text());
+    if (!settings?.mercadopago_device_id) {
       return Response.json({ 
-        error: 'Erro ao conectar com Point',
-        details: 'Verifique se a Point está configurada na conta'
+        error: 'Point não vinculada',
+        details: 'Vincule sua Point Smart primeiro nas Configurações'
       }, { status: 400 });
     }
 
-    const devices = await response.json();
-    
-    if (!devices.devices || devices.devices.length === 0) {
-      return Response.json({ 
-        error: 'Nenhuma Point encontrada',
-        details: 'Configure sua Point Smart no app do Mercado Pago'
-      }, { status: 400 });
-    }
-
-    // Usar o primeiro device disponível
-    const deviceId = devices.devices[0].id;
+    const deviceId = settings.mercadopago_device_id;
 
     // Criar payment intent
     const intentResponse = await fetch(`https://api.mercadopago.com/point/integration-api/devices/${deviceId}/payment-intents`, {
