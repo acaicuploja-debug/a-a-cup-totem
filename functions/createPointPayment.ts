@@ -16,8 +16,7 @@ Deno.serve(async (req) => {
       amount: amount,
       description: description || `Pedido #${orderId}`,
       external_reference: orderId,
-      payment_mode: paymentType === 'credito' ? 'credit' : 'debit',
-      notification_url: `${Deno.env.get('BASE44_APP_URL')}/functions/mercadoPagoWebhook`
+      payment_mode: paymentType === 'credito' ? 'credit' : 'debit'
     };
 
     // Crédito: forçar pagamento à vista (sem parcelamento)
