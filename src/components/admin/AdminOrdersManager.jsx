@@ -14,6 +14,8 @@ import PendingOrderNotification from './PendingOrderNotification';
 import qz from 'qz-tray';
 
 const statusConfig = {
+  aguardando_point: { label: 'Aguardando Point', color: 'bg-orange-500', icon: ChefHat },
+  pagamento_informado: { label: 'Pagamento Informado', color: 'bg-yellow-500', icon: ChefHat },
   em_preparo: { label: 'Em Preparo', color: 'bg-purple-500', icon: ChefHat },
   pronto: { label: 'Pronto', color: 'bg-green-500', icon: Package },
   finalizado: { label: 'Finalizado', color: 'bg-gray-400', icon: CheckCircle }
@@ -78,7 +80,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     };
   }, []);
 
-  // Filter only today's orders (exclude aguardando_pix and cancelado)
+  // Filter only today's orders (exclude cancelado)
   const todayOrders = React.useMemo(() => {
     if (!allOrders) return [];
 
@@ -91,7 +93,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     });
 
     return allOrders.filter(order => {
-      if (order.status === 'cancelado' || order.status === 'aguardando_pix') return false;
+      if (order.status === 'cancelado') return false;
       
       // Comparar apenas a data (sem hora)
       const orderDate = order.order_datetime?.split(' ')[0] || order.order_datetime?.split(',')[0];
@@ -391,14 +393,17 @@ const getCustomerInfo = (phone) => {
 
   const ordersByStatus = React.useMemo(() => {
     const groups = {
+      aguardando_point: [],
+      pagamento_informado: [],
       em_preparo: [],
       pronto: [],
       finalizado: []
     };
     
     todayOrders.forEach(order => {
-      if (groups[order.status]) {
-        groups[order.status].push(order);
+      const status = order.status || 'em_preparo';
+      if (groups[status]) {
+        groups[status].push(order);
       }
     });
     
@@ -463,7 +468,7 @@ const getCustomerInfo = (phone) => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {Object.entries(ordersByStatus).map(([status, orders]) => {
           const config = statusConfig[status];
           const Icon = config.icon;
@@ -530,6 +535,16 @@ const getCustomerInfo = (phone) => {
                       </div>
                       
                       <div className="flex gap-2">
+                        {(status === 'aguardando_point' || status === 'pagamento_informado') && (
+                          <Button
+                            onClick={() => handleStatusChange(order, 'em_preparo')}
+                            className="flex-1 h-9 text-sm"
+                            style={{ backgroundColor: statusConfig.em_preparo.color.replace('bg-', '#') }}
+                          >
+                            Iniciar Preparo
+                          </Button>
+                        )}
+                        
                         {status === 'em_preparo' && (
                           <Button
                             onClick={() => handleStatusChange(order, 'pronto')}
