@@ -9,13 +9,14 @@ import { toast } from 'sonner';
 export default function AdminPointSetup({ primaryColor }) {
   const [linking, setLinking] = useState(false);
 
-  const { data: deviceStatus, refetch } = useQuery({
+  const { data: deviceStatus, refetch, isLoading } = useQuery({
     queryKey: ['point-device-status'],
     queryFn: async () => {
       const { data } = await base44.functions.invoke('getPointDeviceStatus');
       return data;
     },
-    refetchInterval: linking ? 3000 : false
+    refetchInterval: linking ? 3000 : false,
+    initialData: { linked: false }
   });
 
   const linkDeviceMutation = useMutation({
@@ -26,9 +27,11 @@ export default function AdminPointSetup({ primaryColor }) {
       }
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(data.message || 'Point Smart vinculada!');
-      refetch();
+      await refetch();
+      // Force reload da página de settings
+      window.location.reload();
     },
     onError: (error) => {
       toast.error('Erro: ' + error.message);
