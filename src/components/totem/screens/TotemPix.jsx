@@ -42,7 +42,8 @@ export default function TotemPix({
           quantity: item.quantity,
           unit_price: item.unit_price,
           complements: item.complements || [],
-          total: item.total
+          total: item.total,
+          cost_price: item.cost_price || 0
         })),
         subtotal: total,
         total: adjustedTotal,

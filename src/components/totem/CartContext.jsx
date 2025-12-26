@@ -14,6 +14,9 @@ export function CartProvider({ children }) {
     const complementsTotal = complements.reduce((sum, c) => sum + (c.price || 0), 0);
     const unitPrice = (product.promo_price || product.price) + complementsTotal;
     
+    // Calcular custo do item
+    const itemCost = product.cost_price ? product.cost_price * quantity : 0;
+    
     const newItem = {
       id: `${product.id}-${Date.now()}`,
       product_id: product.id,
@@ -23,7 +26,8 @@ export function CartProvider({ children }) {
       unit_price: unitPrice,
       base_price: product.promo_price || product.price,
       complements,
-      total: unitPrice * quantity
+      total: unitPrice * quantity,
+      cost_price: itemCost
     };
     
     setItems(prev => [...prev, newItem]);
@@ -33,11 +37,19 @@ export function CartProvider({ children }) {
     if (quantity <= 0) {
       setItems(prev => prev.filter(item => item.id !== itemId));
     } else {
-      setItems(prev => prev.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity, total: item.unit_price * quantity }
-          : item
-      ));
+      setItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+          // Recalcular custo proporcional à quantidade
+          const unitCost = item.cost_price ? item.cost_price / item.quantity : 0;
+          return { 
+            ...item, 
+            quantity, 
+            total: item.unit_price * quantity,
+            cost_price: unitCost * quantity
+          };
+        }
+        return item;
+      }));
     }
   }, []);
 
