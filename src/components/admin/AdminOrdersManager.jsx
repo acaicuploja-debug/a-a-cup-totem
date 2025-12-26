@@ -80,10 +80,21 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const todayOrders = React.useMemo(() => {
     if (!allOrders) return [];
 
-    return allOrders.filter(order => 
-      order.status !== 'cancelado' && 
-      order.status !== 'aguardando_pix'
-    );
+    const now = new Date();
+    const todayBrasilia = now.toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    return allOrders.filter(order => {
+      if (order.status === 'cancelado' || order.status === 'aguardando_pix') return false;
+      
+      // Comparar apenas a data (sem hora)
+      const orderDate = order.order_datetime?.split(' ')[0] || order.order_datetime?.split(',')[0];
+      return orderDate === todayBrasilia;
+    });
   }, [allOrders]);
 
   // Check for new pending orders and start notifications
