@@ -93,8 +93,8 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     return allOrders.filter(order => {
       if (order.status === 'cancelado' || order.status === 'aguardando_pix' || order.status === 'aguardando_point') return false;
       
-      // Comparar apenas a data (sem hora)
-      const orderDate = order.order_datetime?.split(' ')[0] || order.order_datetime?.split(',')[0];
+      // Extrair apenas a data (antes da vírgula ou espaço)
+      const orderDate = order.order_datetime?.split(',')[0]?.trim();
       return orderDate === todayBrasilia;
     });
   }, [allOrders]);
