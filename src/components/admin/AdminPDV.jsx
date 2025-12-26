@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Users, Scale, Plus, Minus, X, CreditCard, QrCode, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
+import qz from 'qz-tray';
 
 export default function AdminPDV({ settings, primaryColor, onClose }) {
   const [selectedTable, setSelectedTable] = useState(null);
@@ -153,37 +154,93 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
 
       const order = await base44.entities.Order.create({
         order_number: nextNumber,
-        customer_name: selectedTable ? `Mesa ${selectedTable.number}` : 'PDV - Balcão',
+        customer_name: selectedTable ? `Mesa ${selectedTable.number}` : 'Balcão',
         items: cart,
         subtotal: cartTotal,
         total: cartTotal,
         consumption_type: 'local',
         payment_method: paymentMethod,
-        status: 'em_preparo',
+        status: 'finalizado',
         order_datetime: brasiliaTime
       });
 
       if (selectedTable) {
         await base44.entities.Mesa.update(selectedTable.id, {
-          status: 'ocupada',
-          order_id: order.id,
-          items: cart,
-          total: cartTotal,
-          opened_at: new Date().toISOString()
+          status: 'livre',
+          order_id: null,
+          items: [],
+          total: 0
         });
       }
 
       return order;
     },
-    onSuccess: () => {
+    onSuccess: async (order) => {
       queryClient.invalidateQueries(['tables']);
       queryClient.invalidateQueries(['admin-orders-manager']);
-      toast.success('Pedido criado!');
+      queryClient.invalidateQueries(['admin-orders']);
+      
+      // Impressão automática
+      await handlePrintOrder(order);
+      
+      toast.success('Venda finalizada!');
       setCart([]);
       setSelectedTable(null);
       setShowPayment(false);
     }
   });
+
+  const handlePrintOrder = async (order) => {
+    try {
+      const printContent = `
+================================
+${settings?.store_name || 'Loja'}
+PEDIDO #${String(order.order_number || '').padStart(3, '0')}
+${order.order_datetime || new Date().toLocaleString('pt-BR')}
+================================
+
+>>> VENDA BALCAO - PDV <<<
+
+--------------------------------
+Itens:
+${order.items?.map(item => `
+${item.quantity}x ${item.product_name}${item.sold_by_weight ? ` (${item.weight}kg)` : ''}
+R$ ${item.total.toFixed(2)}`).join('\n') || ''}
+
+================================
+TOTAL: R$ ${order.total.toFixed(2)}
+================================
+
+Pagamento: ${
+  order.payment_method === 'pix' ? 'PIX' :
+  order.payment_method === 'cartao' ? 'Cartao' :
+  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartao'
+}
+
+--------------------------------
+Obrigado pela preferencia!
+================================
+`;
+
+      // Verificar QZ Tray
+      if (typeof qz !== 'undefined' && qz.websocket.isActive()) {
+        const defaultPrinter = settings?.default_printer;
+        const printer = defaultPrinter || (await qz.printers.find())[0];
+
+        const config = qz.configs.create(printer);
+        const data = [{
+          type: 'raw',
+          format: 'plain',
+          data: printContent
+        }];
+
+        await qz.print(config, data);
+        toast.success('Pedido impresso!');
+      }
+    } catch (error) {
+      console.error('Erro ao imprimir:', error);
+    }
+  };
 
   const handleSelectTable = (table) => {
     if (table.status === 'ocupada') {
