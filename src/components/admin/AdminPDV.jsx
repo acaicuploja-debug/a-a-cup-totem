@@ -125,8 +125,15 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     
     // Calcular custo baseado em porcentagem para produtos por peso
     let itemCost = 0;
-    if (weightProduct.cost_percentage) {
+    if (weightProduct.cost_percentage && weightProduct.cost_percentage > 0) {
       itemCost = total * (weightProduct.cost_percentage / 100);
+      console.log('DEBUG Self-Service:', {
+        produto: weightProduct.name,
+        peso: weightKg,
+        total: total,
+        costPercentage: weightProduct.cost_percentage,
+        custoCalculado: itemCost
+      });
     } else if (weightProduct.cost_price) {
       itemCost = weightProduct.cost_price * weightKg;
     }
