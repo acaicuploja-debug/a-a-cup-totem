@@ -9,51 +9,47 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Mercado Pago não configurado' }, { status: 500 });
     }
 
-    // Criar um device (terminal) para vincular a Point
+    // Listar devices disponíveis
     const response = await fetch('https://api.mercadopago.com/point/integration-api/devices', {
-      method: 'POST',
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operating_mode: 'PDV',
-        external_pos_id: 'base44-totem-1'
-      })
+      }
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Erro ao criar device:', errorText);
-      
-      let errorDetails = errorText;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorDetails = JSON.stringify(errorJson, null, 2);
-      } catch (e) {
-        // keep errorText
-      }
-      
       return Response.json({ 
-        error: 'Erro ao criar device',
-        details: errorDetails,
-        status: response.status
+        error: 'Erro ao buscar devices',
+        details: errorText
       }, { status: 400 });
     }
 
-    const deviceData = await response.json();
+    const data = await response.json();
+    
+    if (!data.devices || data.devices.length === 0) {
+      return Response.json({ 
+        error: 'Nenhum device encontrado',
+        details: 'Você precisa ter uma Point Smart cadastrada na sua conta do Mercado Pago primeiro'
+      }, { status: 400 });
+    }
+
+    // Usar o primeiro device disponível
+    const device = data.devices[0];
 
     // Salvar o device ID nas configurações
     const settingsList = await base44.asServiceRole.entities.StoreSettings.list();
     if (settingsList.length > 0) {
       await base44.asServiceRole.entities.StoreSettings.update(settingsList[0].id, {
-        mercadopago_device_id: deviceData.id
+        mercadopago_device_id: device.id
       });
     }
 
     return Response.json({ 
       success: true,
-      device: deviceData
+      device: device,
+      message: 'Point Smart vinculada com sucesso!'
     });
 
   } catch (error) {

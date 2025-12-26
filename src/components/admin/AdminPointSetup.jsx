@@ -21,16 +21,17 @@ export default function AdminPointSetup({ primaryColor }) {
   const linkDeviceMutation = useMutation({
     mutationFn: async () => {
       const { data } = await base44.functions.invoke('linkPointDevice');
+      if (data.error) {
+        throw new Error(data.details || data.error);
+      }
       return data;
     },
     onSuccess: (data) => {
-      if (data.device?.id) {
-        setLinking(true);
-        toast.success('Device criado! Agora vincule sua Point Smart.');
-      }
+      toast.success(data.message || 'Point Smart vinculada!');
+      refetch();
     },
     onError: (error) => {
-      toast.error('Erro ao criar device: ' + error.message);
+      toast.error('Erro: ' + error.message);
     }
   });
 
@@ -77,14 +78,13 @@ export default function AdminPointSetup({ primaryColor }) {
               <div className="flex gap-2 mb-2">
                 <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-blue-900 mb-2">Como vincular:</p>
-                  <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
-                    <li>Clique em "Vincular Point Smart" abaixo</li>
-                    <li>No app do Mercado Pago na Point Smart, vá em: Menu → Configurações → Point Smart</li>
-                    <li>Selecione "Vincular a um PDV" ou "Modo PDV"</li>
-                    <li>Digite o código que aparecer na tela ou escaneie o QR code</li>
-                    <li>Aguarde a confirmação de vinculação</li>
-                  </ol>
+                  <p className="font-medium text-blue-900 mb-2">Vincular Point Smart:</p>
+                  <p className="text-sm text-blue-800 mb-2">
+                    Clique no botão abaixo para vincular sua Point Smart que já está cadastrada na sua conta do Mercado Pago.
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    Certifique-se de que você já cadastrou sua Point Smart no app do Mercado Pago antes de vincular aqui.
+                  </p>
                 </div>
               </div>
             </div>
