@@ -25,9 +25,19 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Erro ao criar device:', errorText);
+      
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = JSON.stringify(errorJson, null, 2);
+      } catch (e) {
+        // keep errorText
+      }
+      
       return Response.json({ 
         error: 'Erro ao criar device',
-        details: errorText
+        details: errorDetails,
+        status: response.status
       }, { status: 400 });
     }
 
