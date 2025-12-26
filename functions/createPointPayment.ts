@@ -88,10 +88,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro completo:', error);
     return Response.json({ 
       error: error.message,
-      details: 'Erro interno ao processar pagamento'
+      details: error.stack || 'Erro interno ao processar pagamento'
     }, { status: 500 });
   }
 });
