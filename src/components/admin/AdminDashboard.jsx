@@ -118,14 +118,25 @@ export default function AdminDashboard({ settings, primaryColor }) {
     let totalCost = 0;
     completedOrders.forEach(order => {
       order.items?.forEach(item => {
+        console.log('DEBUG Dashboard Item:', {
+          produto: item.product_name,
+          total: item.total,
+          cost_price_item: item.cost_price,
+          sold_by_weight: item.sold_by_weight
+        });
+        
         // Se o item tem custo calculado e maior que 0 (produtos por peso), usar ele
         if (item.cost_price !== undefined && item.cost_price !== null && item.cost_price > 0) {
+          console.log('→ Usando cost_price do item:', item.cost_price);
           totalCost += item.cost_price;
         } else {
           // Caso contrário, buscar do produto
           const product = products.find(p => p.id === item.product_id);
           if (product && product.cost_price) {
+            console.log('→ Usando cost_price do produto:', product.cost_price * item.quantity);
             totalCost += product.cost_price * item.quantity;
+          } else {
+            console.log('→ Nenhum custo encontrado');
           }
         }
       });
