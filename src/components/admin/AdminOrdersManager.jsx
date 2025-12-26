@@ -109,8 +109,14 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
     const currentPendingIds = new Set(currentPendingOrders.map(o => o.id));
 
-    // Detect truly NEW orders (IDs that didn't exist before)
-    const newOrderIds = [...currentPendingIds].filter(id => !previousPendingOrderIds.current.has(id));
+    // Load seen orders from localStorage
+    const seenOrdersKey = 'admin_seen_orders';
+    const seenOrders = new Set(JSON.parse(localStorage.getItem(seenOrdersKey) || '[]'));
+
+    // Detect truly NEW orders (not seen before)
+    const newOrderIds = [...currentPendingIds].filter(id => 
+      !previousPendingOrderIds.current.has(id) && !seenOrders.has(id)
+    );
 
     if (newOrderIds.length > 0 && !isFirstLoad.current) {
       // Only notify for truly NEW orders (not on first load)
@@ -208,7 +214,15 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handleAcceptPendingOrders = () => {
     stopNotificationLoop();
-    // Keep the IDs in memory so they won't trigger notifications again
+    
+    // Save accepted order IDs to localStorage to prevent future notifications
+    const seenOrdersKey = 'admin_seen_orders';
+    const seenOrders = new Set(JSON.parse(localStorage.getItem(seenOrdersKey) || '[]'));
+    pendingOrders.forEach(order => seenOrders.add(order.id));
+    localStorage.setItem(seenOrdersKey, JSON.stringify([...seenOrders]));
+    
+    // Update refs to prevent notifications
+    previousPendingOrderIds.current = new Set(pendingOrders.map(o => o.id));
     setPendingOrders([]);
   };
 
