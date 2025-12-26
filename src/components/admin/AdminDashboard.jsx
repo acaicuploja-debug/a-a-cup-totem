@@ -272,7 +272,14 @@ export default function AdminDashboard({ settings, primaryColor }) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Lucro Líquido</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-gray-500">Lucro Líquido</p>
+                  {stats.revenue > 0 && (
+                    <Badge className="bg-green-100 text-green-700 text-xs font-semibold">
+                      {((stats.netProfit / stats.revenue) * 100).toFixed(1)}%
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-2xl font-bold text-green-600">
                   R$ {stats.netProfit.toFixed(2)}
                 </p>
