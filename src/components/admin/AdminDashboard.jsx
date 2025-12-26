@@ -117,9 +117,15 @@ export default function AdminDashboard({ settings, primaryColor }) {
     let totalCost = 0;
     completedOrders.forEach(order => {
       order.items?.forEach(item => {
-        const product = products.find(p => p.id === item.product_id);
-        if (product && product.cost_price) {
-          totalCost += product.cost_price * item.quantity;
+        // Se o item já tem custo calculado (produtos por peso), usar ele
+        if (item.cost_price !== undefined) {
+          totalCost += item.cost_price;
+        } else {
+          // Caso contrário, buscar do produto
+          const product = products.find(p => p.id === item.product_id);
+          if (product && product.cost_price) {
+            totalCost += product.cost_price * item.quantity;
+          }
         }
       });
     });

@@ -30,7 +30,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [formData, setFormData] = useState({
     name: '', description: '', image_url: '', price: 0, promo_price: null,
-    cost_price: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
+    cost_price: null, cost_percentage: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
   });
   const [uploading, setUploading] = useState(false);
@@ -90,6 +90,7 @@ export default function AdminProducts({ settings, primaryColor }) {
         price: product.price,
         promo_price: product.promo_price || null,
         cost_price: product.cost_price || null,
+        cost_percentage: product.cost_percentage || null,
         price_per_kg: product.price_per_kg || null,
         pdv_only: product.pdv_only || false,
         sold_by_weight: product.sold_by_weight || false,
@@ -103,7 +104,7 @@ export default function AdminProducts({ settings, primaryColor }) {
       setEditingProduct(null);
       setFormData({
         name: '', description: '', image_url: '', price: 0, promo_price: null,
-        cost_price: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
+        cost_price: null, cost_percentage: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
         category_id: '', badges: [], complements: [], active: true, is_upsell: false
       });
     }
@@ -507,16 +508,32 @@ export default function AdminProducts({ settings, primaryColor }) {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Preço de Custo (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.cost_price || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value || null }))}
-                  placeholder="0.00"
-                />
-              </div>
+              {formData.sold_by_weight ? (
+                <div className="space-y-2">
+                  <Label>Custo (% do valor total na pesagem)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.cost_percentage || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_percentage: e.target.value || null }))}
+                    placeholder="Ex: 30 (para 30%)"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Ex: Se custo é 30% e vender R$ 14,05, custo será R$ 4,22
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Preço de Custo (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.cost_price || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value || null }))}
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label>Preço por Kg (R$)</Label>
