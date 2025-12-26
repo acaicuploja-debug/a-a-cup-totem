@@ -284,8 +284,10 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
       queryClient.invalidateQueries(['admin-orders']);
       
       // Impressão automática
-      await handlePrintOrder(order);
-      
+      setTimeout(() => {
+        handlePrintOrder(order);
+      }, 500);
+
       toast.success('Venda finalizada!');
       setCart([]);
       setSelectedTable(null);
@@ -329,21 +331,40 @@ Obrigado pela preferencia!
 ================================
 `;
 
-      // Verificar QZ Tray
-      if (typeof qz !== 'undefined' && qz.websocket.isActive()) {
-        const defaultPrinter = settings?.default_printer;
-        const printer = defaultPrinter || (await qz.printers.find())[0];
-
-        const config = qz.configs.create(printer);
-        const data = [{
-          type: 'raw',
-          format: 'plain',
-          data: printContent
-        }];
-
-        await qz.print(config, data);
-        toast.success('Pedido impresso!');
+      // Verificar QZ Tray primeiro
+      if (typeof qz === 'undefined') {
+        console.error('QZ Tray não carregado');
+        return;
       }
+
+      if (!qz.websocket.isActive()) {
+        console.error('QZ Tray não está conectado');
+        return;
+      }
+
+      const defaultPrinter = settings?.default_printer;
+      
+      if (!defaultPrinter) {
+        console.error('❌ Nenhuma impressora padrão configurada');
+        return;
+      }
+
+      console.log(`🖨️ Usando impressora: ${defaultPrinter}`);
+      
+      const config = qz.configs.create(defaultPrinter, { 
+        encoding: 'UTF-8',
+        margins: { top: 0, right: 0, bottom: 0, left: 0 }
+      });
+      
+      const data = [{
+        type: 'raw',
+        format: 'plain',
+        data: printContent,
+        options: { encoding: 'UTF-8' }
+      }];
+
+      await qz.print(config, data);
+      console.log('✅ Impressão automática enviada com sucesso');
     } catch (error) {
       console.error('Erro ao imprimir:', error);
     }
