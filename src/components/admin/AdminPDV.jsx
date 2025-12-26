@@ -69,7 +69,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
     if (product.sold_by_weight) {
       setWeightProduct(product);
       setShowWeightDialog(true);
@@ -77,25 +77,40 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     }
 
     const existing = cart.find(item => item.product_id === product.id);
+    let newCart;
+    
     if (existing) {
-      setCart(cart.map(item =>
+      newCart = cart.map(item =>
         item.product_id === product.id
           ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
           : item
-      ));
+      );
     } else {
-      setCart([...cart, {
+      newCart = [...cart, {
         product_id: product.id,
         product_name: product.name,
         quantity: 1,
         unit_price: product.promo_price || product.price,
         total: product.promo_price || product.price,
         sold_by_weight: false
-      }]);
+      }];
+    }
+    
+    setCart(newCart);
+    
+    // Salvar na mesa se houver mesa selecionada
+    if (selectedTable && selectedTable.id) {
+      const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
+      await base44.entities.Mesa.update(selectedTable.id, {
+        status: 'ocupada',
+        items: newCart,
+        total: newTotal
+      });
+      queryClient.invalidateQueries(['tables']);
     }
   };
 
-  const handleAddWeight = () => {
+  const handleAddWeight = async () => {
     if (!weight || parseFloat(weight) <= 0) {
       toast.error('Digite um peso válido');
       return;
@@ -105,7 +120,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     const pricePerKg = weightProduct.price_per_kg || weightProduct.price;
     const total = weightKg * pricePerKg;
 
-    setCart([...cart, {
+    const newCart = [...cart, {
       product_id: weightProduct.id,
       product_name: weightProduct.name,
       quantity: 1,
@@ -113,7 +128,20 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
       unit_price: total,
       total: total,
       sold_by_weight: true
-    }]);
+    }];
+
+    setCart(newCart);
+
+    // Salvar na mesa se houver mesa selecionada
+    if (selectedTable && selectedTable.id) {
+      const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
+      await base44.entities.Mesa.update(selectedTable.id, {
+        status: 'ocupada',
+        items: newCart,
+        total: newTotal
+      });
+      queryClient.invalidateQueries(['tables']);
+    }
 
     setShowWeightDialog(false);
     setWeightProduct(null);
@@ -121,7 +149,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     toast.success(`${weightKg}kg adicionado!`);
   };
 
-  const handleUpdateQuantity = (index, delta) => {
+  const handleUpdateQuantity = async (index, delta) => {
     const newCart = [...cart];
     newCart[index].quantity += delta;
     
@@ -132,10 +160,33 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     }
     
     setCart(newCart);
+
+    // Salvar na mesa se houver mesa selecionada
+    if (selectedTable && selectedTable.id) {
+      const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
+      await base44.entities.Mesa.update(selectedTable.id, {
+        status: newCart.length > 0 ? 'ocupada' : 'livre',
+        items: newCart,
+        total: newTotal
+      });
+      queryClient.invalidateQueries(['tables']);
+    }
   };
 
-  const handleRemoveItem = (index) => {
-    setCart(cart.filter((_, i) => i !== index));
+  const handleRemoveItem = async (index) => {
+    const newCart = cart.filter((_, i) => i !== index);
+    setCart(newCart);
+
+    // Salvar na mesa se houver mesa selecionada
+    if (selectedTable && selectedTable.id) {
+      const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
+      await base44.entities.Mesa.update(selectedTable.id, {
+        status: newCart.length > 0 ? 'ocupada' : 'livre',
+        items: newCart,
+        total: newTotal
+      });
+      queryClient.invalidateQueries(['tables']);
+    }
   };
 
   const createOrderMutation = useMutation({
@@ -251,9 +302,8 @@ Obrigado pela preferencia!
   };
 
   const handleSelectTable = (table) => {
-    if (table.status === 'ocupada') {
-      setCart(table.items || []);
-    }
+    // Carregar os itens da mesa selecionada
+    setCart(table.items || []);
     setSelectedTable(table);
   };
 
@@ -323,7 +373,10 @@ Obrigado pela preferencia!
           </div>
 
           <Button
-            onClick={() => setSelectedTable(null)}
+            onClick={() => {
+              setSelectedTable(null);
+              setCart([]);
+            }}
             variant={!selectedTable ? 'default' : 'outline'}
             className="w-full"
             style={!selectedTable ? { backgroundColor: primaryColor } : {}}
