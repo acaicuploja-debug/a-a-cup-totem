@@ -117,11 +117,14 @@ export default function AdminDashboard({ settings, primaryColor }) {
     // Calcular custo total baseado nos produtos vendidos
     let totalCost = 0;
     completedOrders.forEach(order => {
+      console.log('DEBUG Pedido completo:', order);
       order.items?.forEach(item => {
+        console.log('DEBUG Dashboard Item RAW:', item);
         console.log('DEBUG Dashboard Item:', {
           produto: item.product_name,
           total: item.total,
           cost_price_item: item.cost_price,
+          tipo_cost_price: typeof item.cost_price,
           sold_by_weight: item.sold_by_weight
         });
         
