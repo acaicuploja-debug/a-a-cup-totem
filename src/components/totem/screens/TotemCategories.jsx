@@ -14,10 +14,14 @@ export default function TotemCategories({
   onSelectCategory,
   onCartClick 
 }) {
-  const { data: categories, isLoading } = useQuery({
+  const { data: allCategories, isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => base44.entities.Category.filter({ active: true }, 'order')
   });
+
+  const categories = React.useMemo(() => {
+    return allCategories?.filter(cat => !cat.pdv_only) || [];
+  }, [allCategories]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
