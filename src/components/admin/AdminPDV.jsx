@@ -158,6 +158,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
       const order = await base44.entities.Order.create({
         order_number: nextNumber,
         customer_name: selectedTable ? `Mesa ${selectedTable.number}` : 'Balcão',
+        customer_phone: 'PDV',
         items: cart,
         subtotal: cartTotal,
         total: cartTotal,
@@ -190,6 +191,10 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
       setCart([]);
       setSelectedTable(null);
       setShowPayment(false);
+    },
+    onError: (error) => {
+      console.error('Erro ao finalizar venda:', error);
+      toast.error('Erro ao finalizar venda: ' + error.message);
     }
   });
 
@@ -253,6 +258,10 @@ Obrigado pela preferencia!
   };
 
   const handleCheckout = (paymentMethod) => {
+    if (cart.length === 0) {
+      toast.error('Carrinho vazio!');
+      return;
+    }
     createOrderMutation.mutate(paymentMethod);
   };
 
