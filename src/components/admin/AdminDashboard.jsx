@@ -131,19 +131,7 @@ export default function AdminDashboard({ settings, primaryColor }) {
       });
     });
 
-    // Calcular desconto dado por forma de pagamento
-    let totalDiscountGiven = 0;
-    completedOrders.forEach(order => {
-      const subtotal = order.subtotal || order.total;
-      const adjustment = settings?.payment_adjustments?.[order.payment_method] || 0;
-      if (adjustment < 0) {
-        // Desconto negativo = valor dado ao cliente
-        const discountAmount = Math.abs(subtotal * (adjustment / 100));
-        totalDiscountGiven += discountAmount;
-      }
-    });
-
-    const netProfit = revenue - totalCost - totalDiscountGiven;
+    const netProfit = revenue - totalCost;
 
     return { revenue, orderCount, avgTicket, totalCost, netProfit };
   }, [orders, products, settings]);
