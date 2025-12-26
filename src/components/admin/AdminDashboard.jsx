@@ -119,7 +119,7 @@ export default function AdminDashboard({ settings, primaryColor }) {
     completedOrders.forEach(order => {
       order.items?.forEach(item => {
         // Se o item já tem custo calculado (produtos por peso), usar ele
-        if (item.cost_price !== undefined) {
+        if (item.cost_price !== undefined && item.cost_price !== null) {
           totalCost += item.cost_price;
         } else {
           // Caso contrário, buscar do produto
