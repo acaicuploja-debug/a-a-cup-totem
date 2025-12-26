@@ -119,6 +119,14 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     const weightKg = parseFloat(weight);
     const pricePerKg = weightProduct.price_per_kg || weightProduct.price;
     const total = weightKg * pricePerKg;
+    
+    // Calcular custo baseado em porcentagem para produtos por peso
+    let itemCost = 0;
+    if (weightProduct.cost_percentage) {
+      itemCost = total * (weightProduct.cost_percentage / 100);
+    } else if (weightProduct.cost_price) {
+      itemCost = weightProduct.cost_price * weightKg;
+    }
 
     const newCart = [...cart, {
       product_id: weightProduct.id,
@@ -127,6 +135,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
       weight: weightKg,
       unit_price: total,
       total: total,
+      cost_price: itemCost,
       sold_by_weight: true
     }];
 
