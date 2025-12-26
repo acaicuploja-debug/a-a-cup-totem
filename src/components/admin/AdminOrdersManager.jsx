@@ -137,9 +137,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
           requireInteraction: true
         });
       }
-
-      // Play sound only for NEW orders
-      playNotificationSound();
     }
 
     if (isFirstLoad.current) {
@@ -148,14 +145,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
     previousPendingOrderIds.current = currentPendingIds;
     setPendingOrders(currentPendingOrders);
-
-    if (currentPendingOrders.length > 0) {
-      startNotificationLoop();
-    } else {
-      stopNotificationLoop();
-    }
-
-    return () => stopNotificationLoop();
   }, [allOrders, settings]);
 
   // Auto-print new orders in "em_preparo" status
@@ -181,48 +170,15 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     previousPreparingOrderIds.current = currentPreparingIds;
   }, [allOrders, settings]);
 
-  const getSoundUrl = () => {
-    const sound = settings?.notification_sound || 'bell';
-    const sounds = {
-      bell: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
-      chime: 'https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3',
-      ding: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3',
-      alert: 'https://assets.mixkit.co/active_storage/sfx/2860/2860-preview.mp3'
-    };
-    return sounds[sound] || sounds.bell;
-  };
 
-  const playNotificationSound = () => {
-    const audio = new Audio(getSoundUrl());
-    audio.volume = settings?.notification_volume || 0.8;
-    audio.play().catch(e => console.log('Audio play failed:', e));
-  };
-
-  const startNotificationLoop = () => {
-    if (notificationIntervalRef.current) return;
-    
-    // Start interval without playing sound immediately (sound only on NEW orders)
-    notificationIntervalRef.current = setInterval(() => {
-      playNotificationSound();
-    }, 5000);
-  };
-
-  const stopNotificationLoop = () => {
-    if (notificationIntervalRef.current) {
-      clearInterval(notificationIntervalRef.current);
-      notificationIntervalRef.current = null;
-    }
-  };
 
   const handleAcceptPendingOrders = () => {
-    stopNotificationLoop();
-    
     // Save accepted order IDs to localStorage to prevent future notifications
     const seenOrdersKey = 'admin_seen_orders';
     const seenOrders = new Set(JSON.parse(localStorage.getItem(seenOrdersKey) || '[]'));
     pendingOrders.forEach(order => seenOrders.add(order.id));
     localStorage.setItem(seenOrdersKey, JSON.stringify([...seenOrders]));
-    
+
     // Update refs to prevent notifications
     previousPendingOrderIds.current = new Set(pendingOrders.map(o => o.id));
     setPendingOrders([]);
