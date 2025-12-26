@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Users, Scale, Plus, Minus, X, CreditCard, QrCode, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
 import qz from 'qz-tray';
+import PDVPixPayment from './PDVPixPayment';
 
 export default function AdminPDV({ settings, primaryColor, onClose }) {
   const [selectedTable, setSelectedTable] = useState(null);
@@ -18,6 +19,8 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   const [showWeightDialog, setShowWeightDialog] = useState(false);
   const [weightProduct, setWeightProduct] = useState(null);
   const [weight, setWeight] = useState('');
+  const [showPixPayment, setShowPixPayment] = useState(false);
+  const [currentPixOrder, setCurrentPixOrder] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: products = [] } = useQuery({
@@ -199,7 +202,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   };
 
   const createOrderMutation = useMutation({
-    mutationFn: async (paymentMethod) => {
+    mutationFn: async ({ paymentMethod, status = 'finalizado' }) => {
       const now = new Date();
       const brasiliaTime = now.toLocaleString('pt-BR', {
         timeZone: 'America/Sao_Paulo',
@@ -233,10 +236,19 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
         total: cartTotal,
         consumption_type: 'local',
         payment_method: paymentMethod,
-        status: 'finalizado',
+        status: status,
         order_datetime: brasiliaTime
       });
 
+      return order;
+    },
+    onSuccess: async (order, variables) => {
+      // Se for PIX com Mercado Pago, não finalizar ainda
+      if (variables.paymentMethod === 'pix' && settings?.mercadopago_enabled) {
+        return;
+      }
+
+      // Finalizar para outros métodos
       if (selectedTable) {
         await base44.entities.Mesa.update(selectedTable.id, {
           status: 'livre',
@@ -246,9 +258,6 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
         });
       }
 
-      return order;
-    },
-    onSuccess: async (order) => {
       queryClient.invalidateQueries(['tables']);
       queryClient.invalidateQueries(['admin-orders-manager']);
       queryClient.invalidateQueries(['admin-orders']);
@@ -325,12 +334,54 @@ Obrigado pela preferencia!
     setSelectedTable(table);
   };
 
-  const handleCheckout = (paymentMethod) => {
+  const handleCheckout = async (paymentMethod) => {
     if (cart.length === 0) {
       toast.error('Carrinho vazio!');
       return;
     }
-    createOrderMutation.mutate(paymentMethod);
+
+    // Se for PIX e Mercado Pago estiver habilitado
+    if (paymentMethod === 'pix' && settings?.mercadopago_enabled) {
+      try {
+        const order = await createOrderMutation.mutateAsync({ 
+          paymentMethod, 
+          status: 'aguardando_pix' 
+        });
+        setCurrentPixOrder(order);
+        setShowPayment(false);
+        setShowPixPayment(true);
+      } catch (error) {
+        toast.error('Erro ao criar pedido');
+      }
+    } else {
+      createOrderMutation.mutate({ paymentMethod, status: 'finalizado' });
+    }
+  };
+
+  const handlePixPaymentConfirmed = async () => {
+    if (selectedTable) {
+      await base44.entities.Mesa.update(selectedTable.id, {
+        status: 'livre',
+        order_id: null,
+        items: [],
+        total: 0
+      });
+    }
+
+    queryClient.invalidateQueries(['tables']);
+    queryClient.invalidateQueries(['admin-orders-manager']);
+    queryClient.invalidateQueries(['admin-orders']);
+    
+    // Impressão automática
+    if (currentPixOrder) {
+      await handlePrintOrder(currentPixOrder);
+    }
+    
+    toast.success('Venda finalizada!');
+    setCart([]);
+    setSelectedTable(null);
+    setShowPixPayment(false);
+    setCurrentPixOrder(null);
   };
 
   // Atalho ENTER para abrir pagamento (mas não finalizar)
@@ -637,6 +688,19 @@ Obrigado pela preferencia!
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* PIX Payment Dialog */}
+      <PDVPixPayment
+        open={showPixPayment}
+        onClose={() => {
+          setShowPixPayment(false);
+          setCurrentPixOrder(null);
+        }}
+        order={currentPixOrder}
+        settings={settings}
+        primaryColor={primaryColor}
+        onPaymentConfirmed={handlePixPaymentConfirmed}
+      />
     </div>
   );
 }
