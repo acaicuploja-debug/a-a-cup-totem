@@ -21,6 +21,8 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   const [weight, setWeight] = useState('');
   const [showPixPayment, setShowPixPayment] = useState(false);
   const [currentPixOrder, setCurrentPixOrder] = useState(null);
+  const [showCashDialog, setShowCashDialog] = useState(false);
+  const [cashAmount, setCashAmount] = useState('');
   const queryClient = useQueryClient();
 
   const { data: products = [] } = useQuery({
@@ -359,6 +361,14 @@ Obrigado pela preferencia!
       return;
     }
 
+    // Se for dinheiro, abrir dialog para informar valor pago
+    if (paymentMethod === 'dinheiro') {
+      setShowPayment(false);
+      setShowCashDialog(true);
+      setCashAmount('');
+      return;
+    }
+
     // Se for PIX e Mercado Pago estiver habilitado
     if (paymentMethod === 'pix' && settings?.mercadopago_enabled) {
       try {
@@ -375,6 +385,23 @@ Obrigado pela preferencia!
     } else {
       createOrderMutation.mutate({ paymentMethod, status: 'finalizado' });
     }
+  };
+
+  const handleCashPayment = () => {
+    const paid = parseFloat(cashAmount);
+    if (isNaN(paid) || paid < cartTotal) {
+      toast.error(`Valor insuficiente! Mínimo: R$ ${cartTotal.toFixed(2)}`);
+      return;
+    }
+    
+    const change = paid - cartTotal;
+    if (change > 0) {
+      toast.success(`Troco: R$ ${change.toFixed(2)}`);
+    }
+    
+    createOrderMutation.mutate({ paymentMethod: 'dinheiro', status: 'finalizado' });
+    setShowCashDialog(false);
+    setCashAmount('');
   };
 
   const handlePixPaymentConfirmed = async () => {
@@ -720,6 +747,77 @@ Obrigado pela preferencia!
         primaryColor={primaryColor}
         onPaymentConfirmed={handlePixPaymentConfirmed}
       />
-    </div>
-  );
-}
+
+      {/* Cash Payment Dialog */}
+      <Dialog open={showCashDialog} onOpenChange={setShowCashDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pagamento em Dinheiro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div 
+              className="text-center py-4 rounded-xl"
+              style={{ backgroundColor: `${primaryColor}15` }}
+            >
+              <p className="text-sm text-gray-600 mb-1">Total a pagar</p>
+              <p className="text-3xl font-bold" style={{ color: primaryColor }}>
+                R$ {cartTotal.toFixed(2)}
+              </p>
+            </div>
+
+            <div>
+              <Label>Cliente está pagando com:</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={cashAmount}
+                onChange={(e) => setCashAmount(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCashPayment();
+                  }
+                }}
+                placeholder="0.00"
+                className="text-2xl text-center h-16 mt-2"
+                autoFocus
+              />
+            </div>
+
+            {cashAmount && parseFloat(cashAmount) >= cartTotal && (
+              <div 
+                className="text-center py-4 rounded-xl"
+                style={{ backgroundColor: '#10b98115' }}
+              >
+                <p className="text-sm text-gray-600 mb-1">Troco</p>
+                <p className="text-3xl font-bold text-green-600">
+                  R$ {(parseFloat(cashAmount) - cartTotal).toFixed(2)}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowCashDialog(false);
+                  setCashAmount('');
+                }}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCashPayment}
+                className="flex-1"
+                style={{ backgroundColor: primaryColor }}
+              >
+                Finalizar (Enter)
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      </div>
+      );
+      }
