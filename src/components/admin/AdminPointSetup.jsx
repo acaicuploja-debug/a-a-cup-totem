@@ -21,9 +21,7 @@ export default function AdminPointSetup({ primaryColor }) {
 
   const linkDeviceMutation = useMutation({
     mutationFn: async () => {
-      console.log('Iniciando vinculação...');
       const result = await base44.functions.invoke('linkPointDevice');
-      console.log('Resultado:', result);
       
       if (result.data?.error) {
         throw new Error(result.data.details || result.data.error);
@@ -31,12 +29,12 @@ export default function AdminPointSetup({ primaryColor }) {
       return result.data;
     },
     onSuccess: async (data) => {
-      console.log('Sucesso:', data);
       toast.success(data.message || 'Point Smart vinculada!');
+      // Aguarda um pouco antes de refetch para garantir que o DB foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 500));
       await refetch();
     },
     onError: (error) => {
-      console.error('Erro na vinculação:', error);
       toast.error('Erro: ' + error.message);
     }
   });
