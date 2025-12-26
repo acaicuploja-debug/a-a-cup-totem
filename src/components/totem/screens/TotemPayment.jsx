@@ -31,13 +31,8 @@ export default function TotemPayment({
   const { items, total, customer, consumptionType, setPaymentMethod, setCurrentOrder } = useCart();
   const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
   
-  // Se cartão está disponível E Mercado Pago está ativo, dividir em débito/crédito
-  const availableMethods = configuredMethods.flatMap(method => {
-    if (method === 'cartao' && settings?.mercadopago_enabled) {
-      return ['debito', 'credito'];
-    }
-    return method;
-  });
+  // Sempre usar cartão simples (sem Point)
+  const availableMethods = configuredMethods;
   
   // Garantir que PIX apareça sempre primeiro
   const sortedMethods = [...availableMethods].sort((a, b) => {
@@ -146,13 +141,7 @@ export default function TotemPayment({
   const handleSelect = async (method) => {
     setPaymentMethod(method);
 
-    // Point usa fluxo especial com tela própria (débito ou crédito)
-    if ((method === 'debito' || method === 'credito') && settings?.mercadopago_enabled) {
-      onSelectPayment({ screen: 'point', cardType: method });
-      return;
-    }
-
-    if (method === 'cartao' || method === 'dinheiro' || method === 'debito' || method === 'credito') {
+    if (method === 'cartao' || method === 'dinheiro') {
       toast.info('Criando pedido...');
       await createOrderMutation.mutateAsync(method);
       toast.success('Pedido criado!');

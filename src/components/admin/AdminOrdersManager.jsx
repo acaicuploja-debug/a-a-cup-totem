@@ -368,12 +368,9 @@ TOTAL: R$ ${order.total.toFixed(2)}
 
 Pagamento: ${
   order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
-  order.payment_method === 'credito' && order.mercadopago_payment_id ? 'Credito Online - Pago' :
-  order.payment_method === 'debito' && order.mercadopago_payment_id ? 'Debito Online - Pago' :
   order.payment_method === 'pix' ? 'PIX' :
-  order.payment_method === 'credito' ? 'Credito' :
-  order.payment_method === 'debito' ? 'Debito' :
-  order.payment_method === 'cartao' ? 'Cartao' : 'Dinheiro - Precisa Receber'
+  order.payment_method === 'cartao' ? 'Cartao - Cobrar do Cliente' :
+  order.payment_method === 'dinheiro' ? 'Dinheiro - Cobrar do Cliente' : 'Cartao - Cobrar do Cliente'
 }
 
 ${loyaltyText ? `\n${loyaltyText}\n` : ''}
