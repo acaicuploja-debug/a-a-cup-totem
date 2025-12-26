@@ -158,11 +158,14 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
 
     if (newPreparingIds.length > 0 && !isFirstLoad.current) {
+      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - iniciando impressão automática`);
+      
       // Auto-print each new order
       newPreparingIds.forEach(orderId => {
         const order = currentPreparingOrders.find(o => o.id === orderId);
         if (order) {
-          setTimeout(() => handlePrint(order), 500);
+          console.log(`📄 Imprimindo pedido #${order.order_number}`);
+          setTimeout(() => handlePrint(order, false), 500);
         }
       });
     }
@@ -297,15 +300,28 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     }
   };
 
-  const handlePrint = async (order) => {
+  const handlePrint = async (order, showToast = true) => {
     try {
+      // Verificar QZ Tray primeiro
+      if (typeof qz === 'undefined') {
+        console.error('QZ Tray não carregado');
+        if (showToast) toast.error('QZ Tray não está instalado');
+        return;
+      }
+
+      if (!qz.websocket.isActive()) {
+        console.error('QZ Tray não está conectado');
+        if (showToast) toast.error('QZ Tray não está conectado');
+        return;
+      }
+
       const customerInfo = getCustomerInfo(order.customer_phone);
       const loyaltyTarget = settings?.loyalty_target || 10;
       const customerOrders = allOrders?.filter(o => 
         o.customer_phone === order.customer_phone && 
         o.status !== 'cancelado'
       ).length || 0;
-      
+
       let loyaltyText = '';
       if (order.reward_redeemed) {
         loyaltyText = '🎁 PREMIO RESGATADO NESTE PEDIDO!';
@@ -318,71 +334,73 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
       // Generate print content
       const printContent = `
-================================
-${settings?.store_name || 'Loja'}
-PEDIDO #${String(order.order_number || '').padStart(3, '0')}
-${order.order_datetime || new Date().toLocaleString('pt-BR')}
-================================
+  ================================
+  ${settings?.store_name || 'Loja'}
+  PEDIDO #${String(order.order_number || '').padStart(3, '0')}
+  ${order.order_datetime || new Date().toLocaleString('pt-BR')}
+  ================================
 
-Cliente:
-${order.customer_name || 'N/A'}
-${order.customer_phone || ''}
-Total de pedidos: ${customerOrders}
+  Cliente:
+  ${order.customer_name || 'N/A'}
+  ${order.customer_phone || ''}
+  Total de pedidos: ${customerOrders}
 
->>> ${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'} <<<
+  >>> ${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'} <<<
 
---------------------------------
-Itens:
-${order.items?.map(item => `
-${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}
-R$ ${item.total.toFixed(2)}${item.complements?.length > 0 ? `
-${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || ''}
+  --------------------------------
+  Itens:
+  ${order.items?.map(item => `
+  ${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}
+  R$ ${item.total.toFixed(2)}${item.complements?.length > 0 ? `
+  ${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || ''}
 
-================================
-TOTAL: R$ ${order.total.toFixed(2)}
-================================
+  ================================
+  TOTAL: R$ ${order.total.toFixed(2)}
+  ================================
 
-Pagamento: ${
-  order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
-  order.payment_method === 'pix' ? 'PIX' :
-  order.payment_method === 'cartao' ? 'Cartao - Cobrar do Cliente' :
-  order.payment_method === 'dinheiro' ? 'Dinheiro - Cobrar do Cliente' : 'Cartao - Cobrar do Cliente'
-}
+  Pagamento: ${
+    order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
+    order.payment_method === 'pix' ? 'PIX' :
+    order.payment_method === 'cartao' ? 'Cartao - Cobrar do Cliente' :
+    order.payment_method === 'dinheiro' ? 'Dinheiro - Cobrar do Cliente' : 'Cartao - Cobrar do Cliente'
+  }
 
-${loyaltyText ? `\n${loyaltyText}\n` : ''}
---------------------------------
-Obrigado pela preferencia!
-================================
-`;
+  ${loyaltyText ? `\n${loyaltyText}\n` : ''}
+  --------------------------------
+  Obrigado pela preferencia!
+  ================================
+  `;
 
-    // Impressão via QZ Tray (mesmo com impressão automática, permite reimpressão manual)
-    if (typeof qz === 'undefined' || !qz.websocket.isActive()) {
-      toast.error('QZ Tray não está conectado. Instale em qz.io/download');
-      return;
-    }
-
-    try {
       const defaultPrinter = settings?.default_printer;
-      const printer = defaultPrinter || (await qz.printers.find())[0];
 
-      const config = qz.configs.create(printer);
+      if (!defaultPrinter) {
+        console.error('❌ Nenhuma impressora padrão configurada');
+        if (showToast) toast.error('Configure uma impressora padrão nas configurações');
+        return;
+      }
+
+      console.log(`🖨️ Usando impressora: ${defaultPrinter}`);
+
+      const config = qz.configs.create(defaultPrinter, { 
+        encoding: 'UTF-8',
+        margins: { top: 0, right: 0, bottom: 0, left: 0 }
+      });
+
       const data = [{
         type: 'raw',
         format: 'plain',
-        data: printContent
+        data: printContent,
+        options: { encoding: 'UTF-8' }
       }];
 
       await qz.print(config, data);
-      toast.success('Pedido impresso!');
-    } catch (err) {
-      console.error('Erro ao imprimir via QZ Tray:', err);
-      toast.error('Erro ao imprimir: ' + err.message);
+      console.log('✅ Pedido impresso com sucesso');
+      if (showToast) toast.success('Pedido impresso!');
+    } catch (error) {
+      console.error('❌ Erro ao imprimir:', error);
+      if (showToast) toast.error('Erro ao imprimir: ' + error.message);
     }
-  } catch (error) {
-    console.error('Erro ao imprimir:', error);
-    toast.error('Erro ao imprimir pedido');
-  }
-};
+  };
 
 const getCustomerInfo = (phone) => {
     if (!phone || !customers) return null;
