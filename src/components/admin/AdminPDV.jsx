@@ -229,16 +229,23 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
         order_number: nextNumber,
         customer_name: selectedTable ? `Mesa ${selectedTable.number}` : 'Balcão',
         customer_phone: 'PDV',
-        items: cart.map(item => ({
-          product_id: item.product_id,
-          product_name: item.product_name,
-          quantity: item.quantity,
-          weight: item.weight || null,
-          unit_price: item.unit_price,
-          total: item.total,
-          cost_price: item.cost_price || 0,
-          sold_by_weight: item.sold_by_weight || false
-        })),
+        items: cart.map(item => {
+          console.log('DEBUG Criando pedido - item:', {
+            nome: item.product_name,
+            cost_price: item.cost_price,
+            sold_by_weight: item.sold_by_weight
+          });
+          return {
+            product_id: item.product_id,
+            product_name: item.product_name,
+            quantity: item.quantity,
+            weight: item.weight || null,
+            unit_price: item.unit_price,
+            total: item.total,
+            cost_price: item.cost_price !== undefined && item.cost_price !== null ? item.cost_price : 0,
+            sold_by_weight: item.sold_by_weight || false
+          };
+        }),
         subtotal: cartTotal,
         total: cartTotal,
         consumption_type: 'local',
