@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 export default function AdminCategories({ settings, primaryColor }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [formData, setFormData] = useState({ name: '', image_url: '', active: true, order: 0 });
+  const [formData, setFormData] = useState({ name: '', image_url: '', active: true, pdv_only: false, order: 0 });
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
   
@@ -55,11 +55,12 @@ export default function AdminCategories({ settings, primaryColor }) {
         name: category.name,
         image_url: category.image_url || '',
         active: category.active !== false,
+        pdv_only: category.pdv_only || false,
         order: category.order || 0
       });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', image_url: '', active: true, order: (categories?.length || 0) + 1 });
+      setFormData({ name: '', image_url: '', active: true, pdv_only: false, order: (categories?.length || 0) + 1 });
     }
     setShowDialog(true);
   };
@@ -67,7 +68,7 @@ export default function AdminCategories({ settings, primaryColor }) {
   const handleCloseDialog = () => {
     setShowDialog(false);
     setEditingCategory(null);
-    setFormData({ name: '', image_url: '', active: true, order: 0 });
+    setFormData({ name: '', image_url: '', active: true, pdv_only: false, order: 0 });
   };
   
   const handleSubmit = (e) => {
@@ -149,11 +150,12 @@ export default function AdminCategories({ settings, primaryColor }) {
                   )}
                   
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900">{category.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      Ordem: {category.order || index + 1}
-                      {!category.active && ' • Inativa'}
-                    </p>
+                   <h3 className="font-bold text-gray-900">{category.name}</h3>
+                   <p className="text-sm text-gray-500">
+                     Ordem: {category.order || index + 1}
+                     {!category.active && ' • Inativa'}
+                     {category.pdv_only && ' • PDV'}
+                   </p>
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -238,6 +240,14 @@ export default function AdminCategories({ settings, primaryColor }) {
               <Switch
                 checked={formData.active}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Exclusiva do PDV (não aparece no totem)</Label>
+              <Switch
+                checked={formData.pdv_only}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, pdv_only: checked }))}
               />
             </div>
             

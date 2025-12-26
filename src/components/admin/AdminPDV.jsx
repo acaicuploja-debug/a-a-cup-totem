@@ -30,7 +30,10 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list()
+    queryFn: async () => {
+      const all = await base44.entities.Category.list();
+      return all.filter(c => c.pdv_only && c.active);
+    }
   });
 
   const { data: tables = [] } = useQuery({
