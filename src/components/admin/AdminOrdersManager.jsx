@@ -334,7 +334,7 @@ Total de pedidos: ${customerOrders}
 --------------------------------
 Itens:
 ${order.items?.map(item => `
-${item.quantity}x ${item.product_name}
+${item.quantity}x ${item.product_name}${item.weight ? ` (${item.weight}kg)` : ''}
 R$ ${item.total.toFixed(2)}${item.complements?.length > 0 ? `
 ${item.complements.map(c => `  + ${c.name}`).join('\n')}` : ''}`).join('\n') || ''}
 

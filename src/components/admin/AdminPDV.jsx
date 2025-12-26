@@ -272,7 +272,7 @@ ${order.order_datetime || new Date().toLocaleString('pt-BR')}
 --------------------------------
 Itens:
 ${order.items?.map(item => `
-${item.quantity}x ${item.product_name}${item.sold_by_weight ? ` (${item.weight}kg)` : ''}
+${item.quantity}x ${item.product_name}${item.weight ? ` (${item.weight}kg)` : ''}
 R$ ${item.total.toFixed(2)}`).join('\n') || ''}
 
 ================================
