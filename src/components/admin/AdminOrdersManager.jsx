@@ -355,8 +355,8 @@ Obrigado pela preferencia!
 ================================
 `;
 
-    // Impressão via QZ Tray
-    if (!qzConnected || !qz.websocket.isActive()) {
+    // Impressão via QZ Tray (mesmo com impressão automática, permite reimpressão manual)
+    if (typeof qz === 'undefined' || !qz.websocket.isActive()) {
       toast.error('QZ Tray não está conectado. Instale em qz.io/download');
       return;
     }
@@ -535,11 +535,11 @@ const getCustomerInfo = (phone) => {
                         R$ {order.total?.toFixed(2)}
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {status === 'em_preparo' && (
                           <Button
                             onClick={() => handleStatusChange(order, 'pronto')}
-                            className="flex-1 h-9 text-sm"
+                            className="flex-1 min-w-[120px] h-9 text-sm"
                             style={{ backgroundColor: statusConfig.pronto.color.replace('bg-', '#') }}
                           >
                             Marcar Pronto
@@ -549,7 +549,7 @@ const getCustomerInfo = (phone) => {
                         {status === 'pronto' && (
                           <Button
                             onClick={() => handleStatusChange(order, 'finalizado')}
-                            className="flex-1 h-9 text-sm"
+                            className="flex-1 min-w-[120px] h-9 text-sm"
                             style={{ backgroundColor: statusConfig.finalizado.color.replace('bg-', '#') }}
                           >
                             Finalizar
@@ -559,7 +559,7 @@ const getCustomerInfo = (phone) => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-9 px-3"
+                          className="h-9 px-3 flex-shrink-0"
                           onClick={() => setSelectedOrder(order)}
                         >
                           <Eye className="w-4 h-4" />
@@ -568,7 +568,7 @@ const getCustomerInfo = (phone) => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-9 px-3"
+                          className="h-9 px-3 flex-shrink-0"
                           onClick={() => handlePrint(order)}
                         >
                           <Printer className="w-4 h-4" />
@@ -578,7 +578,7 @@ const getCustomerInfo = (phone) => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 px-3 text-red-600 hover:bg-red-50"
+                            className="h-9 px-3 text-red-600 hover:bg-red-50 flex-shrink-0"
                             onClick={() => handleCancelOrder(order)}
                           >
                             <X className="w-4 h-4" />
