@@ -30,9 +30,10 @@ export default function AdminPointSetup({ primaryColor }) {
     },
     onSuccess: async (data) => {
       toast.success(data.message || 'Point Smart vinculada!');
-      // Aguarda um pouco antes de refetch para garantir que o DB foi atualizado
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refetch();
+      // Recarrega a página para garantir que o estado seja atualizado
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error) => {
       toast.error('Erro: ' + error.message);
