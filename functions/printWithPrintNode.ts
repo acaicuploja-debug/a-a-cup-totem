@@ -141,12 +141,59 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
       printer = printers[0];
     }
 
+    // Gerar conteúdo texto puro para impressora térmica
+    const printContent = `
+    ================================
+    ${settings?.store_name || 'Loja'}
+    PEDIDO #${String(orderData.order_number || '').padStart(3, '0')}
+    ================================
+
+    ${orderData.order_datetime || new Date().toLocaleString('pt-BR')}
+
+    Cliente: ${orderData.customer_name || 'N/A'}
+    ${orderData.customer_phone || ''}
+    Total de pedidos: ${customerOrders}
+
+    ${orderData.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'}
+
+    --------------------------------
+    ITENS:
+    ${orderData.items?.map(item => {
+    let line = item.weight 
+    ? `${item.product_name} ${item.weight.toFixed(3)}kg` 
+    : `${item.quantity}x ${item.product_name}`;
+    line += `\n         R$ ${item.total.toFixed(2)}`;
+    if (item.complements?.length > 0) {
+    line += '\n' + item.complements.map(c => `         + ${c.name}`).join('\n');
+    }
+    return line;
+    }).join('\n') || ''}
+
+    --------------------------------
+    TOTAL: R$ ${orderData.total.toFixed(2)}
+    --------------------------------
+
+    Pagamento: ${
+    orderData.payment_method === 'pix' && orderData.mercadopago_payment_id ? 'Pix Online - Pago' :
+    orderData.payment_method === 'pix' ? 'PIX' :
+    orderData.payment_method === 'cartao' ? 'Cartao' :
+    orderData.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartao'
+    }
+
+    ${loyaltyText ? `\n${loyaltyText}\n` : ''}
+
+    ================================
+    Obrigado pela preferencia!
+    ================================
+
+    `;
+
     // Enviar para impressão
     const printJob = {
       printerId: printer.id,
       title: `Pedido #${orderData.order_number}`,
-      contentType: 'pdf_uri',
-      content: `data:text/html;base64,${btoa(unescape(encodeURIComponent(printHTML)))}`,
+      contentType: 'raw_base64',
+      content: btoa(printContent),
       source: 'Açaí Cup POS'
     };
 
