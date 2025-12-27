@@ -18,7 +18,7 @@ export default function AdminUpsell({ settings, primaryColor }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', description: '', image_url: '', price: 0, promo_price: 0, active: true, badges: [], complements: []
+    name: '', description: '', image_url: '', price: 0, promo_price: 0, cost_price: 0, active: true, badges: [], complements: []
   });
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
@@ -73,13 +73,14 @@ export default function AdminUpsell({ settings, primaryColor }) {
         image_url: product.image_url || '',
         price: product.price,
         promo_price: product.promo_price || 0,
+        cost_price: product.cost_price || 0,
         active: product.active !== false,
         badges: product.badges || [],
         complements: product.complements || []
       });
     } else {
       setEditingProduct(null);
-      setFormData({ name: '', description: '', image_url: '', price: 0, promo_price: 0, active: true, badges: [], complements: [] });
+      setFormData({ name: '', description: '', image_url: '', price: 0, promo_price: 0, cost_price: 0, active: true, badges: [], complements: [] });
     }
     setShowDialog(true);
   };
@@ -99,7 +100,8 @@ export default function AdminUpsell({ settings, primaryColor }) {
     const data = {
       ...formData,
       price: parseFloat(formData.price) || 0,
-      promo_price: parseFloat(formData.promo_price) || 0
+      promo_price: parseFloat(formData.promo_price) || 0,
+      cost_price: parseFloat(formData.cost_price) || 0
     };
     
     if (editingProduct) {
@@ -322,7 +324,7 @@ export default function AdminUpsell({ settings, primaryColor }) {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Preço (R$) *</Label>
                 <Input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))} />
@@ -331,6 +333,11 @@ export default function AdminUpsell({ settings, primaryColor }) {
               <div className="space-y-2">
                 <Label>Preço Promocional (R$)</Label>
                 <Input type="number" step="0.01" value={formData.promo_price} onChange={(e) => setFormData(prev => ({ ...prev, promo_price: e.target.value }))} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Preço de Custo (R$)</Label>
+                <Input type="number" step="0.01" value={formData.cost_price} onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))} />
               </div>
             </div>
             
