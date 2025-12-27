@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Users, Scale, Plus, Minus, X, CreditCard, QrCode, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
+import qz from 'qz-tray';
 
 import PDVPixPayment from './PDVPixPayment';
 
@@ -301,18 +302,57 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
 
   const handlePrintOrder = async (order) => {
     try {
-      // Tentar PrintNode primeiro
-      const { data } = await base44.functions.invoke('printWithPrintNode', {
-        orderId: order.id,
-        printerName: settings?.default_printer
-      });
+      if (qz.websocket.isActive()) {
+        const printers = await qz.printers.find();
+        const printer = settings?.default_printer || printers[0];
+        const config = qz.configs.create(printer);
+        
+        const printContent = `
+================================
+${settings?.store_name || 'Loja'}
+PEDIDO #${String(order.order_number || '').padStart(3, '0')}
+================================
 
-      if (data.success) {
-        console.log('✅ Impresso via PrintNode:', data.printer);
+${order.order_datetime || new Date().toLocaleString('pt-BR')}
+
+VENDA BALCAO - PDV
+
+--------------------------------
+ITENS:
+${order.items?.map(item => {
+  let line = item.weight 
+    ? `${item.product_name} ${item.weight.toFixed(3)}kg` 
+    : `${item.quantity}x ${item.product_name}`;
+  line += `\n         R$ ${item.total.toFixed(2)}`;
+  return line;
+}).join('\n') || ''}
+
+--------------------------------
+TOTAL: R$ ${order.total.toFixed(2)}
+--------------------------------
+
+Pagamento: ${
+  order.payment_method === 'pix' ? 'PIX' :
+  order.payment_method === 'cartao' ? 'Cartão' :
+  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
+}
+
+================================
+Obrigado pela preferencia!
+================================
+`;
+
+        await qz.print(config, [{
+          type: 'raw',
+          format: 'plain',
+          data: printContent
+        }]);
+
+        console.log('✅ Impresso via QZ Tray');
         return;
       }
-    } catch (printNodeError) {
-      console.log('⚠️ PrintNode falhou, tentando fallback:', printNodeError.message);
+    } catch (qzError) {
+      console.log('⚠️ QZ Tray falhou, usando navegador:', qzError);
       
       // Fallback: Impressão do navegador
       const printHTML = `

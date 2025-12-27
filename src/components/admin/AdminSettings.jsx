@@ -10,12 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Loader2, Save, Check, Bell, Volume2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import qz from 'qz-tray';
 
 import AdminPointSetup from './AdminPointSetup';
 
 export default function AdminSettings({ settings, primaryColor }) {
   const [formData, setFormData] = useState({});
   const [uploading, setUploading] = useState({});
+  const [qzConnected, setQzConnected] = useState(false);
+  const [printers, setPrinters] = useState([]);
+  const [selectedPrinter, setSelectedPrinter] = useState('');
   const queryClient = useQueryClient();
   
   const { data: products } = useQuery({
@@ -26,8 +30,32 @@ export default function AdminSettings({ settings, primaryColor }) {
   useEffect(() => {
     if (settings) {
       setFormData(settings);
+      setSelectedPrinter(settings.default_printer || '');
     }
   }, [settings]);
+
+  useEffect(() => {
+    const checkQZ = async () => {
+      try {
+        if (!qz.websocket.isActive()) {
+          await qz.websocket.connect();
+        }
+        setQzConnected(true);
+        const printerList = await qz.printers.find();
+        setPrinters(printerList);
+      } catch (err) {
+        setQzConnected(false);
+      }
+    };
+    
+    checkQZ();
+    
+    return () => {
+      if (qz.websocket.isActive()) {
+        qz.websocket.disconnect();
+      }
+    };
+  }, []);
   
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -72,7 +100,47 @@ export default function AdminSettings({ settings, primaryColor }) {
   };
   
   const handleSave = () => {
-    saveMutation.mutate(formData);
+    saveMutation.mutate({ ...formData, default_printer: selectedPrinter });
+  };
+
+  const handleTestPrint = async () => {
+    if (!qzConnected) {
+      toast.error('QZ Tray não está conectado');
+      return;
+    }
+
+    try {
+      const printer = selectedPrinter || printers[0];
+      const config = qz.configs.create(printer);
+      const testContent = `
+================================
+TESTE DE IMPRESSAO
+================================
+
+Loja: ${formData.store_name || 'Minha Loja'}
+Data: ${new Date().toLocaleString('pt-BR')}
+
+Esta e uma impressao de teste!
+
+Se voce consegue ler isso,
+sua impressora esta funcionando
+corretamente.
+
+================================
+Impressora: ${printer}
+================================
+`;
+      
+      await qz.print(config, [{
+        type: 'raw',
+        format: 'plain',
+        data: testContent
+      }]);
+      
+      toast.success('Teste de impressão enviado!');
+    } catch (err) {
+      toast.error('Erro ao imprimir: ' + err.message);
+    }
   };
 
   const getSoundUrl = (sound) => {
@@ -571,62 +639,96 @@ export default function AdminSettings({ settings, primaryColor }) {
               <CardTitle>Configuração de Impressora</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <Printer className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-green-900 text-xl mb-2">
-                      🖨️ PrintNode - Impressão Automática
-                    </h3>
-                    <p className="text-green-800 mb-4">
-                      Configure o PrintNode para impressão automática profissional em nuvem.
-                    </p>
-                    <div className="space-y-3">
-                      <div className="bg-white rounded-lg p-4">
-                        <p className="font-semibold text-gray-900 mb-2">✨ Como funciona:</p>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                          <li>✅ Instale o app do PrintNode no seu computador</li>
-                          <li>✅ Cole sua API Key nas variáveis de ambiente</li>
-                          <li>✅ Os pedidos imprimem automaticamente!</li>
-                        </ul>
+              {!qzConnected ? (
+                <div className="space-y-4">
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Printer className="w-6 h-6 text-amber-600" />
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-3">
-                        <a href="https://www.printnode.com/en/account/register" target="_blank" rel="noopener noreferrer" className="block">
-                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
-                            1️⃣ Criar Conta
-                          </Button>
-                        </a>
-                        <a href="https://www.printnode.com/en/download" target="_blank" rel="noopener noreferrer" className="block">
-                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
-                            2️⃣ Baixar App
-                          </Button>
-                        </a>
-                        <a href="https://app.printnode.com/app/apikeys" target="_blank" rel="noopener noreferrer" className="block">
-                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
-                            3️⃣ Pegar API Key
-                          </Button>
-                        </a>
-                      </div>
-                      
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-sm text-blue-800">
-                          <strong>📝 Configuração:</strong> Vá em <strong>Painel Base44 → Settings → Environment Variables</strong> e 
-                          adicione: <code className="bg-blue-100 px-2 py-1 rounded font-mono">PRINTNODE_API_KEY</code>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-amber-900 text-xl mb-2">
+                          QZ Tray não detectado
+                        </h3>
+                        <p className="text-amber-800 mb-4">
+                          Instale o QZ Tray para impressão automática silenciosa
                         </p>
-                      </div>
-                      
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <p className="text-sm text-green-800">
-                          ✅ <strong>Pronto!</strong> Quando um pedido for confirmado, ele será impresso automaticamente na primeira impressora disponível.
-                        </p>
+                        <div className="space-y-3">
+                          <div className="bg-white rounded-lg p-4">
+                            <p className="font-semibold text-gray-900 mb-2">📥 Como instalar:</p>
+                            <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                              <li>Baixe e instale o QZ Tray</li>
+                              <li>Execute o programa (fica na bandeja do sistema)</li>
+                              <li>Recarregue esta página</li>
+                              <li>Permita o acesso quando solicitado</li>
+                            </ol>
+                          </div>
+                          
+                          <a href="https://qz.io/download/" target="_blank" rel="noopener noreferrer">
+                            <Button className="w-full" style={{ backgroundColor: primaryColor }}>
+                              <Printer className="w-4 h-4 mr-2" />
+                              Baixar QZ Tray (Gratuito)
+                            </Button>
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <Check className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-green-900">QZ Tray Conectado!</p>
+                        <p className="text-sm text-green-700">Impressão automática ativada</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Impressora Padrão</Label>
+                    <Select 
+                      value={selectedPrinter}
+                      onValueChange={setSelectedPrinter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a impressora" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {printers.map((printer) => (
+                          <SelectItem key={printer} value={printer}>
+                            {printer}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">
+                      {printers.length} impressora(s) detectada(s)
+                    </p>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleTestPrint}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Fazer Teste de Impressão
+                  </Button>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>✨ Pronto!</strong> Quando um pedido for confirmado (PIX pago), 
+                      ele será impresso automaticamente na impressora selecionada, sem precisar clicar em nada.
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
