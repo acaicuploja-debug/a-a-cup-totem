@@ -11,7 +11,6 @@ import { ChefHat, Package, CheckCircle, Printer, Eye, X, ShoppingCart } from 'lu
 import AdminPDV from './AdminPDV';
 import { toast } from 'sonner';
 import PendingOrderNotification from './PendingOrderNotification';
-import qz from 'qz-tray';
 
 
 const statusConfig = {
@@ -34,7 +33,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const previousPreparingOrderIds = useRef(new Set());
 
   const [showPDV, setShowPDV] = useState(false);
-  const [qzConnected, setQzConnected] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allOrders, isLoading } = useQuery({
@@ -51,34 +49,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     queryKey: ['admin-customers'],
     queryFn: () => base44.entities.Customer.list()
   });
-
-  // Initialize QZ Tray
-  useEffect(() => {
-    const connectQZ = async () => {
-      try {
-        if (!qz.websocket.isActive()) {
-          await qz.websocket.connect();
-          setQzConnected(true);
-          console.log('✅ QZ Tray conectado');
-        }
-      } catch (err) {
-        console.log('⚠️ QZ Tray não está rodando:', err);
-        setQzConnected(false);
-      }
-    };
-    
-    connectQZ();
-    
-    return () => {
-      try {
-        if (qz.websocket.isActive()) {
-          qz.websocket.disconnect();
-        }
-      } catch (err) {
-        console.log('Erro ao desconectar QZ:', err);
-      }
-    };
-  }, []);
 
   // Filter only today's orders (exclude aguardando_pix and cancelado)
   const todayOrders = React.useMemo(() => {
@@ -304,9 +274,22 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
   const handlePrint = async (order, showToast = true) => {
     console.log('🖨️ handlePrint chamado para pedido:', order.order_number);
-    
-    if (!qzConnected) {
-      console.log('⚠️ QZ Tray não conectado, usando impressão do navegador');
+    try {
+      const response = await base44.functions.invoke('printWithPrintNode', {
+        orderId: order.id,
+        printerName: settings?.default_printer
+      });
+
+      if (response?.data?.success) {
+        console.log('✅ Impresso via PrintNode:', response.data.printer);
+        if (showToast) toast.success('Pedido impresso!');
+        return;
+      } else {
+        throw new Error(response?.data?.error || 'PrintNode falhou');
+      }
+    } catch (printNodeError) {
+      console.log('⚠️ PrintNode falhou:', printNodeError);
+      
       // Fallback: Impressão do navegador
       const customerInfo = getCustomerInfo(order.customer_phone);
       const loyaltyTarget = settings?.loyalty_target || 10;
@@ -388,88 +371,6 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
       }, 250);
       console.log('✅ Impresso via navegador');
       if (showToast) toast.success('Abrindo impressão...');
-      return;
-    }
-    
-    // Imprimir via QZ Tray
-    try {
-      const printers = await qz.printers.find();
-      const printer = settings?.default_printer || printers[0];
-      const config = qz.configs.create(printer);
-      
-      const customerInfo = getCustomerInfo(order.customer_phone);
-      const loyaltyTarget = settings?.loyalty_target || 10;
-      const customerOrders = allOrders?.filter(o => 
-        o.customer_phone === order.customer_phone && 
-        o.status !== 'cancelado'
-      ).length || 0;
-
-      let loyaltyText = '';
-      if (order.reward_redeemed) {
-        loyaltyText = '🎁 PREMIO RESGATADO NESTE PEDIDO!';
-      } else if (customerInfo) {
-        const remaining = loyaltyTarget - (customerInfo.loyalty_count || 0);
-        loyaltyText = remaining <= 0 
-          ? `🎁 Voce tem um premio disponivel!`
-          : `Faltam ${remaining} pedido(s) para ganhar premio!`;
-      }
-
-      const printContent = `
-================================
-${settings?.store_name || 'Loja'}
-PEDIDO #${String(order.order_number || '').padStart(3, '0')}
-================================
-
-${order.order_datetime || new Date().toLocaleString('pt-BR')}
-
-Cliente: ${order.customer_name || 'N/A'}
-${order.customer_phone || ''}
-Total de pedidos: ${customerOrders}
-
-${order.consumption_type === 'local' ? 'COMER NO LOCAL' : 'EMBALAR P/ VIAGEM'}
-
---------------------------------
-ITENS:
-${order.items?.map(item => {
-  let line = item.weight 
-    ? `${item.product_name} ${item.weight.toFixed(3)}kg` 
-    : `${item.quantity}x ${item.product_name}`;
-  line += `\n         R$ ${item.total.toFixed(2)}`;
-  if (item.complements?.length > 0) {
-    line += '\n' + item.complements.map(c => `         + ${c.name}`).join('\n');
-  }
-  return line;
-}).join('\n') || ''}
-
---------------------------------
-TOTAL: R$ ${order.total.toFixed(2)}
---------------------------------
-
-Pagamento: ${
-  order.payment_method === 'pix' && order.mercadopago_payment_id ? 'Pix Online - Pago' :
-  order.payment_method === 'pix' ? 'PIX' :
-  order.payment_method === 'cartao' ? 'Cartão' :
-  order.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
-}
-
-${loyaltyText ? `\n${loyaltyText}\n` : ''}
-
-================================
-Obrigado pela preferencia!
-================================
-`;
-
-      await qz.print(config, [{
-        type: 'raw',
-        format: 'plain',
-        data: printContent
-      }]);
-
-      console.log('✅ Impresso via QZ Tray na impressora:', printer);
-      if (showToast) toast.success('Pedido impresso!');
-    } catch (qzError) {
-      console.error('⚠️ Erro ao imprimir com QZ Tray:', qzError);
-      if (showToast) toast.error('Erro ao imprimir: ' + qzError.message);
     }
   };
 
