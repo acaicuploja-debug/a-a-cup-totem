@@ -50,6 +50,7 @@ export default function Admin() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const previousPreparingOrderIds = React.useRef(new Set());
+  const isFirstLoad = React.useRef(true);
   
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
@@ -77,37 +78,46 @@ export default function Admin() {
     enabled: !!user && user.role === 'admin'
   });
 
-  // Auto-print new orders in "em_preparo" status - ÚNICA FONTE DE IMPRESSÃO AUTOMÁTICA
+  // Auto-print new orders in "em_preparo" status - FUNCIONA EM BACKGROUND
   React.useEffect(() => {
     if (!allOrders || !settings) return;
 
     const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
     const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
 
-    // Detect NEW orders in em_preparo
+    // Na primeira carga, apenas inicializa a referência sem imprimir
+    if (isFirstLoad.current) {
+      console.log('🔄 Primeira carga - inicializando referências de pedidos');
+      previousPreparingOrderIds.current = currentPreparingIds;
+      isFirstLoad.current = false;
+      return;
+    }
+
+    // Detectar NOVOS pedidos (que não estavam na referência anterior)
     const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
 
     if (newPreparingIds.length > 0) {
-      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - impressão automática ÚNICA`);
+      console.log(`🖨️ ${newPreparingIds.length} NOVO(S) PEDIDO(S) - Imprimindo automaticamente`);
       
-      // Auto-print each new order APENAS UMA VEZ
+      // Imprimir cada novo pedido
       newPreparingIds.forEach(async (orderId) => {
         const order = currentPreparingOrders.find(o => o.id === orderId);
         if (order) {
-          console.log(`📄 Imprimindo pedido #${order.order_number} - UMA VEZ APENAS`);
+          console.log(`📄 Imprimindo pedido #${order.order_number}`, new Date().toLocaleTimeString());
           try {
             const response = await base44.functions.invoke('printWithPrintNode', {
               orderId: order.id,
               printerName: settings?.default_printer
             });
-            console.log(`✅ Pedido #${order.order_number} impresso com sucesso`);
+            console.log(`✅ Pedido #${order.order_number} impresso com sucesso!`);
           } catch (error) {
-            console.error('❌ Erro ao imprimir pedido #' + order.order_number, error);
+            console.error(`❌ Erro ao imprimir pedido #${order.order_number}:`, error);
           }
         }
       });
     }
 
+    // Atualizar referência
     previousPreparingOrderIds.current = currentPreparingIds;
   }, [allOrders, settings]);
   
