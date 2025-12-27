@@ -638,6 +638,65 @@ Impressora: ${printer}
               <CardTitle>Configuração de Impressora</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* PrintNode Section - RECOMMENDED */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-green-900 text-xl mb-2">
+                      ✅ PrintNode (Recomendado)
+                    </h3>
+                    <p className="text-green-800 mb-4">
+                      Solução profissional de impressão automática em nuvem - <strong>muito mais fácil de instalar!</strong>
+                    </p>
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="font-semibold text-gray-900 mb-2">🚀 Por que usar PrintNode:</p>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                          <li>✅ <strong>Super fácil de instalar</strong> - apenas 1 programa leve</li>
+                          <li>✅ Imprime automaticamente via internet</li>
+                          <li>✅ Funciona de qualquer lugar</li>
+                          <li>✅ Mais confiável e estável</li>
+                          <li>✅ 30 dias grátis para testar</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <a href="https://www.printnode.com/en/account/register" target="_blank" rel="noopener noreferrer" className="block">
+                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
+                            1️⃣ Criar Conta
+                          </Button>
+                        </a>
+                        <a href="https://www.printnode.com/en/download" target="_blank" rel="noopener noreferrer" className="block">
+                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
+                            2️⃣ Baixar App
+                          </Button>
+                        </a>
+                        <a href="https://app.printnode.com/app/apikeys" target="_blank" rel="noopener noreferrer" className="block">
+                          <Button className="w-full" size="sm" style={{ backgroundColor: primaryColor }}>
+                            3️⃣ Pegar API Key
+                          </Button>
+                        </a>
+                      </div>
+                      
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-sm text-amber-800">
+                          <strong>📝 Depois:</strong> Vá em <strong>Painel Base44 → Configurações → Environment Variables</strong> e 
+                          cole sua API Key no campo <code className="bg-amber-100 px-1 rounded">PRINTNODE_API_KEY</code>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* QZ Tray Section - Alternative */}
+              <div className="border-t pt-6">
+                <h3 className="font-bold text-gray-700 mb-4">Alternativa: QZ Tray (Gratuito mas mais difícil)</h3>
+              </div>
+              
               {!qzConnected ? (
                 <div className="space-y-4">
                   <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
