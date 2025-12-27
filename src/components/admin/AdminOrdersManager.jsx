@@ -301,20 +301,28 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   };
 
   const handlePrint = async (order, showToast = true) => {
+    console.log('🖨️ handlePrint chamado para pedido:', order.order_number);
     try {
       // Tentar PrintNode primeiro
-      const { data } = await base44.functions.invoke('printWithPrintNode', {
+      console.log('📡 Chamando PrintNode API...');
+      const response = await base44.functions.invoke('printWithPrintNode', {
         orderId: order.id,
         printerName: settings?.default_printer
       });
+      
+      console.log('📡 Resposta PrintNode:', response);
 
-      if (data.success) {
-        console.log('✅ Impresso via PrintNode:', data.printer);
-        if (showToast) toast.success('Pedido impresso!');
+      if (response?.data?.success) {
+        console.log('✅ Impresso via PrintNode:', response.data.printer);
+        if (showToast) toast.success('Pedido impresso via PrintNode!');
         return;
+      } else {
+        console.log('⚠️ PrintNode não retornou sucesso:', response);
+        throw new Error(response?.data?.error || 'PrintNode falhou');
       }
     } catch (printNodeError) {
-      console.log('⚠️ PrintNode falhou, tentando fallback:', printNodeError.message);
+      console.log('⚠️ PrintNode falhou:', printNodeError);
+      console.log('⚠️ Detalhes do erro:', printNodeError.message);
       
       // Fallback: Impressão do navegador
       const customerInfo = getCustomerInfo(order.customer_phone);
