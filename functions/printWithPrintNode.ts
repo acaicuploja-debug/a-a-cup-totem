@@ -142,7 +142,9 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
     }
 
     // Gerar conteúdo texto puro para impressora térmica
-    const printContent = `
+    let printContent = '\x1B\x40'; // ESC @ - Inicializar impressora
+
+    printContent += `
     ================================
     ${settings?.store_name || 'Loja'}
     PEDIDO #${String(orderData.order_number || '').padStart(3, '0')}
@@ -186,7 +188,12 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
     Obrigado pela preferencia!
     ================================
 
+
     `;
+
+    // Adicionar comandos de feed e corte
+    printContent += '\n\n\n\n'; // 4 linhas em branco para garantir que tudo seja impresso
+    printContent += '\x1D\x56\x41\x00'; // GS V A - Corte parcial
 
     // Enviar para impressão
     const printJob = {
