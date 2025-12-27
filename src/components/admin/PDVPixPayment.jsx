@@ -152,14 +152,14 @@ export default function PDVPixPayment({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         {isLoading ? (
           <div className="text-center py-12">
             <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" style={{ color: primaryColor }} />
             <p className="text-xl font-bold text-gray-900">Gerando PIX...</p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 py-4">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Pagamento PIX
@@ -169,16 +169,16 @@ export default function PDVPixPayment({
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border-2 border-gray-200">
+            <div className="bg-white rounded-2xl p-4 border-2 border-gray-200">
               <img 
                 src={`data:image/png;base64,${mercadoPagoData?.qr_code_base64}`}
                 alt="QR Code PIX"
-                className="w-full max-w-xs mx-auto"
+                className="w-full max-w-[280px] mx-auto"
               />
             </div>
 
             <div 
-              className="text-center py-4 rounded-2xl"
+              className="text-center py-3 rounded-2xl"
               style={{ backgroundColor: `${primaryColor}15` }}
             >
               <p className="text-sm text-gray-500 mb-1">Total a pagar</p>
@@ -202,11 +202,12 @@ export default function PDVPixPayment({
                   type="text"
                   value={mercadoPagoData?.qr_code || ''}
                   readOnly
-                  className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-xs font-mono border"
+                  className="flex-1 px-3 py-2 bg-gray-50 rounded-xl text-xs font-mono border"
                 />
                 <Button
                   onClick={handleCopyCode}
                   style={{ backgroundColor: primaryColor }}
+                  size="sm"
                 >
                   Copiar
                 </Button>
