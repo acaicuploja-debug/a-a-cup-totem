@@ -179,6 +179,7 @@ function TotemContent() {
               {...screenProps}
               onSkip={handleSkipUpsell}
               onProceed={handleSkipUpsell}
+              onProductSelect={handleSelectProduct}
             />
           )}
           
