@@ -13,18 +13,29 @@ export default function TotemUpsell({
   settings, 
   primaryColor,
   onSkip,
-  onProceed 
+  onProceed,
+  onProductSelect
 }) {
   const { addItem, total } = useCart();
   
   const { data: upsellProducts, isLoading } = useQuery({
     queryKey: ['upsell-products'],
-    queryFn: () => base44.entities.Product.filter({ is_upsell: true, active: true })
+    queryFn: async () => {
+      const result = await base44.entities.Product.filter({ is_upsell: true, active: true });
+      return result.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
   });
   
   const [addedProducts, setAddedProducts] = React.useState({});
   
   const handleAddUpsell = (product) => {
+    // Se o produto tem complementos, abrir seletor
+    if (product.complements && product.complements.length > 0) {
+      onProductSelect(product);
+      return;
+    }
+    
+    // Se não tem complementos, adicionar direto
     addItem(product, [], 1);
     setAddedProducts(prev => ({
       ...prev,
