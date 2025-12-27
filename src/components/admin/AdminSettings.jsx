@@ -16,16 +16,28 @@ import AdminPointSetup from './AdminPointSetup';
 export default function AdminSettings({ settings, primaryColor }) {
   const [formData, setFormData] = useState({});
   const [uploading, setUploading] = useState({});
+  const [selectedPrinter, setSelectedPrinter] = useState('');
+  const [testingPrint, setTestingPrint] = useState(false);
   const queryClient = useQueryClient();
   
   const { data: products } = useQuery({
     queryKey: ['admin-products'],
     queryFn: () => base44.entities.Product.list()
   });
+
+  const { data: printersData, isLoading: loadingPrinters } = useQuery({
+    queryKey: ['printnode-printers'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getPrintNodePrinters', {});
+      return response.data;
+    },
+    retry: false
+  });
   
   useEffect(() => {
     if (settings) {
       setFormData(settings);
+      setSelectedPrinter(settings.default_printer || '');
     }
   }, [settings]);
   
@@ -72,7 +84,30 @@ export default function AdminSettings({ settings, primaryColor }) {
   };
   
   const handleSave = () => {
-    saveMutation.mutate(formData);
+    saveMutation.mutate({ ...formData, default_printer: selectedPrinter });
+  };
+
+  const handleTestPrint = async () => {
+    if (!selectedPrinter) {
+      toast.error('Selecione uma impressora primeiro');
+      return;
+    }
+
+    setTestingPrint(true);
+    try {
+      const response = await base44.functions.invoke('testPrintNodePrint', {
+        printerName: selectedPrinter
+      });
+
+      if (response.data.success) {
+        toast.success('Teste de impressão enviado para ' + response.data.printer);
+      } else {
+        toast.error(response.data.error || 'Erro ao testar impressão');
+      }
+    } catch (error) {
+      toast.error('Erro ao testar impressão: ' + error.message);
+    }
+    setTestingPrint(false);
   };
 
   const getSoundUrl = (sound) => {
@@ -617,15 +652,84 @@ export default function AdminSettings({ settings, primaryColor }) {
                           adicione: <code className="bg-blue-100 px-2 py-1 rounded font-mono">PRINTNODE_API_KEY</code>
                         </p>
                       </div>
-                      
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                        <p className="text-sm text-green-800">
-                          ✅ <strong>Pronto!</strong> Quando um pedido for confirmado, ele será impresso automaticamente na primeira impressora disponível.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="font-bold text-gray-900 mb-4">Suas Impressoras PrintNode</h3>
+                
+                {loadingPrinters ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  </div>
+                ) : printersData?.success ? (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-5 h-5 text-green-600" />
+                        <p className="text-sm text-green-800">
+                          <strong>PrintNode conectado!</strong> {printersData.printers.length} impressora(s) detectada(s)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Selecione a Impressora Padrão</Label>
+                      <Select 
+                        value={selectedPrinter}
+                        onValueChange={setSelectedPrinter}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha uma impressora" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {printersData.printers.map((printer) => (
+                            <SelectItem key={printer.id} value={printer.name}>
+                              {printer.name} {printer.state === 'online' ? '🟢' : '⚪'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500">
+                        Esta impressora será usada para todos os pedidos
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      onClick={handleTestPrint}
+                      disabled={!selectedPrinter || testingPrint}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {testingPrint ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Printer className="w-4 h-4 mr-2" />
+                          Fazer Teste de Impressão
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-sm text-amber-800">
+                      ⚠️ PrintNode não detectado. Certifique-se de:
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-amber-700 mt-2 ml-2">
+                      <li>Ter instalado o app do PrintNode</li>
+                      <li>O app estar rodando (ícone na bandeja)</li>
+                      <li>Estar logado na sua conta</li>
+                      <li>A API Key estar configurada nas variáveis de ambiente</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
