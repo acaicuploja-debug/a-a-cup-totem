@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Users, Scale, Plus, Minus, X, CreditCard, QrCode, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
-import qz from 'qz-tray';
+
 import PDVPixPayment from './PDVPixPayment';
 
 export default function AdminPDV({ settings, primaryColor, onClose }) {

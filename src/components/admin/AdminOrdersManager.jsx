@@ -11,7 +11,7 @@ import { ChefHat, Package, CheckCircle, Printer, Eye, X, ShoppingCart } from 'lu
 import AdminPDV from './AdminPDV';
 import { toast } from 'sonner';
 import PendingOrderNotification from './PendingOrderNotification';
-import qz from 'qz-tray';
+
 
 const statusConfig = {
   em_preparo: { label: 'Em Preparo', color: 'bg-purple-500', icon: ChefHat },
@@ -31,7 +31,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const isFirstLoad = useRef(true);
   const notificationIntervalRef = useRef(null);
   const previousPreparingOrderIds = useRef(new Set());
-  const [qzConnected, setQzConnected] = useState(false);
+
   const [showPDV, setShowPDV] = useState(false);
   const queryClient = useQueryClient();
 
@@ -50,33 +50,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     queryFn: () => base44.entities.Customer.list()
   });
 
-  // Initialize QZ Tray connection
-  useEffect(() => {
-    const connectQZ = async () => {
-      try {
-        if (!qz.websocket.isActive()) {
-          await qz.websocket.connect();
-          setQzConnected(true);
-          toast.success('QZ Tray conectado! Impressão automática ativada.');
-        }
-      } catch (err) {
-        console.log('QZ Tray não está rodando:', err);
-        setQzConnected(false);
-      }
-    };
-    
-    connectQZ();
-    
-    return () => {
-      try {
-        if (qz.websocket.isActive()) {
-          qz.websocket.disconnect();
-        }
-      } catch (err) {
-        console.log('Erro ao desconectar QZ:', err);
-      }
-    };
-  }, []);
+
 
   // Filter only today's orders (exclude aguardando_pix and cancelado)
   const todayOrders = React.useMemo(() => {
@@ -451,24 +425,11 @@ const getCustomerInfo = (phone) => {
 
   return (
     <div className="space-y-6">
-      {qzConnected && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="text-green-600">✅</div>
-          <div>
-            <p className="font-medium text-green-900">QZ Tray conectado</p>
-            <p className="text-sm text-green-700">
-              Impressão automática silenciosa ativada!
-            </p>
-          </div>
-        </div>
-      )}
-      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestor de Pedidos</h1>
           <p className="text-gray-500 mt-1">
             Pedidos de hoje • {todayOrders.length} total
-            {qzConnected && <span className="ml-2 text-green-600">• 🖨️ Impressão automática ativa</span>}
           </p>
         </div>
         <div className="flex gap-2">
