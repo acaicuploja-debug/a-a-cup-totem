@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
-import { QrCode, CreditCard, Banknote, ArrowRight } from 'lucide-react';
+import { QrCode, CreditCard, Banknote, ArrowRight, Loader2 } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ export default function TotemPayment({
 }) {
   const { items, total, customer, consumptionType, setPaymentMethod, setCurrentOrder } = useCart();
   const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
+  const [processingPayment, setProcessingPayment] = useState(null);
   
   // Sempre usar cartão simples (sem Point)
   const availableMethods = configuredMethods;
@@ -140,15 +141,24 @@ export default function TotemPayment({
   });
   
   const handleSelect = async (method) => {
+    // Prevenir cliques múltiplos
+    if (processingPayment) return;
+    
+    setProcessingPayment(method);
     setPaymentMethod(method);
 
-    if (method === 'cartao' || method === 'dinheiro') {
-      toast.info('Criando pedido...');
-      await createOrderMutation.mutateAsync(method);
-      toast.success('Pedido criado!');
-      onSelectPayment(method);
-    } else {
-      onSelectPayment(method);
+    try {
+      if (method === 'cartao' || method === 'dinheiro') {
+        toast.info('Criando pedido...');
+        await createOrderMutation.mutateAsync(method);
+        toast.success('Pedido criado!');
+        onSelectPayment(method);
+      } else {
+        onSelectPayment(method);
+      }
+    } catch (error) {
+      setProcessingPayment(null);
+      toast.error('Erro ao processar pagamento');
     }
   };
   
@@ -194,58 +204,85 @@ export default function TotemPayment({
 
             if (!Icon || !label) return null;
 
+            const isProcessing = processingPayment === method;
+            const isDisabled = processingPayment !== null;
+
             return (
               <button
                 key={method}
                 onClick={() => handleSelect(method)}
-                className={`w-full flex items-center gap-6 p-6 bg-white rounded-2xl border-2 transition-all active:scale-95 ${
-                  isPix 
-                    ? 'border-green-400 shadow-lg shadow-green-100' 
-                    : 'border-gray-200 hover:border-gray-300'
+                disabled={isDisabled}
+                className={`w-full flex items-center gap-6 p-6 rounded-2xl border-2 transition-all ${
+                  isProcessing
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 border-green-600 scale-95 shadow-2xl'
+                    : isDisabled
+                    ? 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                    : isPix 
+                    ? 'bg-white border-green-400 shadow-lg shadow-green-100 hover:scale-105 active:scale-95' 
+                    : 'bg-white border-gray-200 hover:border-gray-300 hover:scale-105 active:scale-95'
                 }`}
               >
                 <div 
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
-                  style={{ backgroundColor: isPix ? '#22c55e15' : `${primaryColor}15` }}
+                  className={`w-20 h-20 rounded-2xl flex items-center justify-center text-4xl transition-all ${
+                    isProcessing ? 'animate-pulse' : ''
+                  }`}
+                  style={{ backgroundColor: isProcessing ? '#ffffff30' : isPix ? '#22c55e15' : `${primaryColor}15` }}
                 >
-                  {label.emoji}
+                  {isProcessing ? (
+                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                  ) : (
+                    label.emoji
+                  )}
                 </div>
 
                 <div className="flex-1 text-left">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {label.title}
+                    <h3 className={`text-xl font-bold ${isProcessing ? 'text-white' : 'text-gray-900'}`}>
+                      {isProcessing ? 'Processando...' : label.title}
                     </h3>
-                    {label.subtitle && (
+                    {!isProcessing && label.subtitle && (
                       <span className={`text-sm font-normal ${isPix ? 'text-green-600' : 'text-gray-500'}`}>
                         {label.subtitle}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-500 mb-1">
-                    {label.description}
-                  </p>
-                  {hasDiscount && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-semibold text-green-600">
-                        💰 {Math.abs(adjustment)}% de desconto
-                      </span>
-                      <span className="text-sm text-gray-400 line-through ml-2">
-                        R$ {total.toFixed(2)}
-                      </span>
-                      <span className="text-sm font-bold text-green-600 ml-1">
-                        R$ {adjustedTotal.toFixed(2)}
-                      </span>
-                    </div>
+                  {!isProcessing && (
+                    <>
+                      <p className="text-gray-500 mb-1">
+                        {label.description}
+                      </p>
+                      {hasDiscount && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm font-semibold text-green-600">
+                            💰 {Math.abs(adjustment)}% de desconto
+                          </span>
+                          <span className="text-sm text-gray-400 line-through ml-2">
+                            R$ {total.toFixed(2)}
+                          </span>
+                          <span className="text-sm font-bold text-green-600 ml-1">
+                            R$ {adjustedTotal.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {hasSurcharge && (
+                        <div className="text-sm text-amber-600">
+                          +{adjustment}% • Total: R$ {adjustedTotal.toFixed(2)}
+                        </div>
+                      )}
+                    </>
                   )}
-                  {hasSurcharge && (
-                    <div className="text-sm text-amber-600">
-                      +{adjustment}% • Total: R$ {adjustedTotal.toFixed(2)}
-                    </div>
+                  {isProcessing && (
+                    <p className="text-white text-sm font-medium">
+                      Aguarde um momento...
+                    </p>
                   )}
                 </div>
 
-                <ArrowRight className={`w-6 h-6 ${isPix ? 'text-green-500' : 'text-gray-400'}`} />
+                {isProcessing ? (
+                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                ) : (
+                  <ArrowRight className={`w-6 h-6 ${isPix ? 'text-green-500' : 'text-gray-400'}`} />
+                )}
               </button>
             );
           })}
