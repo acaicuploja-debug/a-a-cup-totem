@@ -16,7 +16,7 @@ export default function TotemUpsell({
   onProceed,
   onProductSelect
 }) {
-  const { addItem, total } = useCart();
+  const { addItem, items, removeItem, total } = useCart();
   
   const { data: upsellProducts, isLoading } = useQuery({
     queryKey: ['upsell-products'],
@@ -25,8 +25,6 @@ export default function TotemUpsell({
       return result.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
   });
-  
-  const [addedProducts, setAddedProducts] = React.useState({});
   
   const handleAddUpsell = (product) => {
     // Se o produto tem complementos, abrir seletor
@@ -37,11 +35,20 @@ export default function TotemUpsell({
     
     // Se não tem complementos, adicionar direto
     addItem(product, [], 1);
-    setAddedProducts(prev => ({
-      ...prev,
-      [product.id]: (prev[product.id] || 0) + 1
-    }));
     toast.success(`${product.name} adicionado!`);
+  };
+  
+  const handleRemoveUpsell = (product) => {
+    // Encontrar o último item deste produto no carrinho
+    const itemToRemove = [...items].reverse().find(item => item.product_id === product.id);
+    if (itemToRemove) {
+      removeItem(itemToRemove.id);
+      toast.success(`${product.name} removido!`);
+    }
+  };
+  
+  const getProductCountInCart = (productId) => {
+    return items.filter(item => item.product_id === productId).length;
   };
 
   if (isLoading) {
@@ -81,6 +88,7 @@ export default function TotemUpsell({
           {upsellProducts.map((product, index) => {
             const hasPromo = product.promo_price && product.promo_price < product.price;
             const displayPrice = product.promo_price || product.price;
+            const countInCart = getProductCountInCart(product.id);
             
             return (
               <motion.div
@@ -117,9 +125,9 @@ export default function TotemUpsell({
                       ))}
                     </div>
                   )}
-                  {addedProducts[product.id] > 0 && (
+                  {countInCart > 0 && (
                     <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {addedProducts[product.id]}x
+                      {countInCart}x
                     </div>
                   )}
                 </div>
@@ -149,14 +157,34 @@ export default function TotemUpsell({
                     )}
                   </div>
                   
-                  <Button
-                    onClick={() => handleAddUpsell(product)}
-                    className="w-full h-10 rounded-xl text-sm font-bold text-white"
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar
-                  </Button>
+                  {countInCart > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => handleRemoveUpsell(product)}
+                        variant="outline"
+                        className="h-10 rounded-xl text-sm font-bold"
+                      >
+                        Remover
+                      </Button>
+                      <Button
+                        onClick={() => handleAddUpsell(product)}
+                        className="h-10 rounded-xl text-sm font-bold text-white"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => handleAddUpsell(product)}
+                      className="w-full h-10 rounded-xl text-sm font-bold text-white"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             );
