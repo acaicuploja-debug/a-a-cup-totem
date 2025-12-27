@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, GripVertical } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import ProductComplementEditor from './ProductComplementEditor';
 import { toast } from 'sonner';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function AdminUpsell({ settings, primaryColor }) {
   const [showDialog, setShowDialog] = useState(false);
@@ -24,7 +25,10 @@ export default function AdminUpsell({ settings, primaryColor }) {
   
   const { data: products, isLoading } = useQuery({
     queryKey: ['admin-upsell'],
-    queryFn: () => base44.entities.Product.filter({ is_upsell: true })
+    queryFn: async () => {
+      const result = await base44.entities.Product.filter({ is_upsell: true });
+      return result.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
   });
   
   const createMutation = useMutation({
@@ -120,6 +124,28 @@ export default function AdminUpsell({ settings, primaryColor }) {
     setUploading(false);
   };
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+
+    const items = Array.from(products);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    queryClient.setQueryData(['admin-upsell'], items);
+
+    try {
+      await Promise.all(
+        items.map((item, index) =>
+          base44.entities.Product.update(item.id, { order: index })
+        )
+      );
+      toast.success('Ordem atualizada!');
+    } catch (error) {
+      toast.error('Erro ao atualizar ordem');
+      queryClient.invalidateQueries(['admin-upsell']);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -160,81 +186,109 @@ export default function AdminUpsell({ settings, primaryColor }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {products?.map(product => (
-            <Card key={product.id} className={!product.active ? 'opacity-50' : ''}>
-              <CardContent className="p-4">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full aspect-square rounded-xl object-cover mb-4" />
-                ) : (
-                  <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
-                    <ImageIcon className="w-12 h-12" style={{ color: primaryColor }} />
-                  </div>
-                )}
-                
-                <h3 className="font-bold text-gray-900">{product.name}</h3>
-                {product.description && <p className="text-sm text-gray-500 mb-2">{product.description}</p>}
-                
-                <div className="mb-4">
-                  {product.promo_price && product.promo_price < product.price ? (
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-lg font-bold" style={{ color: primaryColor }}>
-                        R$ {product.promo_price.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-400 line-through">
-                        R$ {product.price.toFixed(2)}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-lg font-bold" style={{ color: primaryColor }}>
-                      R$ {product.price.toFixed(2)}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
-                    <Pencil className="w-4 h-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      if (confirm('Duplicar este produto?')) {
-                        const duplicated = {
-                          ...product,
-                          name: `${product.name} (Cópia)`,
-                          id: undefined,
-                          created_date: undefined,
-                          updated_date: undefined
-                        };
-                        delete duplicated.id;
-                        delete duplicated.created_date;
-                        delete duplicated.updated_date;
-                        createMutation.mutate(duplicated);
-                      }
-                    }}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-red-600"
-                    onClick={() => {
-                      if (confirm('Remover este produto?')) {
-                        deleteMutation.mutate(product.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="upsell-products">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              >
+                {products?.map((product, index) => (
+                  <Draggable key={product.id} draggableId={product.id} index={index}>
+                    {(provided, snapshot) => (
+                      <Card
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`${!product.active ? 'opacity-50' : ''} ${
+                          snapshot.isDragging ? 'shadow-2xl scale-105' : ''
+                        } transition-all`}
+                      >
+                        <CardContent className="p-4">
+                          <div
+                            {...provided.dragHandleProps}
+                            className="flex items-center justify-center mb-2 cursor-grab active:cursor-grabbing"
+                          >
+                            <GripVertical className="w-5 h-5 text-gray-400" />
+                          </div>
+
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name} className="w-full aspect-square rounded-xl object-cover mb-4" />
+                          ) : (
+                            <div className="w-full aspect-square rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
+                              <ImageIcon className="w-12 h-12" style={{ color: primaryColor }} />
+                            </div>
+                          )}
+                          
+                          <h3 className="font-bold text-gray-900">{product.name}</h3>
+                          {product.description && <p className="text-sm text-gray-500 mb-2">{product.description}</p>}
+                          
+                          <div className="mb-4">
+                            {product.promo_price && product.promo_price < product.price ? (
+                              <div className="flex items-baseline gap-2">
+                                <p className="text-lg font-bold" style={{ color: primaryColor }}>
+                                  R$ {product.promo_price.toFixed(2)}
+                                </p>
+                                <p className="text-sm text-gray-400 line-through">
+                                  R$ {product.price.toFixed(2)}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-lg font-bold" style={{ color: primaryColor }}>
+                                R$ {product.price.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
+                              <Pencil className="w-4 h-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Duplicar este produto?')) {
+                                  const duplicated = {
+                                    ...product,
+                                    name: `${product.name} (Cópia)`,
+                                    id: undefined,
+                                    created_date: undefined,
+                                    updated_date: undefined
+                                  };
+                                  delete duplicated.id;
+                                  delete duplicated.created_date;
+                                  delete duplicated.updated_date;
+                                  createMutation.mutate(duplicated);
+                                }
+                              }}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600"
+                              onClick={() => {
+                                if (confirm('Remover este produto?')) {
+                                  deleteMutation.mutate(product.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
