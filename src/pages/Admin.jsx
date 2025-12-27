@@ -77,7 +77,7 @@ export default function Admin() {
     enabled: !!user && user.role === 'admin'
   });
 
-  // Auto-print new orders in "em_preparo" status - funciona em qualquer aba
+  // Auto-print new orders in "em_preparo" status - ÚNICA FONTE DE IMPRESSÃO AUTOMÁTICA
   React.useEffect(() => {
     if (!allOrders || !settings) return;
 
@@ -88,20 +88,21 @@ export default function Admin() {
     const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
 
     if (newPreparingIds.length > 0) {
-      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - iniciando impressão automática`);
+      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - impressão automática ÚNICA`);
       
-      // Auto-print each new order
+      // Auto-print each new order APENAS UMA VEZ
       newPreparingIds.forEach(async (orderId) => {
         const order = currentPreparingOrders.find(o => o.id === orderId);
         if (order) {
-          console.log(`📄 Imprimindo pedido #${order.order_number}`);
+          console.log(`📄 Imprimindo pedido #${order.order_number} - UMA VEZ APENAS`);
           try {
-            await base44.functions.invoke('printWithPrintNode', {
+            const response = await base44.functions.invoke('printWithPrintNode', {
               orderId: order.id,
               printerName: settings?.default_printer
             });
+            console.log(`✅ Pedido #${order.order_number} impresso com sucesso`);
           } catch (error) {
-            console.error('Erro ao imprimir:', error);
+            console.error('❌ Erro ao imprimir pedido #' + order.order_number, error);
           }
         }
       });

@@ -119,7 +119,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     setPendingOrders(currentPendingOrders);
   }, [allOrders, settings]);
 
-  // Impressão automática agora é gerenciada na página Admin principal
+  // Impressão automática é gerenciada na página Admin principal (Admin.jsx)
 
 
 
@@ -149,7 +149,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const handleStatusChange = async (order, newStatus) => {
     updateStatusMutation.mutate({ orderId: order.id, status: newStatus });
 
-    // Se finalizou o pedido e tem telefone, enviar feedback request
+    // Se finalizou o pedido e tem telefone, enviar feedback request (SEM impressão aqui)
     if (newStatus === 'finalizado' && order.customer_phone && settings?.whatsapp_number) {
       try {
         await base44.functions.invoke('sendFeedbackRequest', { orderId: order.id });
