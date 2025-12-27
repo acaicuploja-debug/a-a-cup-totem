@@ -42,7 +42,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
       return result;
     },
     refetchInterval: 5000,
-    refetchIntervalInBackground: false
+    refetchIntervalInBackground: true // Funcionar em background
   });
 
   const { data: customers } = useQuery({
@@ -119,31 +119,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
     setPendingOrders(currentPendingOrders);
   }, [allOrders, settings]);
 
-  // Auto-print new orders in "em_preparo" status
-  useEffect(() => {
-    if (!allOrders || !settings) return;
-
-    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
-    const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
-
-    // Detect NEW orders in em_preparo
-    const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
-
-    if (newPreparingIds.length > 0 && !isFirstLoad.current) {
-      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - iniciando impressão automática`);
-      
-      // Auto-print each new order
-      newPreparingIds.forEach(orderId => {
-        const order = currentPreparingOrders.find(o => o.id === orderId);
-        if (order) {
-          console.log(`📄 Imprimindo pedido #${order.order_number}`);
-          setTimeout(() => handlePrint(order, false), 500);
-        }
-      });
-    }
-
-    previousPreparingOrderIds.current = currentPreparingIds;
-  }, [allOrders, settings]);
+  // Impressão automática agora é gerenciada na página Admin principal
 
 
 

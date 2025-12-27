@@ -44,8 +44,12 @@ const menuItems = [
 ];
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Persistir aba ativa no localStorage
+    return localStorage.getItem('admin_active_tab') || 'dashboard';
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const previousPreparingOrderIds = React.useRef(new Set());
   
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
@@ -60,6 +64,51 @@ export default function Admin() {
       return list[0] || {};
     }
   });
+
+  // Polling de pedidos em background - funciona em qualquer aba
+  const { data: allOrders } = useQuery({
+    queryKey: ['admin-orders-background'],
+    queryFn: async () => {
+      const result = await base44.entities.Order.list('-created_date');
+      return result;
+    },
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true, // CRÍTICO: funciona mesmo em background
+    enabled: !!user && user.role === 'admin'
+  });
+
+  // Auto-print new orders in "em_preparo" status - funciona em qualquer aba
+  React.useEffect(() => {
+    if (!allOrders || !settings) return;
+
+    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
+    const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
+
+    // Detect NEW orders in em_preparo
+    const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
+
+    if (newPreparingIds.length > 0) {
+      console.log(`🖨️ ${newPreparingIds.length} novo(s) pedido(s) detectado(s) - iniciando impressão automática`);
+      
+      // Auto-print each new order
+      newPreparingIds.forEach(async (orderId) => {
+        const order = currentPreparingOrders.find(o => o.id === orderId);
+        if (order) {
+          console.log(`📄 Imprimindo pedido #${order.order_number}`);
+          try {
+            await base44.functions.invoke('printWithPrintNode', {
+              orderId: order.id,
+              printerName: settings?.default_printer
+            });
+          } catch (error) {
+            console.error('Erro ao imprimir:', error);
+          }
+        }
+      });
+    }
+
+    previousPreparingOrderIds.current = currentPreparingIds;
+  }, [allOrders, settings]);
   
   const primaryColor = settings?.primary_color || '#6B21A8';
   
@@ -172,6 +221,7 @@ export default function Admin() {
                 key={item.id}
                 onClick={() => {
                   setActiveTab(item.id);
+                  localStorage.setItem('admin_active_tab', item.id); // Persistir
                   setSidebarOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
