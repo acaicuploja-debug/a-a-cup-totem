@@ -66,85 +66,123 @@ export default function Admin() {
     }
   });
 
-  // Polling de pedidos em background - funciona em qualquer aba
+  // Polling de pedidos em background - SEMPRE ATIVO
   const { data: allOrders } = useQuery({
     queryKey: ['admin-orders-background'],
     queryFn: async () => {
+      console.log('🔄 Buscando pedidos...', new Date().toLocaleTimeString());
       const result = await base44.entities.Order.list('-created_date');
+      console.log(`📦 ${result.length} pedidos retornados`);
       return result;
     },
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true, // CRÍTICO: funciona mesmo em background
-    enabled: !!user && user.role === 'admin'
+    refetchInterval: 3000, // Reduzido para 3 segundos
+    refetchIntervalInBackground: true,
+    enabled: !!user && user.role === 'admin',
+    staleTime: 0, // Sempre considerar dados como stale
+    gcTime: 0 // Não cachear
   });
 
-  // Auto-print new orders in "em_preparo" status - FUNCIONA EM BACKGROUND
+  // Auto-print GARANTIDO - executa SEMPRE que detecta novo pedido
   React.useEffect(() => {
-    if (!allOrders || !settings) return;
-
-    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
-    const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
-
-    // Na primeira carga, inicializa referência apenas com pedidos criados há mais de 5 minutos
-    // (assim não perde pedidos novos se recarregar a página)
-    if (isFirstLoad.current) {
-      console.log('🔄 Primeira carga - inicializando referências');
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const oldOrders = currentPreparingOrders.filter(o => {
-        const orderDate = new Date(o.created_date);
-        return orderDate < fiveMinutesAgo;
-      });
-      previousPreparingOrderIds.current = new Set(oldOrders.map(o => o.id));
-      console.log(`📋 Marcados ${oldOrders.length} pedidos antigos como já impressos`);
-      isFirstLoad.current = false;
-      
-      // Imprimir pedidos recentes (menos de 5 minutos) na primeira carga
-      const recentOrders = currentPreparingOrders.filter(o => !oldOrders.find(old => old.id === o.id));
-      if (recentOrders.length > 0) {
-        console.log(`🆕 ${recentOrders.length} pedido(s) recente(s) detectado(s) - imprimindo`);
-        recentOrders.forEach(async (order) => {
-          console.log(`📄 Imprimindo pedido #${order.order_number} (recente)`);
-          try {
-            await base44.functions.invoke('printWithPrintNode', {
-              orderId: order.id,
-              printerName: settings?.default_printer
-            });
-            console.log(`✅ Pedido #${order.order_number} impresso!`);
-            previousPreparingOrderIds.current.add(order.id);
-          } catch (error) {
-            console.error(`❌ Erro ao imprimir #${order.order_number}:`, error);
-          }
-        });
+    if (!allOrders || !settings || !settings.default_printer) {
+      if (!settings?.default_printer) {
+        console.warn('⚠️ Impressora padrão não configurada');
       }
       return;
     }
 
-    // Detectar NOVOS pedidos (que não estavam na referência anterior)
-    const newPreparingIds = [...currentPreparingIds].filter(id => !previousPreparingOrderIds.current.has(id));
+    console.log('🔍 Checando pedidos em preparo...', new Date().toLocaleTimeString());
 
-    if (newPreparingIds.length > 0) {
-      console.log(`🖨️ ${newPreparingIds.length} NOVO(S) PEDIDO(S) - Imprimindo automaticamente`);
+    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
+    const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
+
+    console.log(`📋 ${currentPreparingOrders.length} pedidos em preparo`);
+
+    // PRIMEIRA CARGA: marcar pedidos antigos (mais de 3 minutos)
+    if (isFirstLoad.current) {
+      console.log('🆕 PRIMEIRA CARGA DO SISTEMA');
+      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
       
-      // Imprimir cada novo pedido
-      newPreparingIds.forEach(async (orderId) => {
-        const order = currentPreparingOrders.find(o => o.id === orderId);
-        if (order) {
-          console.log(`📄 Imprimindo pedido #${order.order_number}`, new Date().toLocaleTimeString());
-          try {
-            await base44.functions.invoke('printWithPrintNode', {
-              orderId: order.id,
-              printerName: settings?.default_printer
-            });
-            console.log(`✅ Pedido #${order.order_number} impresso com sucesso!`);
-          } catch (error) {
-            console.error(`❌ Erro ao imprimir pedido #${order.order_number}:`, error);
-          }
-        }
+      const oldOrders = currentPreparingOrders.filter(o => {
+        const orderDate = new Date(o.created_date);
+        return orderDate < threeMinutesAgo;
       });
+      
+      const recentOrders = currentPreparingOrders.filter(o => {
+        const orderDate = new Date(o.created_date);
+        return orderDate >= threeMinutesAgo;
+      });
+
+      // Marcar antigos como já impressos
+      previousPreparingOrderIds.current = new Set(oldOrders.map(o => o.id));
+      console.log(`✅ ${oldOrders.length} pedidos antigos marcados como impressos`);
+      
+      // Imprimir RECENTES imediatamente
+      if (recentOrders.length > 0) {
+        console.log(`🖨️ IMPRIMINDO ${recentOrders.length} PEDIDO(S) RECENTE(S)!`);
+        
+        recentOrders.forEach((order) => {
+          console.log(`📄 Enviando para impressão: #${order.order_number}`);
+          
+          base44.functions.invoke('printWithPrintNode', {
+            orderId: order.id,
+            printerName: settings.default_printer
+          }).then(() => {
+            console.log(`✅ #${order.order_number} IMPRESSO COM SUCESSO`);
+            previousPreparingOrderIds.current.add(order.id);
+          }).catch((error) => {
+            console.error(`❌ ERRO ao imprimir #${order.order_number}:`, error);
+          });
+        });
+      }
+      
+      isFirstLoad.current = false;
+      return;
     }
 
-    // Atualizar referência
+    // DETECTAR NOVOS PEDIDOS (não existiam antes)
+    const newPreparingIds = [...currentPreparingIds].filter(
+      id => !previousPreparingOrderIds.current.has(id)
+    );
+
+    if (newPreparingIds.length > 0) {
+      console.log(`🚨 ALERTA: ${newPreparingIds.length} NOVO(S) PEDIDO(S) DETECTADO(S)!`);
+      
+      newPreparingIds.forEach((orderId) => {
+        const order = currentPreparingOrders.find(o => o.id === orderId);
+        if (!order) {
+          console.error(`❌ Pedido ${orderId} não encontrado!`);
+          return;
+        }
+
+        console.log(`📄 IMPRIMINDO AGORA: Pedido #${order.order_number}`);
+        
+        // Chamar impressão IMEDIATAMENTE
+        base44.functions.invoke('printWithPrintNode', {
+          orderId: order.id,
+          printerName: settings.default_printer
+        }).then(() => {
+          console.log(`✅ SUCESSO: Pedido #${order.order_number} IMPRESSO!`);
+          previousPreparingOrderIds.current.add(order.id);
+        }).catch((error) => {
+          console.error(`❌ FALHA na impressão do #${order.order_number}:`, error.message);
+          // Tentar novamente após 2 segundos
+          setTimeout(() => {
+            console.log(`🔄 Tentando reimprimir #${order.order_number}...`);
+            base44.functions.invoke('printWithPrintNode', {
+              orderId: order.id,
+              printerName: settings.default_printer
+            }).catch(err => console.error(`❌ Falha na reimpressão:`, err));
+          }, 2000);
+        });
+      });
+    } else {
+      console.log('✅ Nenhum pedido novo detectado');
+    }
+
+    // SEMPRE atualizar referência
     previousPreparingOrderIds.current = currentPreparingIds;
+    
   }, [allOrders, settings]);
   
   const primaryColor = settings?.primary_color || '#6B21A8';
