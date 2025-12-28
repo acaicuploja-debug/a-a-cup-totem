@@ -85,11 +85,37 @@ export default function Admin() {
     const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
     const currentPreparingIds = new Set(currentPreparingOrders.map(o => o.id));
 
-    // Na primeira carga, apenas inicializa a referência sem imprimir
+    // Na primeira carga, inicializa referência apenas com pedidos criados há mais de 5 minutos
+    // (assim não perde pedidos novos se recarregar a página)
     if (isFirstLoad.current) {
-      console.log('🔄 Primeira carga - inicializando referências de pedidos');
-      previousPreparingOrderIds.current = currentPreparingIds;
+      console.log('🔄 Primeira carga - inicializando referências');
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const oldOrders = currentPreparingOrders.filter(o => {
+        const orderDate = new Date(o.created_date);
+        return orderDate < fiveMinutesAgo;
+      });
+      previousPreparingOrderIds.current = new Set(oldOrders.map(o => o.id));
+      console.log(`📋 Marcados ${oldOrders.length} pedidos antigos como já impressos`);
       isFirstLoad.current = false;
+      
+      // Imprimir pedidos recentes (menos de 5 minutos) na primeira carga
+      const recentOrders = currentPreparingOrders.filter(o => !oldOrders.find(old => old.id === o.id));
+      if (recentOrders.length > 0) {
+        console.log(`🆕 ${recentOrders.length} pedido(s) recente(s) detectado(s) - imprimindo`);
+        recentOrders.forEach(async (order) => {
+          console.log(`📄 Imprimindo pedido #${order.order_number} (recente)`);
+          try {
+            await base44.functions.invoke('printWithPrintNode', {
+              orderId: order.id,
+              printerName: settings?.default_printer
+            });
+            console.log(`✅ Pedido #${order.order_number} impresso!`);
+            previousPreparingOrderIds.current.add(order.id);
+          } catch (error) {
+            console.error(`❌ Erro ao imprimir #${order.order_number}:`, error);
+          }
+        });
+      }
       return;
     }
 
@@ -105,7 +131,7 @@ export default function Admin() {
         if (order) {
           console.log(`📄 Imprimindo pedido #${order.order_number}`, new Date().toLocaleTimeString());
           try {
-            const response = await base44.functions.invoke('printWithPrintNode', {
+            await base44.functions.invoke('printWithPrintNode', {
               orderId: order.id,
               printerName: settings?.default_printer
             });
