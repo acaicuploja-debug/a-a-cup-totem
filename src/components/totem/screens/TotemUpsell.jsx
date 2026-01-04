@@ -114,15 +114,24 @@ export default function TotemUpsell({
                     </div>
                   )}
                   {product.badges && product.badges.length > 0 && (
-                    <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                      {product.badges.map(badge => (
-                        <div key={badge} className="px-2 py-1 rounded-lg bg-black/70 text-white text-xs font-bold">
-                          {badge === 'promocao' && '🔥 Promoção'}
-                          {badge === 'novo' && '✨ Novo'}
-                          {badge === 'mais_vendido' && '⭐ Top'}
-                          {badge === 'oferta' && '💰 Oferta'}
-                        </div>
-                      ))}
+                    <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                      {product.badges.map(badge => {
+                        if (badge === 'leve_mais_pague_menos') {
+                          return (
+                            <div key={badge} className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-black shadow-lg border-2 border-white">
+                              🎁 LEVE MAIS PAGUE MENOS
+                            </div>
+                          );
+                        }
+                        return (
+                          <div key={badge} className="px-2 py-1 rounded-lg bg-black/70 text-white text-xs font-bold">
+                            {badge === 'promocao' && '🔥 Promoção'}
+                            {badge === 'novo' && '✨ Novo'}
+                            {badge === 'mais_vendido' && '⭐ Top'}
+                            {badge === 'oferta' && '💰 Oferta'}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   {countInCart > 0 && (

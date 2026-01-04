@@ -61,7 +61,8 @@ export default function AdminUpsell({ settings, primaryColor }) {
     { value: 'promocao', label: '🔥 Promoção' },
     { value: 'novo', label: '✨ Novo' },
     { value: 'mais_vendido', label: '⭐ Mais Vendido' },
-    { value: 'oferta', label: '💰 Oferta' }
+    { value: 'oferta', label: '💰 Oferta' },
+    { value: 'leve_mais_pague_menos', label: '🎁 Leve Mais Pague Menos' }
   ];
   
   const handleOpenDialog = (product = null) => {
