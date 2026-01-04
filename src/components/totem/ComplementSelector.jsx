@@ -75,6 +75,11 @@ export default function ComplementSelector({
                   {isSelected && <Check className="w-4 h-4" />}
                 </div>
                 <span className="font-medium text-gray-900">{item.name}</span>
+                {(!item.price || item.price === 0) && (
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                    GRÁTIS
+                  </span>
+                )}
               </div>
               
               {item.price > 0 && (
