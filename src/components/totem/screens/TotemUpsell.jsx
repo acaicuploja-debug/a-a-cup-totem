@@ -98,7 +98,10 @@ export default function TotemUpsell({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="relative aspect-square">
+                <div 
+                  className="relative aspect-square cursor-pointer active:opacity-80 transition-opacity"
+                  onClick={() => handleAddUpsell(product)}
+                >
                   {product.image_url ? (
                     <img 
                       src={product.image_url} 
