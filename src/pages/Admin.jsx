@@ -66,7 +66,7 @@ export default function Admin() {
     }
   });
 
-  // Polling de pedidos em background - SEMPRE ATIVO
+  // Polling de pedidos em background - MÁXIMA VELOCIDADE
   const { data: allOrders } = useQuery({
     queryKey: ['admin-orders-background'],
     queryFn: async () => {
@@ -75,11 +75,11 @@ export default function Admin() {
       console.log(`📦 ${result.length} pedidos retornados`);
       return result;
     },
-    refetchInterval: 3000, // Reduzido para 3 segundos
+    refetchInterval: 2000, // 2 segundos - mais rápido
     refetchIntervalInBackground: true,
     enabled: !!user && user.role === 'admin',
-    staleTime: 0, // Sempre considerar dados como stale
-    gcTime: 0 // Não cachear
+    staleTime: 0,
+    gcTime: 0
   });
 
   // Auto-print GARANTIDO - executa SEMPRE que detecta novo pedido
@@ -123,13 +123,13 @@ export default function Admin() {
         
         recentOrders.forEach((order) => {
           console.log(`📄 Enviando para impressão: #${order.order_number}`);
+          previousPreparingOrderIds.current.add(order.id);
           
           base44.functions.invoke('printWithPrintNode', {
             orderId: order.id,
             printerName: settings.default_printer
           }).then(() => {
             console.log(`✅ #${order.order_number} IMPRESSO COM SUCESSO`);
-            previousPreparingOrderIds.current.add(order.id);
           }).catch((error) => {
             console.error(`❌ ERRO ao imprimir #${order.order_number}:`, error);
           });
@@ -157,23 +157,24 @@ export default function Admin() {
 
         console.log(`📄 IMPRIMINDO AGORA: Pedido #${order.order_number}`);
         
-        // Chamar impressão IMEDIATAMENTE
+        // Marcar como impresso IMEDIATAMENTE (não esperar resposta)
+        previousPreparingOrderIds.current.add(order.id);
+        
+        // Chamar impressão SEM ESPERAR (fire and forget)
         base44.functions.invoke('printWithPrintNode', {
           orderId: order.id,
           printerName: settings.default_printer
         }).then(() => {
           console.log(`✅ SUCESSO: Pedido #${order.order_number} IMPRESSO!`);
-          previousPreparingOrderIds.current.add(order.id);
         }).catch((error) => {
           console.error(`❌ FALHA na impressão do #${order.order_number}:`, error.message);
-          // Tentar novamente após 2 segundos
+          // Retry em 1 segundo
           setTimeout(() => {
-            console.log(`🔄 Tentando reimprimir #${order.order_number}...`);
             base44.functions.invoke('printWithPrintNode', {
               orderId: order.id,
               printerName: settings.default_printer
-            }).catch(err => console.error(`❌ Falha na reimpressão:`, err));
-          }, 2000);
+            });
+          }, 1000);
         });
       });
     } else {
