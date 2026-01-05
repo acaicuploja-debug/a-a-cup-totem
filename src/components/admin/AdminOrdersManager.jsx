@@ -377,6 +377,19 @@ const getCustomerInfo = (phone) => {
     return groups;
   }, [todayOrders]);
 
+  // Atalho de teclado: ESPAÇO para abrir PDV
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.code === 'Space' && !showPDV && !e.target.matches('input, textarea, select')) {
+        e.preventDefault();
+        setShowPDV(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showPDV]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -407,6 +420,7 @@ const getCustomerInfo = (phone) => {
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
             PDV - Loja
+            <kbd className="ml-2 px-2 py-1 bg-white/20 rounded text-xs">ESPAÇO</kbd>
           </Button>
           <Button 
             variant="outline" 

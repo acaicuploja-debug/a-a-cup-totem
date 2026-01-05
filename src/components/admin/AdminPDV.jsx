@@ -371,7 +371,21 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     }
   };
 
-  const handleSelectTable = (table) => {
+  const handleSelectTable = async (table) => {
+    // Marcar mesa anterior como ocupada se havia itens (exceto ao finalizar)
+    if (selectedTable && selectedTable.id && cart.length > 0) {
+      try {
+        await base44.entities.Mesa.update(selectedTable.id, {
+          status: 'ocupada',
+          items: cart,
+          total: cartTotal
+        });
+        queryClient.invalidateQueries(['tables']);
+      } catch (error) {
+        console.error('Erro ao salvar mesa anterior:', error);
+      }
+    }
+
     // Carregar os itens da mesa selecionada
     setCart(table.items || []);
     setSelectedTable(table);
@@ -452,18 +466,33 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
     setCurrentPixOrder(null);
   };
 
-  // Atalho ENTER para abrir pagamento (mas não finalizar)
+  // Atalhos de teclado
   React.useEffect(() => {
     const handleKeyPress = (e) => {
-      if (e.key === 'Enter' && cart.length > 0 && !showPayment && !showWeightDialog) {
+      // ENTER para abrir pagamento
+      if (e.key === 'Enter' && cart.length > 0 && !showPayment && !showWeightDialog && !showCashDialog) {
         e.preventDefault();
         setShowPayment(true);
+      }
+
+      // Atalhos de pagamento (apenas quando dialog de pagamento está aberto)
+      if (showPayment && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (e.key === '1' && settings?.payment_methods?.includes('pix')) {
+          e.preventDefault();
+          handleCheckout('pix');
+        } else if (e.key === '2' && settings?.payment_methods?.includes('cartao')) {
+          e.preventDefault();
+          handleCheckout('cartao');
+        } else if (e.key === '3' && settings?.payment_methods?.includes('dinheiro')) {
+          e.preventDefault();
+          handleCheckout('dinheiro');
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [cart.length, showPayment, showWeightDialog]);
+  }, [cart.length, showPayment, showWeightDialog, showCashDialog, settings]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-auto">
@@ -729,6 +758,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
                   <p className="font-bold">PIX</p>
                   <p className="text-sm text-gray-500">QR Code</p>
                 </div>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">1</kbd>
               </button>
             )}
 
@@ -742,6 +772,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
                   <p className="font-bold">Cartão</p>
                   <p className="text-sm text-gray-500">Débito ou Crédito</p>
                 </div>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">2</kbd>
               </button>
             )}
 
@@ -755,6 +786,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
                   <p className="font-bold">Dinheiro</p>
                   <p className="text-sm text-gray-500">Espécie</p>
                 </div>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">3</kbd>
               </button>
             )}
           </div>
