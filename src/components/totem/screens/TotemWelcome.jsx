@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Hand } from 'lucide-react';
+import { Hand, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function TotemWelcome({ settings, primaryColor, onStart }) {
   const bgStyle = settings?.background_url 
@@ -61,6 +63,14 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
           <span>Clique na tela para iniciar seu pedido</span>
         </motion.div>
       </motion.div>
+      
+      <Link 
+        to={createPageUrl('Admin')}
+        className="hidden md:block absolute bottom-4 right-4 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-3 rounded-full transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Settings className="w-5 h-5" />
+      </Link>
     </div>
   );
 }
