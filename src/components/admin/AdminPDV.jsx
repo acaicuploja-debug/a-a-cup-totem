@@ -117,63 +117,62 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   };
 
   const handleAddWeight = async () => {
-    if (!weight || parseFloat(weight) <= 0) {
-      toast.error('Digite um peso válido');
-      return;
-    }
+    try {
+      if (!weight || parseFloat(weight) <= 0) {
+        toast.error('Digite um peso válido');
+        return;
+      }
 
-    const weightKg = parseFloat(weight);
-    const pricePerKg = weightProduct.price_per_kg || weightProduct.price;
-    const total = weightKg * pricePerKg;
+      const weightKg = parseFloat(weight);
+      const pricePerKg = weightProduct.price_per_kg || weightProduct.price;
+      const total = weightKg * pricePerKg;
 
-    // Calcular custo baseado em porcentagem para produtos por peso
-    let itemCost = 0;
-    if (weightProduct.cost_percentage && weightProduct.cost_percentage > 0) {
-      itemCost = total * (weightProduct.cost_percentage / 100);
-      console.log('DEBUG Self-Service:', {
-        produto: weightProduct.name,
-        peso: weightKg,
+      // Calcular custo baseado em porcentagem para produtos por peso
+      let itemCost = 0;
+      if (weightProduct.cost_percentage && weightProduct.cost_percentage > 0) {
+        itemCost = total * (weightProduct.cost_percentage / 100);
+      } else if (weightProduct.cost_price) {
+        itemCost = weightProduct.cost_price * weightKg;
+      }
+
+      const newItem = {
+        product_id: weightProduct.id,
+        product_name: weightProduct.name,
+        quantity: 1,
+        weight: weightKg,
+        unit_price: total,
         total: total,
-        costPercentage: weightProduct.cost_percentage,
-        custoCalculado: itemCost,
-        tipoCusto: typeof itemCost
-      });
-    } else if (weightProduct.cost_price) {
-      itemCost = weightProduct.cost_price * weightKg;
+        cost_price: parseFloat(itemCost) || 0,
+        sold_by_weight: true
+      };
+
+      const newCart = [...cart, newItem];
+      setCart(newCart);
+
+      // Salvar na mesa se houver mesa selecionada
+      if (selectedTable && selectedTable.id) {
+        try {
+          const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
+          await base44.entities.Mesa.update(selectedTable.id, {
+            status: 'ocupada',
+            items: newCart,
+            total: newTotal
+          });
+          queryClient.invalidateQueries(['tables']);
+        } catch (error) {
+          console.error('Erro ao atualizar mesa:', error);
+          // Não impede de adicionar ao carrinho local
+        }
+      }
+
+      setShowWeightDialog(false);
+      setWeightProduct(null);
+      setWeight('');
+      toast.success(`${weightKg}kg adicionado!`);
+    } catch (error) {
+      console.error('Erro ao adicionar peso:', error);
+      toast.error('Erro ao adicionar produto: ' + error.message);
     }
-
-    const newItem = {
-      product_id: weightProduct.id,
-      product_name: weightProduct.name,
-      quantity: 1,
-      weight: weightKg,
-      unit_price: total,
-      total: total,
-      cost_price: parseFloat(itemCost),
-      sold_by_weight: true
-    };
-
-    console.log('DEBUG Item criado:', newItem);
-
-    const newCart = [...cart, newItem];
-
-    setCart(newCart);
-
-    // Salvar na mesa se houver mesa selecionada
-    if (selectedTable && selectedTable.id) {
-      const newTotal = newCart.reduce((sum, item) => sum + item.total, 0);
-      await base44.entities.Mesa.update(selectedTable.id, {
-        status: 'ocupada',
-        items: newCart,
-        total: newTotal
-      });
-      queryClient.invalidateQueries(['tables']);
-    }
-
-    setShowWeightDialog(false);
-    setWeightProduct(null);
-    setWeight('');
-    toast.success(`${weightKg}kg adicionado!`);
   };
 
   const handleUpdateQuantity = async (index, delta) => {
