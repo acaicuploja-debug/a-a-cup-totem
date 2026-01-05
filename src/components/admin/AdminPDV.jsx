@@ -77,6 +77,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   const handleAddToCart = async (product) => {
     if (product.sold_by_weight) {
       setWeightProduct(product);
+      setWeight('');
       setShowWeightDialog(true);
       return;
     }
@@ -688,11 +689,15 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
                 autoFocus
               />
             </div>
-            {weight && (
+            {weight && parseFloat(weight) > 0 && (
               <div className="p-3 bg-purple-50 rounded-lg">
                 <p className="text-sm text-gray-600">Total:</p>
                 <p className="text-2xl font-bold" style={{ color: primaryColor }}>
-                  R$ {(parseFloat(weight) * (weightProduct?.price_per_kg || weightProduct?.price || 0)).toFixed(2)}
+                  R$ {(() => {
+                    const w = parseFloat(weight);
+                    const priceKg = weightProduct?.price_per_kg || weightProduct?.price || 0;
+                    return (w * priceKg).toFixed(2);
+                  })()}
                 </p>
               </div>
             )}
