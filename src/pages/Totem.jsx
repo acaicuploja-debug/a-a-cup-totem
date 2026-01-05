@@ -15,6 +15,7 @@ import TotemPayment from '../components/totem/screens/TotemPayment';
 import TotemPix from '../components/totem/screens/TotemPix';
 import TotemSuccess from '../components/totem/screens/TotemSuccess';
 import TotemPoint from '../components/totem/screens/TotemPoint';
+import Admin from './Admin';
 
 Totem.publicPage = true;
 
@@ -37,6 +38,7 @@ function TotemContent() {
   const [screen, setScreen] = useState(SCREENS.WELCOME);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
   const { clearCart, setCurrentOrder } = useCart();
   
   const { data: settings } = useQuery({
@@ -135,6 +137,7 @@ function TotemContent() {
             <TotemWelcome 
               {...screenProps}
               onStart={handleStartOrder}
+              onOpenAdmin={() => setShowAdmin(true)}
             />
           )}
           
@@ -232,6 +235,12 @@ function TotemContent() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {showAdmin && (
+        <div className="hidden md:block fixed inset-0 z-50 bg-white">
+          <Admin onClose={() => setShowAdmin(false)} />
+        </div>
+      )}
     </div>
   );
 }
