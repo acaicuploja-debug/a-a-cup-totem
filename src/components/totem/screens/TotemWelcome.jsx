@@ -1,10 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Hand, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 
-export default function TotemWelcome({ settings, primaryColor, onStart }) {
+export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAdmin }) {
   const bgStyle = settings?.background_url 
     ? { backgroundImage: `url(${settings.background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { background: `linear-gradient(135deg, ${primaryColor} 0%, ${settings?.secondary_color || '#EC4899'} 100%)` };
@@ -64,13 +62,15 @@ export default function TotemWelcome({ settings, primaryColor, onStart }) {
         </motion.div>
       </motion.div>
       
-      <Link 
-        to={createPageUrl('Admin')}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenAdmin?.();
+        }}
         className="hidden md:block absolute bottom-4 right-4 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-3 rounded-full transition-all"
-        onClick={(e) => e.stopPropagation()}
       >
         <Settings className="w-5 h-5" />
-      </Link>
+      </button>
     </div>
   );
 }

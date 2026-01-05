@@ -43,7 +43,7 @@ const menuItems = [
   { id: 'settings', label: 'Configurações', icon: Settings }
 ];
 
-export default function Admin() {
+export default function Admin({ onClose }) {
   const [activeTab, setActiveTab] = useState(() => {
     // Persistir aba ativa no localStorage
     return localStorage.getItem('admin_active_tab') || 'dashboard';
@@ -246,6 +246,11 @@ export default function Admin() {
             {settings?.store_name || 'Açaí Cup'} Admin
           </h1>
         </div>
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-6 h-6" />
+          </Button>
+        )}
       </header>
 
       {/* Mobile Sidebar Overlay */}
@@ -276,14 +281,24 @@ export default function Admin() {
                 <p className="text-sm text-gray-500">Painel Admin</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            {onClose ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
         
