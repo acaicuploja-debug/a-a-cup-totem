@@ -62,15 +62,7 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
         </motion.div>
       </motion.div>
       
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenAdmin?.();
-        }}
-        className="hidden md:block absolute bottom-4 right-4 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white p-3 rounded-full transition-all"
-      >
-        <Settings className="w-5 h-5" />
-      </button>
+
     </div>
   );
 }
