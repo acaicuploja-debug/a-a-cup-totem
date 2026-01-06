@@ -331,7 +331,7 @@ export default function Admin({ onClose }) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:ml-64 p-6">
+      <main className="lg:ml-64 p-6 min-h-screen overflow-y-auto">
         {activeTab === 'dashboard' && <AdminDashboard settings={settings} primaryColor={primaryColor} />}
         {activeTab === 'categories' && <AdminCategories settings={settings} primaryColor={primaryColor} />}
         {activeTab === 'products' && <AdminProducts settings={settings} primaryColor={primaryColor} />}
