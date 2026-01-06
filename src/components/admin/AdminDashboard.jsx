@@ -100,7 +100,16 @@ export default function AdminDashboard({ settings, primaryColor }) {
     if (!start || !end || !allOrders) return [];
     
     return allOrders.filter(order => {
-      const orderDate = new Date(order.created_date);
+      // Usar order_datetime (horário Brasília) ao invés de created_date (UTC)
+      if (!order.order_datetime) return false;
+      
+      // Extrair data do order_datetime (formato: "DD/MM/YYYY, HH:MM:SS")
+      const dateStr = order.order_datetime.split(',')[0]?.trim();
+      if (!dateStr) return false;
+      
+      const [day, month, year] = dateStr.split('/');
+      const orderDate = new Date(year, month - 1, day);
+      
       return orderDate >= start && orderDate < end;
     });
   }, [allOrders, dateFilter, customStartDate, customEndDate]);
