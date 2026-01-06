@@ -71,22 +71,24 @@ export default function AdminDashboard({ settings, primaryColor }) {
   const { data: allOrders } = useQuery({
     queryKey: ['admin-orders'],
     queryFn: () => base44.entities.Order.list('-created_date'),
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true
+    refetchInterval: 10000,
+    staleTime: 5000,
+    retry: 2
   });
   
   const { data: allCustomers } = useQuery({
     queryKey: ['admin-customers'],
     queryFn: () => base44.entities.Customer.list(),
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true
+    refetchInterval: 60000,
+    staleTime: 30000,
+    retry: 2
   });
   
   const { data: products } = useQuery({
     queryKey: ['admin-products'],
     queryFn: () => base44.entities.Product.list(),
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true
+    staleTime: 60000,
+    retry: 2
   });
   
   const orders = useMemo(() => {
