@@ -98,6 +98,7 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
         quantity: 1,
         unit_price: product.promo_price || product.price,
         total: product.promo_price || product.price,
+        cost_price: product.cost_price || 0,
         sold_by_weight: false
       }];
     }
