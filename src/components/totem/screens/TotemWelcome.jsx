@@ -14,7 +14,18 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
       onClick={onStart}
     >
       <div className="absolute inset-0 bg-black/30" />
-      
+
+      {/* Admin Button - Desktop Only */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenAdmin();
+        }}
+        className="hidden lg:block absolute top-6 right-6 z-20 p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all"
+      >
+        <Settings className="w-5 h-5 text-white" />
+      </button>
+
       <motion.div 
         className="relative z-10 flex flex-col items-center text-center"
         initial={{ opacity: 0, y: 30 }}

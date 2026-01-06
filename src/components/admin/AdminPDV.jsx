@@ -470,6 +470,13 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
   // Atalhos de teclado
   React.useEffect(() => {
     const handleKeyPress = (e) => {
+      // ESC para sair do PDV
+      if (e.key === 'Escape' && !showPayment && !showWeightDialog && !showCashDialog && !showPixPayment) {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
       // ENTER para abrir pagamento
       if (e.key === 'Enter' && cart.length > 0 && !showPayment && !showWeightDialog && !showCashDialog) {
         e.preventDefault();
@@ -489,11 +496,24 @@ export default function AdminPDV({ settings, primaryColor, onClose }) {
           handleCheckout('dinheiro');
         }
       }
+
+      // Atalhos para selecionar mesas (1-6)
+      if (!showPayment && !showWeightDialog && !showCashDialog && !showPixPayment && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        const key = e.key;
+        if (['1', '2', '3', '4', '5', '6'].includes(key)) {
+          e.preventDefault();
+          const tableNum = parseInt(key);
+          const table = tables.find(t => t.number === tableNum);
+          if (table) {
+            handleSelectTable(table);
+          }
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [cart.length, showPayment, showWeightDialog, showCashDialog, settings]);
+  }, [cart.length, showPayment, showWeightDialog, showCashDialog, showPixPayment, settings, tables, onClose]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-auto">
