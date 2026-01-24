@@ -432,17 +432,27 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
               </ol>
             </div>
             
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm text-amber-800">
-                <strong>🔧 Se não aparecer nenhuma impressora:</strong>
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4">
+              <p className="text-sm text-amber-800 font-bold mb-2">
+                🔧 Não aparece sua impressora térmica?
               </p>
-              <ul className="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
-                <li>Verifique se a impressora está ligada</li>
-                <li>Verifique se o cabo USB está conectado</li>
-                <li>Tente desconectar e reconectar o cabo USB</li>
-                <li>Reinicie o navegador Chrome/Edge</li>
-                <li>Use o PrintNode como alternativa (seção abaixo)</li>
+              <ul className="list-disc list-inside text-sm text-amber-700 space-y-1.5">
+                <li><strong>Procure por "printer", "thermal", "POS", ou nome da marca</strong> (Bematech, Elgin, Epson, etc.)</li>
+                <li>Se aparecer apenas "USB Receiver", "NIC" ou dispositivos genéricos, sua impressora <strong>não é compatível com WebUSB</strong></li>
+                <li>Certifique-se que a impressora está <strong>ligada e com papel</strong></li>
+                <li>Teste desconectar e reconectar o cabo USB</li>
+                <li><strong>SOLUÇÃO:</strong> Use o PrintNode (seção abaixo) - funciona com qualquer impressora!</li>
               </ul>
+            </div>
+            
+            <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4">
+              <p className="text-sm text-red-800">
+                <strong>⚠️ LIMITAÇÃO DO WEBUSB:</strong><br />
+                Nem todas as impressoras térmicas são compatíveis com WebUSB. 
+                Se sua impressora não aparecer na lista ou aparecer com nome genérico (como "USB Device"), 
+                ela não pode ser usada via navegador.<br /><br />
+                <strong>✅ Recomendamos usar o PrintNode</strong> (configuração abaixo) - funciona com 100% das impressoras!
+              </p>
             </div>
           </div>
         )}
