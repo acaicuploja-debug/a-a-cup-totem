@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Loader2, Save, Check, Bell, Volume2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminPointSetup from './AdminPointSetup';
 
 
 
@@ -729,11 +730,15 @@ export default function AdminSettings({ settings, primaryColor }) {
                       <li>A API Key estar configurada nas variáveis de ambiente</li>
                     </ul>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  )}
+
+                  <div className="border-t pt-6">
+                  <AdminPointSetup settings={formData} primaryColor={primaryColor} />
+                  </div>
+                  </div>
+                  </CardContent>
+                  </Card>
+                  </TabsContent>
         
         <TabsContent value="whatsapp">
           <Card>
