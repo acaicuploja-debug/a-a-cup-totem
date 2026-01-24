@@ -396,25 +396,27 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
               </ul>
             </div>
 
-            <Button
-              onClick={connectPrinter}
-              disabled={connecting}
-              className="w-full"
-              size="lg"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {connecting ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Conectando...
-                </>
-              ) : (
-                <>
-                  <Printer className="w-5 h-5 mr-2" />
-                  Conectar Impressora USB
-                </>
-              )}
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={connectPrinter}
+                disabled={connecting}
+                className="col-span-2"
+                size="lg"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {connecting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Conectando...
+                  </>
+                ) : (
+                  <>
+                    <Printer className="w-5 h-5 mr-2" />
+                    Conectar Impressora USB
+                  </>
+                )}
+              </Button>
+            </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <p className="text-sm text-blue-800">
