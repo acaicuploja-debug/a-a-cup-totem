@@ -251,20 +251,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
   const handlePrint = async (order, showToast = true) => {
     console.log('🖨️ handlePrint chamado para pedido:', order.order_number);
     
-    // 1. Tentar WebUSB primeiro
-    if (typeof window.printOrderUSB === 'function') {
-      try {
-        console.log('🖨️ Tentando imprimir via WebUSB...');
-        await window.printOrderUSB(order);
-        console.log('✅ Impresso via WebUSB');
-        if (showToast) toast.success('Pedido impresso via USB!');
-        return;
-      } catch (usbError) {
-        console.log('⚠️ WebUSB falhou:', usbError);
-      }
-    }
-    
-    // 2. Tentar PrintNode
+    // Tentar PrintNode
     try {
       const response = await base44.functions.invoke('printWithPrintNode', {
         orderId: order.id,
@@ -273,7 +260,7 @@ export default function AdminOrdersManager({ settings, primaryColor }) {
 
       if (response?.data?.success) {
         console.log('✅ Impresso via PrintNode:', response.data.printer);
-        if (showToast) toast.success('Pedido impresso via PrintNode!');
+        if (showToast) toast.success('Pedido impresso!');
         return;
       } else {
         throw new Error(response?.data?.error || 'PrintNode falhou');
