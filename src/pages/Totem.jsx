@@ -14,7 +14,7 @@ import TotemConsumption from '../components/totem/screens/TotemConsumption';
 import TotemPayment from '../components/totem/screens/TotemPayment';
 import TotemPix from '../components/totem/screens/TotemPix';
 import TotemSuccess from '../components/totem/screens/TotemSuccess';
-import TotemPoint from '../components/totem/screens/TotemPoint';
+
 import Admin from './Admin';
 
 Totem.publicPage = true;
@@ -30,7 +30,6 @@ const SCREENS = {
   CONSUMPTION: 'consumption',
   PAYMENT: 'payment',
   PIX: 'pix',
-  POINT: 'point',
   SUCCESS: 'success'
 };
 
@@ -122,8 +121,6 @@ function TotemContent() {
   const handlePaymentSelect = (method) => {
     if (method === 'pix') {
       setScreen(SCREENS.PIX);
-    } else if (method === 'point') {
-      setScreen(SCREENS.POINT);
     } else {
       setScreen(SCREENS.SUCCESS);
     }
@@ -246,14 +243,6 @@ function TotemContent() {
               {...screenProps}
               onConfirmPayment={handlePaymentConfirmed}
               onChangePaymentMethod={handleChangePaymentMethod}
-            />
-          )}
-          
-          {screen === SCREENS.POINT && (
-            <TotemPoint 
-              {...screenProps}
-              onSuccess={handlePaymentConfirmed}
-              onChangePayment={handleChangePaymentMethod}
             />
           )}
           
