@@ -21,7 +21,9 @@ export default function TotemCart({
   const handleProceed = () => {
     const hasNonUpsellItem = items.some(item => !item.is_upsell);
     if (!hasNonUpsellItem) {
-      toast.error('Adicione pelo menos um produto do cardápio para continuar');
+      toast.error('⚠️ Você só tem produtos extras no carrinho. Adicione pelo menos um produto do cardápio principal para continuar!', {
+        duration: 5000
+      });
       return;
     }
     onProceed();
