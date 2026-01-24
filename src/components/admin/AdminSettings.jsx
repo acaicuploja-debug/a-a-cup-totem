@@ -12,7 +12,6 @@ import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Lo
 import { toast } from 'sonner';
 
 import AdminPointSetup from './AdminPointSetup';
-import WebUSBPrinter from './WebUSBPrinter';
 
 export default function AdminSettings({ settings, primaryColor }) {
   const [formData, setFormData] = useState({});
@@ -602,10 +601,7 @@ export default function AdminSettings({ settings, primaryColor }) {
         </TabsContent>
         
         <TabsContent value="printer">
-          <div className="space-y-6">
-            <WebUSBPrinter settings={settings} primaryColor={primaryColor} />
-            
-            <Card>
+          <Card>
               <CardHeader>
                 <CardTitle>Configuração PrintNode (Nuvem)</CardTitle>
               </CardHeader>
@@ -735,9 +731,8 @@ export default function AdminSettings({ settings, primaryColor }) {
                   </div>
                 )}
               </div>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="whatsapp">
