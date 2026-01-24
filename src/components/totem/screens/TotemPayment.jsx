@@ -148,12 +148,19 @@ export default function TotemPayment({
     setPaymentMethod(method);
 
     try {
-      if (method === 'cartao' || method === 'dinheiro') {
+      // Se for cartão e tiver Point configurada, usar Point
+      if (method === 'cartao' && settings?.mercadopago_enabled && settings?.mercadopago_device_id) {
+        onSelectPayment('point');
+      }
+      // Se for cartão mas Point não configurada, ou dinheiro - criar pedido direto
+      else if (method === 'cartao' || method === 'dinheiro') {
         toast.info('Criando pedido...');
         await createOrderMutation.mutateAsync(method);
         toast.success('Pedido criado!');
         onSelectPayment(method);
-      } else {
+      } 
+      // PIX - vai para tela de PIX
+      else {
         onSelectPayment(method);
       }
     } catch (error) {
