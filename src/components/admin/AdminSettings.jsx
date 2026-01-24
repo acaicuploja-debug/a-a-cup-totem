@@ -12,6 +12,7 @@ import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Lo
 import { toast } from 'sonner';
 
 import AdminPointSetup from './AdminPointSetup';
+import WebUSBPrinter from './WebUSBPrinter';
 
 export default function AdminSettings({ settings, primaryColor }) {
   const [formData, setFormData] = useState({});
@@ -601,12 +602,15 @@ export default function AdminSettings({ settings, primaryColor }) {
         </TabsContent>
         
         <TabsContent value="printer">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuração de Impressora</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6">
+          <div className="space-y-6">
+            <WebUSBPrinter settings={settings} primaryColor={primaryColor} />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuração PrintNode (Nuvem)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                     <Printer className="w-6 h-6 text-green-600" />
