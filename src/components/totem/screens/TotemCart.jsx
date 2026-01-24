@@ -17,6 +17,15 @@ export default function TotemCart({
   onBack 
 }) {
   const { items, updateItemQuantity, removeItem, subtotal, discount, total, appliedCoupon, setAppliedCoupon } = useCart();
+  
+  const handleProceed = () => {
+    const hasNonUpsellItem = items.some(item => !item.is_upsell);
+    if (!hasNonUpsellItem) {
+      toast.error('Adicione pelo menos um produto do cardápio para continuar');
+      return;
+    }
+    onProceed();
+  };
   const [couponCode, setCouponCode] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
@@ -191,7 +200,7 @@ export default function TotemCart({
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-xl mx-auto space-y-3">
           <Button
-            onClick={onProceed}
+            onClick={handleProceed}
             className="w-full h-16 text-xl font-bold rounded-2xl text-white"
             style={{ backgroundColor: primaryColor }}
           >

@@ -39,6 +39,7 @@ function TotemContent() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [lastActivity, setLastActivity] = useState(Date.now());
   const { clearCart, setCurrentOrder } = useCart();
   
   const { data: settings } = useQuery({
@@ -53,6 +54,36 @@ function TotemContent() {
   });
   
   const primaryColor = settings?.primary_color || '#6B21A8';
+  
+  // Reset inactivity timer on user interaction
+  React.useEffect(() => {
+    const resetTimer = () => setLastActivity(Date.now());
+    
+    window.addEventListener('click', resetTimer);
+    window.addEventListener('touchstart', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    
+    return () => {
+      window.removeEventListener('click', resetTimer);
+      window.removeEventListener('touchstart', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+    };
+  }, []);
+  
+  // Check for inactivity (1 minute)
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      // Don't reset if on PIX screen or admin
+      if (screen === SCREENS.PIX || showAdmin) return;
+      
+      const inactiveTime = Date.now() - lastActivity;
+      if (inactiveTime > 60000 && screen !== SCREENS.WELCOME) { // 1 minute
+        handleNewOrder();
+      }
+    }, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [screen, lastActivity, showAdmin]);
   
   const handleStartOrder = () => setScreen(SCREENS.CATEGORIES);
   

@@ -86,7 +86,7 @@ export default function ProductComplementEditor({ complements, onChange, primary
           </CardHeader>
           
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Switch
                   checked={group.required}
@@ -94,6 +94,16 @@ export default function ProductComplementEditor({ complements, onChange, primary
                 />
                 <Label className="text-sm">Obrigatório</Label>
               </div>
+              
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={group.max_value_mode || false}
+                  onCheckedChange={(checked) => updateGroup(groupIndex, 'max_value_mode', checked)}
+                />
+                <Label className="text-sm">Apenas maior valor (não soma complementos)</Label>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
               
               <div className="flex items-center gap-2">
                 <Label className="text-sm whitespace-nowrap">Mín:</Label>
@@ -106,15 +116,16 @@ export default function ProductComplementEditor({ complements, onChange, primary
                 />
               </div>
               
-              <div className="flex items-center gap-2">
-                <Label className="text-sm whitespace-nowrap">Máx:</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={group.max}
-                  onChange={(e) => updateGroup(groupIndex, 'max', parseInt(e.target.value) || 1)}
-                  className="w-16"
-                />
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm whitespace-nowrap">Máx:</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={group.max}
+                    onChange={(e) => updateGroup(groupIndex, 'max', parseInt(e.target.value) || 1)}
+                    className="w-16"
+                  />
+                </div>
               </div>
             </div>
             
@@ -122,6 +133,10 @@ export default function ProductComplementEditor({ complements, onChange, primary
               <Label className="text-sm text-gray-500">Itens</Label>
               {group.items.map((item, itemIndex) => (
                 <div key={itemIndex} className="flex items-center gap-2">
+                  <Switch
+                    checked={item.active !== false}
+                    onCheckedChange={(checked) => updateItem(groupIndex, itemIndex, 'active', checked)}
+                  />
                   <GripVertical className="w-4 h-4 text-gray-400" />
                   <Input
                     value={item.name}

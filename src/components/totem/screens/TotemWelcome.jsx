@@ -33,22 +33,13 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
         transition={{ duration: 0.6 }}
       >
         <motion.h1 
-          className="text-4xl md:text-6xl font-light text-white mb-4 drop-shadow-lg"
+          className="text-6xl md:text-8xl font-bold text-white mb-12 drop-shadow-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          Bem-vindo ao
+          Faça seu pedido aqui
         </motion.h1>
-        
-        <motion.h2 
-          className="text-5xl md:text-7xl font-bold text-white mb-8 drop-shadow-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          {settings?.store_name || 'Açaí Cup'}
-        </motion.h2>
         
         <motion.div 
           className="text-white text-2xl font-light mt-4 flex flex-col items-center gap-4"

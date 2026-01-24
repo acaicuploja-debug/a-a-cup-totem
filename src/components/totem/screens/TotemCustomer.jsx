@@ -93,6 +93,11 @@ export default function TotemCustomer({
       toast.error('Telefone inválido');
       return;
     }
+    
+    if (!name.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
 
     await createCustomerMutation.mutateAsync({
       name,
@@ -173,7 +178,7 @@ export default function TotemCustomer({
             
             <div className="space-y-3">
               <Label htmlFor="name" className="text-xl font-bold">
-                Nome
+                Nome *
               </Label>
               <div className="relative">
                 <User className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
@@ -221,7 +226,7 @@ export default function TotemCustomer({
         <div className="max-w-xl mx-auto">
           <Button
             onClick={handleSubmit}
-            disabled={!phone || phone.replace(/\D/g, '').length < 10 || createCustomerMutation.isPending}
+            disabled={!phone || phone.replace(/\D/g, '').length < 10 || !name.trim() || createCustomerMutation.isPending}
             className="w-full h-16 text-xl font-bold rounded-2xl text-white disabled:opacity-50"
             style={{ backgroundColor: primaryColor }}
           >
