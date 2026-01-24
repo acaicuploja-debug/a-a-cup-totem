@@ -16,8 +16,6 @@ const paymentIcons = {
 
 const paymentLabels = {
   pix: { title: 'PIX', subtitle: '(recomendado)', description: 'Pagamento instantâneo via QR Code', emoji: '📱' },
-  debito: { title: 'Débito', subtitle: '', description: 'Passe o cartão na maquininha', emoji: '💳' },
-  credito: { title: 'Crédito', subtitle: '(à vista)', description: 'Passe o cartão na maquininha', emoji: '💳' },
   cartao: { title: 'Cartão', subtitle: '', description: 'Débito ou crédito na maquininha', emoji: '💳' },
   dinheiro: { title: 'Dinheiro', subtitle: '', description: 'Pagamento em espécie', emoji: '💵' }
 };
@@ -32,11 +30,7 @@ export default function TotemPayment({
   const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
   const [processingPayment, setProcessingPayment] = useState(null);
   
-  // Se Point configurada, substituir 'cartao' por 'debito' e 'credito'
-  const hasPoint = settings?.mercadopago_enabled && settings?.mercadopago_device_id;
-  const availableMethods = hasPoint 
-    ? configuredMethods.flatMap(m => m === 'cartao' ? ['debito', 'credito'] : [m])
-    : configuredMethods;
+  const availableMethods = configuredMethods;
   
   // Garantir que PIX apareça sempre primeiro
   const sortedMethods = [...availableMethods].sort((a, b) => {
@@ -151,19 +145,12 @@ export default function TotemPayment({
     setPaymentMethod(method);
 
     try {
-      // Se for débito ou crédito, ir para Point
-      if (method === 'debito' || method === 'credito') {
-        onSelectPayment('point');
-      }
-      // Se for cartão genérico ou dinheiro - criar pedido direto
-      else if (method === 'cartao' || method === 'dinheiro') {
+      if (method === 'cartao' || method === 'dinheiro') {
         toast.info('Criando pedido...');
         await createOrderMutation.mutateAsync(method);
         toast.success('Pedido criado!');
         onSelectPayment(method);
-      } 
-      // PIX - vai para tela de PIX
-      else {
+      } else {
         onSelectPayment(method);
       }
     } catch (error) {

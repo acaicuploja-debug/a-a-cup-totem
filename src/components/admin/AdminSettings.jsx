@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Store, Palette, CreditCard, Gift, MessageCircle, Image as ImageIcon, Loader2, Save, Check, Bell, Volume2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 
-import AdminPointSetup from './AdminPointSetup';
+
 
 export default function AdminSettings({ settings, primaryColor }) {
   const [formData, setFormData] = useState({});
@@ -460,7 +460,7 @@ export default function AdminSettings({ settings, primaryColor }) {
                         </p>
                       </div>
                       
-                      <AdminPointSetup primaryColor={primaryColor} />
+
                       
                       <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                         <p className="text-sm text-green-800">
