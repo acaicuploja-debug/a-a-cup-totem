@@ -17,18 +17,28 @@ export default function TotemPoint({ settings, primaryColor, onSuccess, onChange
 
     const initiatePayment = async () => {
       try {
+        console.log('🔵 Iniciando pagamento Point:', {
+          orderId: currentOrder.id,
+          paymentType: currentOrder.payment_method,
+          total: currentOrder.total
+        });
+
         const response = await base44.functions.invoke('createPointPayment', {
           orderId: currentOrder.id,
           paymentType: currentOrder.payment_method // 'debito' ou 'credito'
         });
 
+        console.log('🔵 Resposta createPointPayment:', response.data);
+
         if (response.data.success) {
           setPaymentIntentId(response.data.payment_intent_id);
           setDeviceId(response.data.device_id);
         } else {
+          console.error('❌ Erro createPointPayment:', response.data);
           setStatus('error');
         }
       } catch (error) {
+        console.error('❌ Erro catch createPointPayment:', error);
         setStatus('error');
       }
     };
