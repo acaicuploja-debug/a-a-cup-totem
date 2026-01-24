@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     
     console.log('✅ Topic válido:', topic);
     
-    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN_PIX');
     if (!accessToken) {
       return Response.json({ error: 'Access token not configured' }, { status: 500 });
     }

@@ -7,11 +7,11 @@ Deno.serve(async (req) => {
     
     console.log('🔵 Recebido:', { orderId, amount, description });
     
-    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN_PIX');
     if (!accessToken) {
       console.log('❌ Access Token não encontrado');
       return Response.json({ 
-        error: 'Mercado Pago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN nas variáveis de ambiente.' 
+        error: 'Mercado Pago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN_PIX nas variáveis de ambiente.' 
       }, { status: 400 });
     }
     
