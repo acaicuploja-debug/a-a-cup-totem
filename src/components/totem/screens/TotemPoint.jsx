@@ -29,11 +29,12 @@ export default function TotemPoint({
   });
 
   const createPointPaymentMutation = useMutation({
-    mutationFn: async ({ orderId, amount, description }) => {
+    mutationFn: async ({ orderId, amount, description, paymentType }) => {
       return await base44.functions.invoke('createPointPayment', {
         orderId,
         amount,
-        description
+        description,
+        paymentType
       });
     }
   });
