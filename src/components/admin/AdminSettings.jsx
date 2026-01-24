@@ -735,8 +735,9 @@ export default function AdminSettings({ settings, primaryColor }) {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         <TabsContent value="whatsapp">
