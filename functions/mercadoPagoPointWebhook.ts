@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       }
 
       // Buscar detalhes do payment intent
-      const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+      const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN_POINT');
       const settings = await base44.asServiceRole.entities.StoreSettings.list();
       const deviceId = settings[0]?.mercadopago_device_id;
 

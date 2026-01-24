@@ -11,10 +11,10 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN_POINT');
     if (!accessToken) {
       return Response.json({ 
-        error: 'MERCADOPAGO_ACCESS_TOKEN não configurado' 
+        error: 'MERCADOPAGO_ACCESS_TOKEN_POINT não configurado' 
       }, { status: 500 });
     }
 
