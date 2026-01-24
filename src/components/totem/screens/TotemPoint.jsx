@@ -18,7 +18,9 @@ export default function TotemPoint({
   const { items, total, customer, consumptionType, clearCart, appliedCoupon, paymentMethod } = useCart();
   const [paymentStatus, setPaymentStatus] = useState('creating'); // creating, waiting, paid, error
   const [orderId, setOrderId] = useState(null);
+  const [paymentIntentId, setPaymentIntentId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [cancelling, setCancelling] = useState(false);
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData) => {
@@ -83,6 +85,7 @@ export default function TotemPoint({
           return;
         }
 
+        setPaymentIntentId(pointPayment.data.paymentIntentId);
         setPaymentStatus('waiting');
 
         // Iniciar polling
@@ -135,6 +138,44 @@ export default function TotemPoint({
 
     initPayment();
   }, []);
+
+  const handleCancelPayment = async () => {
+    if (!paymentIntentId || cancelling) return;
+
+    setCancelling(true);
+    try {
+      const accessToken = settings?.mercadopago_access_token;
+      const deviceId = settings?.mercadopago_device_id;
+
+      if (!accessToken || !deviceId) {
+        throw new Error('Mercado Pago não configurado');
+      }
+
+      // Cancelar payment intent
+      await fetch(`https://api.mercadopago.com/point/integration-api/devices/${deviceId}/payment-intents/${paymentIntentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Atualizar pedido como cancelado
+      if (orderId) {
+        await base44.entities.Order.update(orderId, {
+          status: 'cancelado',
+          cancellation_reason: 'Cliente cancelou na tela'
+        });
+      }
+
+      setPaymentStatus('error');
+      setErrorMessage('Pagamento cancelado pelo cliente');
+    } catch (error) {
+      console.error('Erro ao cancelar:', error);
+      setErrorMessage('Erro ao cancelar transação');
+    }
+    setCancelling(false);
+  };
 
   if (paymentStatus === 'paid') {
     return (
@@ -247,13 +288,31 @@ export default function TotemPoint({
           style={{ color: primaryColor }}
         />
         
-        <Button
-          onClick={onChangePayment}
-          variant="outline"
-          className="h-12 px-6 text-base"
-        >
-          Mudar Forma de Pagamento
-        </Button>
+        <div className="space-y-3 w-full max-w-md">
+          <Button
+            onClick={handleCancelPayment}
+            disabled={cancelling}
+            variant="outline"
+            className="h-12 px-6 text-base w-full border-2 border-red-400 text-red-600 hover:bg-red-50"
+          >
+            {cancelling ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Cancelando...
+              </>
+            ) : (
+              'Cancelar Transação'
+            )}
+          </Button>
+          
+          <Button
+            onClick={onChangePayment}
+            variant="outline"
+            className="h-12 px-6 text-base w-full"
+          >
+            Mudar Forma de Pagamento
+          </Button>
+        </div>
       </div>
     </div>
   );
