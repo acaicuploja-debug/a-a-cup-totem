@@ -27,7 +27,8 @@ export function CartProvider({ children }) {
       base_price: product.promo_price || product.price,
       complements,
       total: unitPrice * quantity,
-      cost_price: itemCost
+      cost_price: itemCost,
+      is_upsell: product.is_upsell || false
     };
     
     setItems(prev => [...prev, newItem]);

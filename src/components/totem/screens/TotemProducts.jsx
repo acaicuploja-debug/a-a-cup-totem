@@ -17,11 +17,15 @@ export default function TotemProducts({
 }) {
   const { data: rawProducts, isLoading } = useQuery({
     queryKey: ['products', category?.id],
-    queryFn: () => base44.entities.Product.filter({ 
-      category_id: category?.id, 
-      active: true,
-      is_upsell: false 
-    }),
+    queryFn: async () => {
+      const products = await base44.entities.Product.filter({ 
+        category_id: category?.id, 
+        active: true,
+        is_upsell: false,
+        pdv_only: false
+      });
+      return products;
+    },
     enabled: !!category?.id
   });
   

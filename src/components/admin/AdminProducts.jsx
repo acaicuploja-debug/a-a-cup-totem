@@ -310,6 +310,17 @@ export default function AdminProducts({ settings, primaryColor }) {
                             </div>
                             
                             <div className="flex items-center gap-2">
+                              <Button 
+                                variant={product.active ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => updateMutation.mutate({ 
+                                  id: product.id, 
+                                  data: { ...product, active: !product.active } 
+                                })}
+                                style={product.active ? { backgroundColor: primaryColor } : {}}
+                              >
+                                {product.active ? 'Ativo' : 'Pausado'}
+                              </Button>
                               <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>
                                 <Pencil className="w-4 h-4" />
                               </Button>
@@ -393,9 +404,20 @@ export default function AdminProducts({ settings, primaryColor }) {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
-                    <Pencil className="w-4 h-4 mr-1" />
-                    Editar
+                  <Button 
+                    variant={product.active ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => updateMutation.mutate({ 
+                      id: product.id, 
+                      data: { ...product, active: !product.active } 
+                    })}
+                    style={product.active ? { backgroundColor: primaryColor } : {}}
+                  >
+                    {product.active ? 'Ativo' : 'Pausado'}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>
+                    <Pencil className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
