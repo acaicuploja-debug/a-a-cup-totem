@@ -62,15 +62,10 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
 
     setConnecting(true);
     try {
-      // Request device with filter for common thermal printer vendors
+      // Request ANY USB device (no filters)
+      console.log('🔍 Buscando impressoras USB...');
       const device = await navigator.usb.requestDevice({
-        filters: [
-          { vendorId: 0x0525 }, // Bematech
-          { vendorId: 0x154f }, // Elgin
-          { vendorId: 0x04b8 }, // Epson
-          { vendorId: 0x0fe6 }, // Daruma
-          { vendorId: 0x0483 }, // Generic
-        ]
+        filters: [] // Sem filtros - mostra TODAS as impressoras USB
       });
 
       await device.open();
@@ -84,14 +79,27 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
       await device.claimInterface(0);
 
       printerDevice = device;
-      setPrinterName(device.productName || 'Impressora USB');
+      const name = device.productName || device.manufacturerName || 'Impressora USB';
+      setPrinterName(name);
       setConnected(true);
       
-      toast.success(`Impressora "${device.productName}" conectada!`);
-      console.log('✅ Impressora conectada:', device);
+      console.log('✅ Impressora conectada:', {
+        nome: name,
+        vendorId: device.vendorId.toString(16),
+        productId: device.productId.toString(16)
+      });
+      
+      toast.success(`Impressora "${name}" conectada!`);
     } catch (error) {
-      console.error('Erro ao conectar impressora:', error);
-      toast.error('Erro ao conectar impressora: ' + error.message);
+      console.error('❌ Erro ao conectar impressora:', error);
+      
+      if (error.name === 'NotFoundError') {
+        toast.error('Nenhuma impressora USB selecionada ou detectada');
+      } else if (error.name === 'SecurityError') {
+        toast.error('Permissão negada. Autorize o acesso à impressora USB');
+      } else {
+        toast.error('Erro: ' + error.message);
+      }
     }
     setConnecting(false);
   };
@@ -378,14 +386,13 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
           <div className="space-y-4">
             <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
               <p className="text-sm text-gray-700 mb-3">
-                <strong>Impressoras compatíveis:</strong>
+                <strong>⚠️ Requisitos importantes:</strong>
               </p>
               <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                <li>Bematech MP-4200 TH</li>
-                <li>Elgin i9</li>
-                <li>Epson TM-T20 / TM-T88</li>
-                <li>Daruma DR-800</li>
-                <li>Outras impressoras térmicas ESC/POS USB</li>
+                <li>✅ Impressora térmica conectada via USB</li>
+                <li>✅ Driver instalado no Windows</li>
+                <li>✅ Impressora ligada e pronta</li>
+                <li>✅ Usar navegador Chrome ou Edge</li>
               </ul>
             </div>
 
@@ -411,14 +418,29 @@ export default function WebUSBPrinter({ settings, primaryColor }) {
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <p className="text-sm text-blue-800">
-                <strong>ℹ️ Como funciona:</strong>
+                <strong>ℹ️ Passo a passo:</strong>
               </p>
               <ol className="list-decimal list-inside text-sm text-blue-700 mt-2 space-y-1">
-                <li>Conecte a impressora USB no computador</li>
-                <li>Clique em "Conectar Impressora USB"</li>
-                <li>Selecione sua impressora na janela que abrir</li>
-                <li>Pronto! Autorizaçãofeita apenas uma vez</li>
+                <li>Certifique-se que a impressora está ligada</li>
+                <li>Clique em "Conectar Impressora USB" abaixo</li>
+                <li>Uma janela do Chrome/Edge abrirá</li>
+                <li>Selecione sua impressora na lista</li>
+                <li>Clique em "Conectar" na janela</li>
+                <li>Pronto! Autorização feita apenas uma vez</li>
               </ol>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm text-amber-800">
+                <strong>🔧 Se não aparecer nenhuma impressora:</strong>
+              </p>
+              <ul className="list-disc list-inside text-sm text-amber-700 mt-2 space-y-1">
+                <li>Verifique se a impressora está ligada</li>
+                <li>Verifique se o cabo USB está conectado</li>
+                <li>Tente desconectar e reconectar o cabo USB</li>
+                <li>Reinicie o navegador Chrome/Edge</li>
+                <li>Use o PrintNode como alternativa (seção abaixo)</li>
+              </ul>
             </div>
           </div>
         )}
