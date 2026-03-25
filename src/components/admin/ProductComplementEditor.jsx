@@ -102,6 +102,14 @@ export default function ProductComplementEditor({ complements, onChange, primary
                 />
                 <Label className="text-sm">Apenas maior valor (não soma complementos)</Label>
               </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={group.allow_multiply || false}
+                  onCheckedChange={(checked) => updateGroup(groupIndex, 'allow_multiply', checked)}
+                />
+                <Label className="text-sm">Permitir multiplicar adicionais (ex: 2x Morango)</Label>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
               

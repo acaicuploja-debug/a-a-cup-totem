@@ -40,16 +40,36 @@ export default function TotemProductDetail({
       const exists = current.some(c => c.name === item.name);
       
       if (exists) {
-        return {
-          ...prev,
-          [groupIndex]: current.filter(c => c.name !== item.name)
-        };
+        return { ...prev, [groupIndex]: current.filter(c => c.name !== item.name) };
       } else {
-        return {
-          ...prev,
-          [groupIndex]: [...current, item]
-        };
+        return { ...prev, [groupIndex]: [...current, { ...item, qty: 1 }] };
       }
+    });
+  };
+
+  const handleIncrementComplement = (groupIndex, item) => {
+    setSelectedComplements(prev => {
+      const current = prev[groupIndex] || [];
+      const group = product.complements[groupIndex];
+      const totalQty = current.reduce((s, i) => s + (i.qty || 1), 0);
+      if (group.max && totalQty >= group.max) return prev;
+      const exists = current.find(c => c.name === item.name);
+      if (exists) {
+        return { ...prev, [groupIndex]: current.map(c => c.name === item.name ? { ...c, qty: (c.qty || 1) + 1 } : c) };
+      }
+      return { ...prev, [groupIndex]: [...current, { ...item, qty: 1 }] };
+    });
+  };
+
+  const handleDecrementComplement = (groupIndex, item) => {
+    setSelectedComplements(prev => {
+      const current = prev[groupIndex] || [];
+      const exists = current.find(c => c.name === item.name);
+      if (!exists) return prev;
+      if ((exists.qty || 1) <= 1) {
+        return { ...prev, [groupIndex]: current.filter(c => c.name !== item.name) };
+      }
+      return { ...prev, [groupIndex]: current.map(c => c.name === item.name ? { ...c, qty: (c.qty || 1) - 1 } : c) };
     });
   };
   
@@ -58,7 +78,7 @@ export default function TotemProductDetail({
   }, [selectedComplements]);
   
   const complementsTotal = useMemo(() => {
-    return allComplements.reduce((sum, c) => sum + (c.price || 0), 0);
+    return allComplements.reduce((sum, c) => sum + (c.price || 0) * (c.qty || 1), 0);
   }, [allComplements]);
   
   const basePrice = product?.promo_price || product?.price || 0;
@@ -71,7 +91,10 @@ export default function TotemProductDetail({
     return product.complements.every((group, index) => {
       if (!group.required) return true;
       const selected = selectedComplements[index] || [];
-      return !group.min || selected.length >= group.min;
+      const count = group.allow_multiply
+        ? selected.reduce((s, i) => s + (i.qty || 1), 0)
+        : selected.length;
+      return !group.min || count >= group.min;
     });
   }, [product?.complements, selectedComplements]);
   
@@ -168,14 +191,8 @@ export default function TotemProductDetail({
                     group={group}
                     selectedItems={selectedComplements[index] || []}
                     onToggle={(item) => handleToggleComplement(index, item)}
-                    primaryColor={primaryColor}
-                    onMaxReached={() => {
-                      const nextGroup = document.getElementById(`complement-group-${index + 1}`);
-                      if (nextGroup) {
-                        const targetPosition = nextGroup.getBoundingClientRect().top + window.pageYOffset - 100;
-                        window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-                      }
-                    }}
+                    onIncrement={(item) => handleIncrementComplement(index, item)}
+                    onDecrement={(item) => handleDecrementComplement(index, item)}
                   />
                 </div>
               ))}

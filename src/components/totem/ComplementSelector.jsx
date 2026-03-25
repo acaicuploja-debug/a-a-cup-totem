@@ -5,11 +5,15 @@ import { motion } from 'framer-motion';
 export default function ComplementSelector({ 
   group, 
   selectedItems, 
-  onToggle, 
+  onToggle,
+  onIncrement,
+  onDecrement,
   primaryColor,
   onMaxReached
 }) {
-  const selectedCount = selectedItems.length;
+  const selectedCount = group.allow_multiply
+    ? selectedItems.reduce((s, i) => s + (i.qty || 1), 0)
+    : selectedItems.length;
   const canSelectMore = !group.max || selectedCount < group.max;
   const meetsMinimum = !group.min || selectedCount >= group.min;
   const prevCountRef = useRef(selectedCount);
@@ -46,9 +50,60 @@ export default function ComplementSelector({
       
       <div className="space-y-2">
         {group.items?.map((item, idx) => {
-          const isSelected = selectedItems.some(s => s.name === item.name);
+          const selectedItem = selectedItems.find(s => s.name === item.name);
+          const isSelected = !!selectedItem;
+          const itemQty = selectedItem?.qty || 0;
           const canSelect = isSelected || canSelectMore;
-          
+
+          if (group.allow_multiply) {
+            return (
+              <motion.div
+                key={idx}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  isSelected ? 'border-current' : 'border-gray-200'
+                }`}
+                style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-gray-900">{item.name}</span>
+                  {item.price === 0 && (
+                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">GRÁTIS</span>
+                  )}
+                  {item.price > 0 && (
+                    <span className="text-sm font-semibold text-gray-500">
+                      + R$ {(item.price * (itemQty || 1)).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isSelected && (
+                    <button
+                      onClick={() => onDecrement(item)}
+                      className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
+                    >
+                      <Minus className="w-4 h-4 text-gray-600" />
+                    </button>
+                  )}
+                  {isSelected && (
+                    <span className="w-8 text-center text-lg font-bold" style={{ color: primaryColor }}>
+                      {itemQty}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => canSelectMore && onIncrement(item)}
+                    disabled={!canSelectMore && !isSelected}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                      canSelectMore ? '' : 'opacity-40 cursor-not-allowed'
+                    }`}
+                    style={{ backgroundColor: `${primaryColor}20` }}
+                  >
+                    <Plus className="w-4 h-4" style={{ color: primaryColor }} />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          }
+
           return (
             <motion.button
               key={idx}
