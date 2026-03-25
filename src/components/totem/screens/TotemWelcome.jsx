@@ -86,7 +86,7 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
       {/* CTA Button */}
       <motion.button
         onClick={onStart}
-        className="relative z-20 px-12 py-6 rounded-2xl text-white font-extrabold text-3xl md:text-4xl uppercase tracking-wide border-4 border-black"
+        className="relative z-20 px-8 py-4 rounded-2xl text-white font-extrabold text-xl md:text-2xl uppercase tracking-wide border-4 border-black"
         style={{
           backgroundColor: primaryColor,
           boxShadow: '6px 6px 0px 0px #000000'
