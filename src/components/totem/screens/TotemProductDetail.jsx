@@ -193,6 +193,7 @@ export default function TotemProductDetail({
                     onToggle={(item) => handleToggleComplement(index, item)}
                     onIncrement={(item) => handleIncrementComplement(index, item)}
                     onDecrement={(item) => handleDecrementComplement(index, item)}
+                    primaryColor={primaryColor}
                   />
                 </div>
               ))}
