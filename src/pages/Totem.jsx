@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CartProvider, useCart } from '../components/totem/CartContext';
-import TotemWelcome from '../components/totem/screens/TotemWelcome';
+import TotemWelcome from '../components/totem/screens/TotemWelcome.jsx';
 import TotemCategories from '../components/totem/screens/TotemCategories';
 import TotemCatalog from '../components/totem/screens/TotemCatalog';
 import TotemProducts from '../components/totem/screens/TotemProducts';
