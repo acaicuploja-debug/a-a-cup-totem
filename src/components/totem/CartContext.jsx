@@ -11,7 +11,7 @@ export function CartProvider({ children }) {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   const addItem = useCallback((product, complements = [], quantity = 1) => {
-    const complementsTotal = complements.reduce((sum, c) => sum + (c.price || 0), 0);
+    const complementsTotal = complements.reduce((sum, c) => sum + (c.price || 0) * (c.qty || 1), 0);
     const unitPrice = (product.promo_price || product.price) + complementsTotal;
     
     // Calcular custo do item
