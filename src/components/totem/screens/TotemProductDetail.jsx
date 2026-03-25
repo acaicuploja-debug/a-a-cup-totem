@@ -19,26 +19,10 @@ export default function TotemProductDetail({
   const [quantity, setQuantity] = useState(1);
   const [selectedComplements, setSelectedComplements] = useState({});
   
-  React.useEffect(() => {
-    if (product?.complements && product.complements.length > 0) {
-      const firstRequiredGroup = product.complements.findIndex(g => g.required);
-      if (firstRequiredGroup >= 0) {
-        setTimeout(() => {
-          const priceElement = document.querySelector('.product-price-section');
-          if (priceElement) {
-            const offsetTop = priceElement.offsetTop - 80;
-            window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-          }
-        }, 300);
-      }
-    }
-  }, [product]);
-  
   const handleToggleComplement = (groupIndex, item) => {
     setSelectedComplements(prev => {
       const current = prev[groupIndex] || [];
       const exists = current.some(c => c.name === item.name);
-      
       if (exists) {
         return { ...prev, [groupIndex]: current.filter(c => c.name !== item.name) };
       } else {
@@ -87,7 +71,6 @@ export default function TotemProductDetail({
   
   const canAddToCart = useMemo(() => {
     if (!product?.complements) return true;
-    
     return product.complements.every((group, index) => {
       if (!group.required) return true;
       const selected = selectedComplements[index] || [];
@@ -97,13 +80,33 @@ export default function TotemProductDetail({
       return !group.min || count >= group.min;
     });
   }, [product?.complements, selectedComplements]);
+
+  const handleScrollToNextGroup = (currentIndex) => {
+    const complements = product?.complements || [];
+    for (let i = currentIndex + 1; i < complements.length; i++) {
+      const group = complements[i];
+      if (!group.required) continue;
+      const selected = selectedComplements[i] || [];
+      const count = group.allow_multiply
+        ? selected.reduce((s, item) => s + (item.qty || 1), 0)
+        : selected.length;
+      const isFulfilled = group.min ? count >= group.min : count >= (group.max || 1);
+      if (!isFulfilled) {
+        const el = document.getElementById(`complement-group-${i}`);
+        if (el) {
+          const offsetTop = el.getBoundingClientRect().top + window.scrollY - 100;
+          window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+        }
+        return;
+      }
+    }
+  };
   
   const handleAddToCart = () => {
     if (!canAddToCart) {
       toast.error('Selecione os itens obrigatórios');
       return;
     }
-    
     addItem(product, allComplements, quantity);
     toast.success('Adicionado ao carrinho!');
     onAddToCart();
@@ -160,10 +163,7 @@ export default function TotemProductDetail({
           <div className="flex items-center gap-2 mb-6 flex-wrap product-price-section">
             {product.promo_price && product.promo_price < product.price ? (
               <>
-                <span 
-                  className="text-3xl font-bold"
-                  style={{ color: primaryColor }}
-                >
+                <span className="text-3xl font-bold" style={{ color: primaryColor }}>
                   R$ {product.promo_price.toFixed(2)}
                 </span>
                 <span className="text-lg text-gray-400 line-through">
@@ -174,10 +174,7 @@ export default function TotemProductDetail({
                 </span>
               </>
             ) : (
-              <span 
-                className="text-3xl font-bold"
-                style={{ color: primaryColor }}
-              >
+              <span className="text-3xl font-bold" style={{ color: primaryColor }}>
                 R$ {product.price.toFixed(2)}
               </span>
             )}
@@ -194,6 +191,7 @@ export default function TotemProductDetail({
                     onIncrement={(item) => handleIncrementComplement(index, item)}
                     onDecrement={(item) => handleDecrementComplement(index, item)}
                     primaryColor={primaryColor}
+                    onMaxReached={() => handleScrollToNextGroup(index)}
                   />
                 </div>
               ))}
@@ -202,7 +200,7 @@ export default function TotemProductDetail({
         </div>
       </div>
       
-      {/* Fixed bottom bar - always visible */}
+      {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl z-50">
         <div className="w-full max-w-xl mx-auto px-safe">
           <div className="flex items-center justify-between mb-4">
@@ -229,10 +227,7 @@ export default function TotemProductDetail({
             
             <div className="text-right">
               <p className="text-sm text-gray-500">Total</p>
-              <p 
-                className="text-2xl font-bold"
-                style={{ color: primaryColor }}
-              >
+              <p className="text-2xl font-bold" style={{ color: primaryColor }}>
                 R$ {total.toFixed(2)}
               </p>
             </div>
