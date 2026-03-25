@@ -71,18 +71,6 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
         <Settings className="w-5 h-5 text-white" />
       </button>
 
-      {/* Logo */}
-      {settings?.logo_url && (
-        <motion.img
-          src={settings.logo_url}
-          alt={settings.store_name}
-          className="relative z-20 h-28 md:h-40 object-contain mb-8 drop-shadow-xl"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        />
-      )}
-
       {/* CTA Button */}
       <motion.button
         onClick={onStart}
