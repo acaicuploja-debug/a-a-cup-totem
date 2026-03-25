@@ -105,7 +105,7 @@ function TotemContent() {
   
   const handleBackToProducts = () => {
     setSelectedProduct(null);
-    setScreen(SCREENS.PRODUCTS);
+    setScreen(SCREENS.CATALOG);
   };
   
   const handleGoToCart = () => setScreen(SCREENS.CART);
