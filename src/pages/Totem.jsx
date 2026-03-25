@@ -193,6 +193,13 @@ function TotemContent() {
           )}
 
           {screen === SCREENS.CART && (
+            <TotemCart 
+              {...screenProps}
+              onContinueShopping={handleContinueShopping}
+              onProceed={handleProceedFromCart}
+              onBack={handleBackToProducts}
+            />
+          )}
           
           {screen === SCREENS.UPSELL && (
             <TotemUpsell 
