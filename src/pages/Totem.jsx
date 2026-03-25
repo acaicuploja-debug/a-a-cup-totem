@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CartProvider, useCart } from '../components/totem/CartContext';
 import TotemWelcome from '../components/totem/screens/TotemWelcome';
 import TotemCategories from '../components/totem/screens/TotemCategories';
+import TotemCatalog from '../components/totem/screens/TotemCatalog';
 import TotemProducts from '../components/totem/screens/TotemProducts';
 import TotemProductDetail from '../components/totem/screens/TotemProductDetail';
 import TotemCart from '../components/totem/screens/TotemCart';
@@ -21,6 +22,7 @@ Totem.publicPage = true;
 
 const SCREENS = {
   WELCOME: 'welcome',
+  CATALOG: 'catalog',
   CATEGORIES: 'categories',
   PRODUCTS: 'products',
   PRODUCT_DETAIL: 'product_detail',
@@ -84,7 +86,7 @@ function TotemContent() {
     return () => clearInterval(interval);
   }, [screen, lastActivity, showAdmin]);
   
-  const handleStartOrder = () => setScreen(SCREENS.CATEGORIES);
+  const handleStartOrder = () => setScreen(SCREENS.CATALOG);
   
   const handleSelectCategory = (category) => {
     setSelectedCategory(category);
@@ -98,7 +100,7 @@ function TotemContent() {
   
   const handleBackToCategories = () => {
     setSelectedCategory(null);
-    setScreen(SCREENS.CATEGORIES);
+    setScreen(SCREENS.CATALOG);
   };
   
   const handleBackToProducts = () => {
@@ -108,7 +110,7 @@ function TotemContent() {
   
   const handleGoToCart = () => setScreen(SCREENS.CART);
   
-  const handleContinueShopping = () => setScreen(SCREENS.CATEGORIES);
+  const handleContinueShopping = () => setScreen(SCREENS.CATALOG);
   
   const handleProceedFromCart = () => setScreen(SCREENS.UPSELL);
   
@@ -169,30 +171,26 @@ function TotemContent() {
             />
           )}
           
-          {screen === SCREENS.CATEGORIES && (
-            <TotemCategories 
+          {screen === SCREENS.CATALOG && (
+            <TotemCatalog
               {...screenProps}
-              onSelectCategory={handleSelectCategory}
+              onSelectProduct={(product) => {
+                setSelectedProduct(product);
+                setScreen(SCREENS.PRODUCT_DETAIL);
+              }}
               onCartClick={handleGoToCart}
+              onBack={() => setScreen(SCREENS.WELCOME)}
             />
           )}
-          
+
           {screen === SCREENS.PRODUCTS && (
-            <TotemProducts 
-              {...screenProps}
-              category={selectedCategory}
-              onSelectProduct={handleSelectProduct}
-              onBack={handleBackToCategories}
-              onCartClick={handleGoToCart}
-            />
-          )}
           
           {screen === SCREENS.PRODUCT_DETAIL && (
             <TotemProductDetail 
               {...screenProps}
               product={selectedProduct}
               onBack={handleBackToProducts}
-              onAddToCart={() => setScreen(SCREENS.PRODUCTS)}
+              onAddToCart={() => setScreen(SCREENS.CATALOG)}
             />
           )}
           
