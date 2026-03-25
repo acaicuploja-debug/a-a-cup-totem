@@ -183,8 +183,6 @@ function TotemContent() {
             />
           )}
 
-          {screen === SCREENS.PRODUCTS && (
-          
           {screen === SCREENS.PRODUCT_DETAIL && (
             <TotemProductDetail 
               {...screenProps}
@@ -193,15 +191,8 @@ function TotemContent() {
               onAddToCart={() => setScreen(SCREENS.CATALOG)}
             />
           )}
-          
+
           {screen === SCREENS.CART && (
-            <TotemCart 
-              {...screenProps}
-              onContinueShopping={handleContinueShopping}
-              onProceed={handleProceedFromCart}
-              onBack={handleBackToProducts}
-            />
-          )}
           
           {screen === SCREENS.UPSELL && (
             <TotemUpsell 
