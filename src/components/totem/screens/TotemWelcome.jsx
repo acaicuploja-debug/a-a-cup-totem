@@ -1,70 +1,101 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Hand, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings } from 'lucide-react';
 
 export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAdmin }) {
-  const bgStyle = settings?.background_url 
+  const banners = settings?.welcome_banners?.filter(Boolean) || [];
+  const hasBanners = banners.length > 0;
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!hasBanners || banners.length < 2) return;
+    const interval = setInterval(() => {
+      setCurrent(prev => (prev + 1) % banners.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [banners.length, hasBanners]);
+
+  const bgStyle = hasBanners
+    ? {}
+    : settings?.background_url
     ? { backgroundImage: `url(${settings.background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { background: `linear-gradient(135deg, ${primaryColor} 0%, ${settings?.secondary_color || '#EC4899'} 100%)` };
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-8 cursor-pointer"
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-8 cursor-pointer relative overflow-hidden"
       style={bgStyle}
       onClick={onStart}
     >
-      <div className="absolute inset-0 bg-black/30" />
+      {/* Banner carousel background */}
+      {hasBanners && (
+        <>
+          <AnimatePresence>
+            <motion.div
+              key={current}
+              className="absolute inset-0"
+              initial={{ opacity: 0, x: 80 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -80 }}
+              transition={{ duration: 0.7 }}
+              style={{
+                backgroundImage: `url(${banners[current]})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            />
+          </AnimatePresence>
+          {banners.length > 1 && (
+            <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+              {banners.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    i === current ? 'bg-white scale-125' : 'bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-      {/* Admin Button - Desktop Only */}
+      <div className="absolute inset-0 bg-black/40 z-10" />
+
+      {/* Admin Button */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpenAdmin();
-        }}
+        onClick={(e) => { e.stopPropagation(); onOpenAdmin(); }}
         className="hidden lg:block absolute top-6 right-6 z-20 p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all"
       >
         <Settings className="w-5 h-5 text-white" />
       </button>
 
-      <motion.div 
-        className="relative z-10 flex flex-col items-center text-center"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <motion.h1 
-          className="text-6xl md:text-8xl font-bold text-white mb-12 drop-shadow-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Faça seu pedido aqui
-        </motion.h1>
-        
-        <motion.div 
-          className="text-white text-2xl font-light mt-4 flex flex-col items-center gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <motion.div
-            animate={{ 
-              scale: [1, 1.2, 1],
-              rotate: [0, 10, -10, 0]
-            }}
-            transition={{ 
-              duration: 1.5,
-              repeat: Infinity,
-              repeatDelay: 0.5
-            }}
-          >
-            <Hand className="w-16 h-16 text-white drop-shadow-lg" />
-          </motion.div>
-          <span>Clique na tela para iniciar seu pedido</span>
-        </motion.div>
-      </motion.div>
-      
+      {/* Logo */}
+      {settings?.logo_url && (
+        <motion.img
+          src={settings.logo_url}
+          alt={settings.store_name}
+          className="relative z-20 h-28 md:h-40 object-contain mb-8 drop-shadow-xl"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        />
+      )}
 
+      {/* CTA Button */}
+      <motion.button
+        onClick={onStart}
+        className="relative z-20 px-12 py-6 rounded-3xl text-white font-extrabold text-3xl md:text-4xl shadow-2xl"
+        style={{ backgroundColor: primaryColor }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        👆 Clique aqui para iniciar seu pedido
+      </motion.button>
     </div>
   );
 }

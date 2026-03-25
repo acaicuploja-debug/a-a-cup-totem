@@ -249,7 +249,7 @@ export default function AdminSettings({ settings, primaryColor }) {
               </div>
               
               <div className="space-y-2">
-                <Label>Imagem de Fundo (Tela de Boas-vindas)</Label>
+                <Label>Imagem de Fundo (Fallback sem banners)</Label>
                 <div className="flex items-center gap-4">
                   {formData.background_url ? (
                     <img src={formData.background_url} alt="Background" className="h-24 w-40 object-cover rounded-xl" />
@@ -264,6 +264,51 @@ export default function AdminSettings({ settings, primaryColor }) {
                     onChange={(e) => handleImageUpload('background_url', e)}
                     disabled={uploading.background_url}
                   />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Banners da Tela Inicial (carrossel)</Label>
+                <p className="text-xs text-gray-500">Faça upload de várias imagens. Elas passam automaticamente no totem a cada 4 segundos.</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {(formData.welcome_banners || []).map((url, idx) => (
+                    <div key={idx} className="relative group">
+                      <img src={url} alt={`Banner ${idx + 1}`} className="w-full h-28 object-cover rounded-xl" />
+                      <button
+                        type="button"
+                        onClick={() => handleChange('welcome_banners', (formData.welcome_banners || []).filter((_, i) => i !== idx))}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <label className="h-28 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors">
+                    {uploading.welcome_banners ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-gray-400 mb-1" />
+                        <span className="text-xs text-gray-500">Adicionar</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading.welcome_banners}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploading(prev => ({ ...prev, welcome_banners: true }));
+                        const result = await base44.integrations.Core.UploadFile({ file });
+                        handleChange('welcome_banners', [...(formData.welcome_banners || []), result.file_url]);
+                        setUploading(prev => ({ ...prev, welcome_banners: false }));
+                        toast.success('Banner adicionado!');
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
             </CardContent>
