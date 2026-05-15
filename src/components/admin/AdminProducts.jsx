@@ -34,6 +34,7 @@ export default function AdminProducts({ settings, primaryColor }) {
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingComplement, setUploadingComplement] = useState(false);
   const formDataRef = useRef(formData);
   const queryClient = useQueryClient();
 
@@ -625,6 +626,7 @@ export default function AdminProducts({ settings, primaryColor }) {
             <ProductComplementEditor
               complements={formData.complements}
               onChange={(complements) => setFormDataAndRef(prev => ({ ...prev, complements }))}
+              onUploadingChange={setUploadingComplement}
               primaryColor={primaryColor}
             />
             
@@ -638,7 +640,7 @@ export default function AdminProducts({ settings, primaryColor }) {
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancelar</Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} style={{ backgroundColor: primaryColor }}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending || uploading || uploadingComplement} style={{ backgroundColor: primaryColor }}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingProduct ? 'Salvar' : 'Criar'}
               </Button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,15 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, GripVertical, Upload, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
-export default function ProductComplementEditor({ complements, onChange, primaryColor }) {
+export default function ProductComplementEditor({ complements, onChange, onUploadingChange, primaryColor }) {
   const [uploadingFor, setUploadingFor] = useState(null);
+  // Keep a ref to always have the latest complements during async upload
+  const complementsRef = React.useRef(complements);
+  complementsRef.current = complements;
 
   const handleImageUpload = async (groupIndex, itemIndex, file) => {
     const key = `${groupIndex}-${itemIndex}`;
     setUploadingFor(key);
+    onUploadingChange?.(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const updated = complements.map((group, gi) => {
+      // Use ref to get latest complements, avoiding stale closure
+      const current = complementsRef.current;
+      const updated = current.map((group, gi) => {
         if (gi !== groupIndex) return group;
         return {
           ...group,
@@ -27,6 +33,7 @@ export default function ProductComplementEditor({ complements, onChange, primary
       onChange(updated);
     } finally {
       setUploadingFor(null);
+      onUploadingChange?.(false);
     }
   };
 
