@@ -46,6 +46,12 @@ export default function AdminProducts({ settings, primaryColor }) {
       return next;
     });
   };
+
+  // Direct ref update for async callbacks (e.g. image upload in child)
+  const updateComplementsInRef = (complements) => {
+    formDataRef.current = { ...formDataRef.current, complements };
+    setFormData(prev => ({ ...prev, complements }));
+  };
   
   const { data: allProducts, isLoading } = useQuery({
     queryKey: ['admin-products'],
@@ -625,7 +631,7 @@ export default function AdminProducts({ settings, primaryColor }) {
             
             <ProductComplementEditor
               complements={formData.complements}
-              onChange={(complements) => setFormDataAndRef(prev => ({ ...prev, complements }))}
+              onChange={updateComplementsInRef}
               onUploadingChange={setUploadingComplement}
               primaryColor={primaryColor}
             />
