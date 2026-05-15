@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,21 +8,43 @@ import { Plus, Trash2, GripVertical, Upload, X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-export default function ProductComplementEditor({ complements, onChange, onUploadingChange, onImageUploaded, primaryColor }) {
+export default function ProductComplementEditor({ complements, onChange, onUploadingChange, primaryColor }) {
   const [uploadingFor, setUploadingFor] = useState(null);
+  // Always keep a ref to the latest complements so async handlers never use stale closures
+  const complementsRef = useRef(complements);
+  useEffect(() => { complementsRef.current = complements; }, [complements]);
+
+  // All mutations go through a single updater that always reads from the latest `complements` prop
+  const updateComplements = (updater) => {
+    onChange(updater(complements));
+  };
 
   const handleImageUpload = async (groupIndex, itemIndex, file) => {
     const key = `${groupIndex}-${itemIndex}`;
     setUploadingFor(key);
     onUploadingChange?.(true);
+    let uploadedUrl = null;
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      onImageUploaded(groupIndex, itemIndex, file_url);
+      uploadedUrl = file_url;
     } catch (err) {
       toast.error('Erro ao enviar imagem');
-    } finally {
-      setUploadingFor(null);
-      onUploadingChange?.(false);
+    }
+    // Clear uploading state first, then update complements
+    setUploadingFor(null);
+    onUploadingChange?.(false);
+    if (uploadedUrl) {
+      // Use the ref to get the freshest complements — never stale
+      const updated = complementsRef.current.map((group, gi) => {
+        if (gi !== groupIndex) return group;
+        return {
+          ...group,
+          items: group.items.map((item, ii) =>
+            ii === itemIndex ? { ...item, image_url: uploadedUrl } : item
+          )
+        };
+      });
+      onChange(updated);
     }
   };
 
@@ -31,8 +53,7 @@ export default function ProductComplementEditor({ complements, onChange, onUploa
   };
 
   const updateGroup = (index, field, value) => {
-    const updated = complements.map((g, i) => i === index ? { ...g, [field]: value } : g);
-    onChange(updated);
+    updateComplements(prev => prev.map((g, i) => i === index ? { ...g, [field]: value } : g));
   };
 
   const removeGroup = (index) => {
@@ -40,14 +61,13 @@ export default function ProductComplementEditor({ complements, onChange, onUploa
   };
 
   const addItem = (groupIndex) => {
-    const updated = complements.map((g, i) =>
+    updateComplements(prev => prev.map((g, i) =>
       i === groupIndex ? { ...g, items: [...g.items, { name: '', price: 0, active: true }] } : g
-    );
-    onChange(updated);
+    ));
   };
 
   const updateItem = (groupIndex, itemIndex, field, value) => {
-    const updated = complements.map((g, gi) => {
+    updateComplements(prev => prev.map((g, gi) => {
       if (gi !== groupIndex) return g;
       return {
         ...g,
@@ -55,16 +75,14 @@ export default function ProductComplementEditor({ complements, onChange, onUploa
           ii === itemIndex ? { ...item, [field]: value } : item
         )
       };
-    });
-    onChange(updated);
+    }));
   };
 
   const removeItem = (groupIndex, itemIndex) => {
-    const updated = complements.map((g, gi) => {
+    updateComplements(prev => prev.map((g, gi) => {
       if (gi !== groupIndex) return g;
       return { ...g, items: g.items.filter((_, ii) => ii !== itemIndex) };
-    });
-    onChange(updated);
+    }));
   };
 
   return (

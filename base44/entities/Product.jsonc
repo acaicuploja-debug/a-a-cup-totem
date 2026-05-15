@@ -1,0 +1,137 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do produto"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do produto"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem"
+    },
+    "price": {
+      "type": "number",
+      "description": "Pre\u00e7o original"
+    },
+    "cost_price": {
+      "type": "number",
+      "description": "Pre\u00e7o de custo do produto (fixo)"
+    },
+    "cost_percentage": {
+      "type": "number",
+      "description": "Porcentagem de custo (para produtos vendidos por peso)"
+    },
+    "promo_price": {
+      "type": "number",
+      "description": "Pre\u00e7o promocional"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "ID da categoria"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o dentro da categoria",
+      "default": 0
+    },
+    "badges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "promocao",
+          "novo",
+          "mais_vendido",
+          "oferta",
+          "leve_mais_pague_menos"
+        ]
+      },
+      "description": "Selos visuais"
+    },
+    "complements": {
+      "type": "array",
+      "description": "Grupos de complementos",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "max_value_mode": {
+            "type": "boolean",
+            "description": "Se true, apenas o complemento de maior valor ser\u00e1 somado"
+          },
+          "allow_multiply": {
+            "type": "boolean",
+            "default": false,
+            "description": "Se true, permite selecionar m\u00faltiplas quantidades do mesmo item"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                },
+                "active": {
+                  "type": "boolean",
+                  "default": true
+                },
+                "image_url": {
+                  "type": "string",
+                  "description": "URL da imagem do complemento"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "is_upsell": {
+      "type": "boolean",
+      "default": false,
+      "description": "Produto exclusivo de upsell"
+    },
+    "pdv_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Produto vis\u00edvel apenas no PDV da loja"
+    },
+    "sold_by_weight": {
+      "type": "boolean",
+      "default": false,
+      "description": "Produto vendido por quilo"
+    },
+    "price_per_kg": {
+      "type": "number",
+      "description": "Pre\u00e7o por kg (quando vendido por peso)"
+    }
+  },
+  "required": [
+    "name",
+    "price",
+    "category_id"
+  ]
+}

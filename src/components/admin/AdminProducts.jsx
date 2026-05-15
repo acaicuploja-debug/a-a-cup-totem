@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,34 +35,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingComplement, setUploadingComplement] = useState(false);
-  const formDataRef = useRef(formData);
   const queryClient = useQueryClient();
-
-  // Keep ref in sync - called immediately on every setFormData
-  const setFormDataAndRef = (updater) => {
-    setFormData(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      formDataRef.current = next;
-      return next;
-    });
-  };
-
-  // Called directly by child after image upload - bypasses React render cycle
-  const handleComplementImageUploaded = (groupIndex, itemIndex, file_url) => {
-    const current = formDataRef.current;
-    const updatedComplements = current.complements.map((group, gi) => {
-      if (gi !== groupIndex) return group;
-      return {
-        ...group,
-        items: group.items.map((item, ii) =>
-          ii === itemIndex ? { ...item, image_url: file_url } : item
-        )
-      };
-    });
-    const next = { ...current, complements: updatedComplements };
-    formDataRef.current = next;
-    setFormData(next);
-  };
 
 
   
@@ -113,7 +86,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   const handleOpenDialog = (product = null) => {
     if (product) {
       setEditingProduct(product);
-      const productData = {
+      setFormData({
         name: product.name,
         description: product.description || '',
         image_url: product.image_url || '',
@@ -129,18 +102,14 @@ export default function AdminProducts({ settings, primaryColor }) {
         complements: product.complements || [],
         active: product.active !== false,
         is_upsell: false
-      };
-      formDataRef.current = productData;
-      setFormData(productData);
+      });
     } else {
       setEditingProduct(null);
-      const emptyData = {
+      setFormData({
         name: '', description: '', image_url: '', price: 0, promo_price: null,
         cost_price: null, cost_percentage: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
         category_id: '', badges: [], complements: [], active: true, is_upsell: false
-      };
-      formDataRef.current = emptyData;
-      setFormData(emptyData);
+      });
     }
     setShowDialog(true);
   };
@@ -152,18 +121,15 @@ export default function AdminProducts({ settings, primaryColor }) {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    const current = formDataRef.current;
-    if (!current.name.trim() || !current.category_id) {
+    if (!formData.name.trim() || !formData.category_id) {
       toast.error('Nome e categoria são obrigatórios');
       return;
     }
-    
     const data = {
-      ...current,
-      price: parseFloat(current.price) || 0,
-      promo_price: current.promo_price ? parseFloat(current.promo_price) : null
+      ...formData,
+      price: parseFloat(formData.price) || 0,
+      promo_price: formData.promo_price ? parseFloat(formData.promo_price) : null
     };
-    
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, data });
     } else {
@@ -178,7 +144,7 @@ export default function AdminProducts({ settings, primaryColor }) {
     setUploading(true);
     try {
       const result = await base44.integrations.Core.UploadFile({ file });
-      setFormDataAndRef(prev => ({ ...prev, image_url: result.file_url }));
+      setFormData(prev => ({ ...prev, image_url: result.file_url }));
       toast.success('Imagem enviada!');
     } catch (error) {
       toast.error('Erro ao enviar imagem');
@@ -187,7 +153,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   };
   
   const toggleBadge = (badge) => {
-    setFormDataAndRef(prev => ({
+    setFormData(prev => ({
       ...prev,
       badges: prev.badges.includes(badge)
         ? prev.badges.filter(b => b !== badge)
@@ -494,7 +460,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                 <Label>Nome *</Label>
                 <Input
                   value={formData.name}
-                  onChange={(e) => setFormDataAndRef(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Nome do produto"
                 />
               </div>
@@ -503,7 +469,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                 <Label>Categoria *</Label>
                 <Select 
                   value={formData.category_id}
-                  onValueChange={(value) => setFormDataAndRef(prev => ({ ...prev, category_id: value }))}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
@@ -521,7 +487,7 @@ export default function AdminProducts({ settings, primaryColor }) {
               <Label>Descrição</Label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormDataAndRef(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Descrição do produto"
                 rows={2}
               />
@@ -548,7 +514,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                   type="number"
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormDataAndRef(prev => ({ ...prev, price: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                 />
               </div>
               
@@ -558,7 +524,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                   type="number"
                   step="0.01"
                   value={formData.promo_price || ''}
-                  onChange={(e) => setFormDataAndRef(prev => ({ ...prev, promo_price: e.target.value || null }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, promo_price: e.target.value || null }))}
                   placeholder="Deixe vazio se não houver"
                 />
               </div>
@@ -572,7 +538,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                     type="number"
                     step="0.1"
                     value={formData.cost_percentage || ''}
-                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, cost_percentage: e.target.value || null }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_percentage: e.target.value || null }))}
                     placeholder="Ex: 30 (para 30%)"
                   />
                   <p className="text-xs text-gray-500">
@@ -586,7 +552,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                     type="number"
                     step="0.01"
                     value={formData.cost_price || ''}
-                    onChange={(e) => setFormDataAndRef(prev => ({ ...prev, cost_price: e.target.value || null }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value || null }))}
                     placeholder="0.00"
                   />
                 </div>
@@ -598,7 +564,7 @@ export default function AdminProducts({ settings, primaryColor }) {
                   type="number"
                   step="0.01"
                   value={formData.price_per_kg || ''}
-                  onChange={(e) => setFormDataAndRef(prev => ({ ...prev, price_per_kg: e.target.value || null }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_kg: e.target.value || null }))}
                   placeholder="Para produtos vendidos por peso"
                 />
               </div>
@@ -608,7 +574,7 @@ export default function AdminProducts({ settings, primaryColor }) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={formData.pdv_only || false}
-                  onCheckedChange={(checked) => setFormDataAndRef(prev => ({ ...prev, pdv_only: checked }))}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, pdv_only: checked }))}
                   id="pdv-only"
                 />
                 <Label htmlFor="pdv-only" className="cursor-pointer">
@@ -619,7 +585,7 @@ export default function AdminProducts({ settings, primaryColor }) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={formData.sold_by_weight || false}
-                  onCheckedChange={(checked) => setFormDataAndRef(prev => ({ ...prev, sold_by_weight: checked }))}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, sold_by_weight: checked }))}
                   id="sold-by-weight"
                 />
                 <Label htmlFor="sold-by-weight" className="cursor-pointer">
@@ -647,14 +613,9 @@ export default function AdminProducts({ settings, primaryColor }) {
             </div>
             
             <ProductComplementEditor
-              complements={formDataRef.current.complements}
-              onChange={(complements) => {
-                const next = { ...formDataRef.current, complements };
-                formDataRef.current = next;
-                setFormData(next);
-              }}
+              complements={formData.complements}
+              onChange={(complements) => setFormData(fd => ({ ...fd, complements }))}
               onUploadingChange={setUploadingComplement}
-              onImageUploaded={handleComplementImageUploaded}
               primaryColor={primaryColor}
             />
             
@@ -662,7 +623,7 @@ export default function AdminProducts({ settings, primaryColor }) {
               <Label>Ativo</Label>
               <Switch
                 checked={formData.active}
-                onCheckedChange={(checked) => setFormDataAndRef(prev => ({ ...prev, active: checked }))}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
               />
             </div>
             
