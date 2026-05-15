@@ -15,8 +15,16 @@ export default function ProductComplementEditor({ complements, onChange, primary
     setUploadingFor(key);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      // Use functional updater pattern via onChange to always work on latest state
-      onChange(null, { groupIndex, itemIndex, file_url });
+      const updated = complements.map((group, gi) => {
+        if (gi !== groupIndex) return group;
+        return {
+          ...group,
+          items: group.items.map((item, ii) =>
+            ii === itemIndex ? { ...item, image_url: file_url } : item
+          )
+        };
+      });
+      onChange(updated);
     } finally {
       setUploadingFor(null);
     }
