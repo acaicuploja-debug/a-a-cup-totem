@@ -141,6 +141,12 @@ export default function AdminProducts({ settings, primaryColor }) {
       return;
     }
     
+    // Log para debug - verificar se image_url dos complementos está presente
+    console.log('🟡 SUBMIT complements:', JSON.stringify(current.complements?.map(g => ({
+      name: g.name,
+      items: g.items?.map(i => ({ name: i.name, image_url: i.image_url || 'SEM IMAGEM' }))
+    }))));
+
     const data = {
       ...current,
       price: parseFloat(current.price) || 0,
