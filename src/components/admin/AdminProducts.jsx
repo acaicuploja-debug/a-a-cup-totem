@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,6 +34,8 @@ export default function AdminProducts({ settings, primaryColor }) {
     category_id: '', badges: [], complements: [], active: true, is_upsell: false
   });
   const [uploading, setUploading] = useState(false);
+  const formDataRef = useRef(formData);
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
   const queryClient = useQueryClient();
   
   const { data: allProducts, isLoading } = useQuery({
@@ -118,15 +120,17 @@ export default function AdminProducts({ settings, primaryColor }) {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.category_id) {
+    // Use ref to get the freshest formData (avoids stale closure with async complement image uploads)
+    const current = formDataRef.current;
+    if (!current.name.trim() || !current.category_id) {
       toast.error('Nome e categoria são obrigatórios');
       return;
     }
     
     const data = {
-      ...formData,
-      price: parseFloat(formData.price) || 0,
-      promo_price: formData.promo_price ? parseFloat(formData.promo_price) : null
+      ...current,
+      price: parseFloat(current.price) || 0,
+      promo_price: current.promo_price ? parseFloat(current.promo_price) : null
     };
     
     if (editingProduct) {

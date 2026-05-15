@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,14 +9,18 @@ import { base44 } from '@/api/base44Client';
 
 export default function ProductComplementEditor({ complements, onChange, primaryColor }) {
   const [uploadingFor, setUploadingFor] = useState(null);
+  // Always keep a ref to the latest complements to avoid stale closures in async uploads
+  const complementsRef = useRef(complements);
+  useEffect(() => { complementsRef.current = complements; }, [complements]);
 
   const handleImageUpload = async (groupIndex, itemIndex, file) => {
     const key = `${groupIndex}-${itemIndex}`;
     setUploadingFor(key);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      // Use fresh copy of complements to avoid stale closure
-      const updated = complements.map((group, gi) => {
+      // Use the ref to get the freshest complements state
+      const current = complementsRef.current;
+      const updated = current.map((group, gi) => {
         if (gi !== groupIndex) return group;
         return {
           ...group,
