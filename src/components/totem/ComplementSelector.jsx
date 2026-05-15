@@ -65,15 +65,22 @@ export default function ComplementSelector({
                 style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-medium text-gray-900">{item.name}</span>
-                  {item.price === 0 && (
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">GRÁTIS</span>
+                  {item.image_url && (
+                    <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
                   )}
-                  {item.price > 0 && (
-                    <span className="text-sm font-semibold text-gray-500">
-                      + R$ {(item.price * (itemQty || 1)).toFixed(2)}
-                    </span>
-                  )}
+                  <div>
+                    <span className="font-medium text-gray-900">{item.name}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {item.price === 0 && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">GRÁTIS</span>
+                      )}
+                      {item.price > 0 && (
+                        <span className="text-sm font-semibold text-gray-500">
+                          + R$ {(item.price * (itemQty || 1)).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {isSelected && (
@@ -122,23 +129,30 @@ export default function ComplementSelector({
             >
               <div className="flex items-center gap-3">
                 <div 
-                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isSelected ? 'text-white' : 'border-2 border-gray-300'
                   }`}
                   style={isSelected ? { backgroundColor: primaryColor } : {}}
                 >
                   {isSelected && <Check className="w-4 h-4" />}
                 </div>
-                <span className="font-medium text-gray-900">{item.name}</span>
-                {(!item.price || item.price === 0) && (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                    GRÁTIS
-                  </span>
+                {item.image_url && (
+                  <img src={item.image_url} alt={item.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
                 )}
+                <div>
+                  <span className="font-medium text-gray-900">{item.name}</span>
+                  {(!item.price || item.price === 0) && (
+                    <div>
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                        GRÁTIS
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {item.price > 0 && (
-                <span className="font-semibold text-gray-700">
+                <span className="font-semibold text-gray-700 flex-shrink-0">
                   + R$ {item.price.toFixed(2)}
                 </span>
               )}
