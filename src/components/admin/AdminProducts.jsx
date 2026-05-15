@@ -617,7 +617,25 @@ export default function AdminProducts({ settings, primaryColor }) {
             
             <ProductComplementEditor
               complements={formData.complements}
-              onChange={(complements) => setFormData(prev => ({ ...prev, complements }))}
+              onChange={(complements, imagePatch) => {
+                if (imagePatch) {
+                  // Functional update to guarantee we work on the latest complements state
+                  setFormData(prev => {
+                    const updated = prev.complements.map((group, gi) => {
+                      if (gi !== imagePatch.groupIndex) return group;
+                      return {
+                        ...group,
+                        items: group.items.map((item, ii) =>
+                          ii === imagePatch.itemIndex ? { ...item, image_url: imagePatch.file_url } : item
+                        )
+                      };
+                    });
+                    return { ...prev, complements: updated };
+                  });
+                } else {
+                  setFormData(prev => ({ ...prev, complements }));
+                }
+              }}
               primaryColor={primaryColor}
             />
             
