@@ -8,7 +8,7 @@ import { Plus, Trash2, GripVertical, Upload, X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-export default function ProductComplementEditor({ complements, onChange, onUploadingChange, primaryColor }) {
+export default function ProductComplementEditor({ complements, onChange, onUploadingChange, onImageUploaded, primaryColor }) {
   const [uploadingFor, setUploadingFor] = useState(null);
 
   const handleImageUpload = async (groupIndex, itemIndex, file) => {
@@ -17,21 +17,9 @@ export default function ProductComplementEditor({ complements, onChange, onUploa
     onUploadingChange?.(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      // Use the complements prop directly at call time - it's always current
-      const updated = complements.map((group, gi) => {
-        if (gi !== groupIndex) return group;
-        return {
-          ...group,
-          items: group.items.map((item, ii) =>
-            ii === itemIndex ? { ...item, image_url: file_url } : item
-          )
-        };
-      });
-      console.log('🟢 Upload OK, image_url:', file_url, 'item:', complements[groupIndex].items[itemIndex].name);
-      onChange(updated);
+      onImageUploaded(groupIndex, itemIndex, file_url);
     } catch (err) {
       toast.error('Erro ao enviar imagem');
-      console.error('Upload error:', err);
     } finally {
       setUploadingFor(null);
       onUploadingChange?.(false);

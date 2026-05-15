@@ -47,6 +47,23 @@ export default function AdminProducts({ settings, primaryColor }) {
     });
   };
 
+  // Called directly by child after image upload - bypasses React render cycle
+  const handleComplementImageUploaded = (groupIndex, itemIndex, file_url) => {
+    const current = formDataRef.current;
+    const updatedComplements = current.complements.map((group, gi) => {
+      if (gi !== groupIndex) return group;
+      return {
+        ...group,
+        items: group.items.map((item, ii) =>
+          ii === itemIndex ? { ...item, image_url: file_url } : item
+        )
+      };
+    });
+    const next = { ...current, complements: updatedComplements };
+    formDataRef.current = next;
+    setFormData(next);
+  };
+
 
   
   const { data: allProducts, isLoading } = useQuery({
@@ -131,16 +148,16 @@ export default function AdminProducts({ settings, primaryColor }) {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Use formData (state) directly - it's always in sync since we await upload before allowing submit
-    if (!formData.name.trim() || !formData.category_id) {
+    const current = formDataRef.current;
+    if (!current.name.trim() || !current.category_id) {
       toast.error('Nome e categoria são obrigatórios');
       return;
     }
     
     const data = {
-      ...formData,
-      price: parseFloat(formData.price) || 0,
-      promo_price: formData.promo_price ? parseFloat(formData.promo_price) : null
+      ...current,
+      price: parseFloat(current.price) || 0,
+      promo_price: current.promo_price ? parseFloat(current.promo_price) : null
     };
     
     if (editingProduct) {
@@ -629,6 +646,7 @@ export default function AdminProducts({ settings, primaryColor }) {
               complements={formData.complements}
               onChange={(complements) => setFormDataAndRef(prev => ({ ...prev, complements }))}
               onUploadingChange={setUploadingComplement}
+              onImageUploaded={handleComplementImageUploaded}
               primaryColor={primaryColor}
             />
             
