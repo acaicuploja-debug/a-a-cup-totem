@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Minus, Plus, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -80,6 +80,21 @@ export default function TotemProductDetail({
       return !group.min || count >= group.min;
     });
   }, [product?.complements, selectedComplements]);
+
+  // Auto-scroll to first required complement group on product open
+  useEffect(() => {
+    if (!product?.complements) return;
+    const firstRequired = product.complements.findIndex(group => group.required);
+    if (firstRequired !== -1) {
+      setTimeout(() => {
+        const el = document.getElementById(`complement-group-${firstRequired}`);
+        if (el) {
+          const offsetTop = el.getBoundingClientRect().top + window.scrollY - 100;
+          window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+        }
+      }, 300);
+    }
+  }, [product]);
 
   const handleScrollToNextGroup = (currentIndex) => {
     const complements = product?.complements || [];
