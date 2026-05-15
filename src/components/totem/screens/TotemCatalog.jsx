@@ -31,7 +31,8 @@ export default function TotemCatalog({
       const filter = { active: true, is_upsell: false, pdv_only: false };
       if (selectedCategory?.id) filter.category_id = selectedCategory.id;
       return base44.entities.Product.filter(filter);
-    }
+    },
+    staleTime: 0
   });
 
   const products = useMemo(() => {

@@ -13,9 +13,22 @@ export default function ProductComplementEditor({ complements, onChange, primary
   const handleImageUpload = async (groupIndex, itemIndex, file) => {
     const key = `${groupIndex}-${itemIndex}`;
     setUploadingFor(key);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    updateItem(groupIndex, itemIndex, 'image_url', file_url);
-    setUploadingFor(null);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Use fresh copy of complements to avoid stale closure
+      const updated = complements.map((group, gi) => {
+        if (gi !== groupIndex) return group;
+        return {
+          ...group,
+          items: group.items.map((item, ii) =>
+            ii === itemIndex ? { ...item, image_url: file_url } : item
+          )
+        };
+      });
+      onChange(updated);
+    } finally {
+      setUploadingFor(null);
+    }
   };
 
   const addGroup = () => {
