@@ -113,7 +113,7 @@ export default function AdminProducts({ settings, primaryColor }) {
   const handleOpenDialog = (product = null) => {
     if (product) {
       setEditingProduct(product);
-      setFormDataAndRef({
+      const productData = {
         name: product.name,
         description: product.description || '',
         image_url: product.image_url || '',
@@ -129,14 +129,18 @@ export default function AdminProducts({ settings, primaryColor }) {
         complements: product.complements || [],
         active: product.active !== false,
         is_upsell: false
-      });
+      };
+      formDataRef.current = productData;
+      setFormData(productData);
     } else {
       setEditingProduct(null);
-      setFormDataAndRef({
+      const emptyData = {
         name: '', description: '', image_url: '', price: 0, promo_price: null,
         cost_price: null, cost_percentage: null, price_per_kg: null, pdv_only: false, sold_by_weight: false,
         category_id: '', badges: [], complements: [], active: true, is_upsell: false
-      });
+      };
+      formDataRef.current = emptyData;
+      setFormData(emptyData);
     }
     setShowDialog(true);
   };
@@ -643,8 +647,12 @@ export default function AdminProducts({ settings, primaryColor }) {
             </div>
             
             <ProductComplementEditor
-              complements={formData.complements}
-              onChange={(complements) => setFormDataAndRef(prev => ({ ...prev, complements }))}
+              complements={formDataRef.current.complements}
+              onChange={(complements) => {
+                const next = { ...formDataRef.current, complements };
+                formDataRef.current = next;
+                setFormData(next);
+              }}
               onUploadingChange={setUploadingComplement}
               onImageUploaded={handleComplementImageUploaded}
               primaryColor={primaryColor}
