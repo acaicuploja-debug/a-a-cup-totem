@@ -47,11 +47,7 @@ export default function AdminProducts({ settings, primaryColor }) {
     });
   };
 
-  // Direct ref update for async callbacks (e.g. image upload in child)
-  const updateComplementsInRef = (complements) => {
-    formDataRef.current = { ...formDataRef.current, complements };
-    setFormData(prev => ({ ...prev, complements }));
-  };
+
   
   const { data: allProducts, isLoading } = useQuery({
     queryKey: ['admin-products'],
@@ -135,22 +131,16 @@ export default function AdminProducts({ settings, primaryColor }) {
   
   const handleSubmit = (e) => {
     e.preventDefault();
-    const current = formDataRef.current;
-    if (!current.name.trim() || !current.category_id) {
+    // Use formData (state) directly - it's always in sync since we await upload before allowing submit
+    if (!formData.name.trim() || !formData.category_id) {
       toast.error('Nome e categoria são obrigatórios');
       return;
     }
     
-    // Log para debug - verificar se image_url dos complementos está presente
-    console.log('🟡 SUBMIT complements:', JSON.stringify(current.complements?.map(g => ({
-      name: g.name,
-      items: g.items?.map(i => ({ name: i.name, image_url: i.image_url || 'SEM IMAGEM' }))
-    }))));
-
     const data = {
-      ...current,
-      price: parseFloat(current.price) || 0,
-      promo_price: current.promo_price ? parseFloat(current.promo_price) : null
+      ...formData,
+      price: parseFloat(formData.price) || 0,
+      promo_price: formData.promo_price ? parseFloat(formData.promo_price) : null
     };
     
     if (editingProduct) {
@@ -637,7 +627,7 @@ export default function AdminProducts({ settings, primaryColor }) {
             
             <ProductComplementEditor
               complements={formData.complements}
-              onChange={updateComplementsInRef}
+              onChange={(complements) => setFormDataAndRef(prev => ({ ...prev, complements }))}
               onUploadingChange={setUploadingComplement}
               primaryColor={primaryColor}
             />
