@@ -71,22 +71,7 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
         <Settings className="w-5 h-5 text-white" />
       </button>
 
-      {/* CTA Button */}
-      <motion.button
-        onClick={onStart}
-        className="relative z-20 px-8 py-4 rounded-2xl text-white font-extrabold text-xl md:text-2xl uppercase tracking-wide border-4 border-black"
-        style={{
-          backgroundColor: primaryColor,
-          boxShadow: '6px 6px 0px 0px #000000'
-        }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        whileHover={{ scale: 1.05, boxShadow: '8px 8px 0px 0px #000000' }}
-        whileTap={{ scale: 0.97, boxShadow: '3px 3px 0px 0px #000000', x: 3, y: 3 }}
-      >
-        👆 Clique aqui para iniciar seu pedido
-      </motion.button>
+
     </div>
   );
 }

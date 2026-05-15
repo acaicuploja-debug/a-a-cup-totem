@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
 import { QrCode, CreditCard, Banknote, ArrowRight, Loader2 } from 'lucide-react';
@@ -288,7 +289,7 @@ export default function TotemPayment({
           })}
         </div>
         
-        {!settings?.pix_key && availableMethods.includes('pix') && (
+        {!settings?.pix_key && sortedMethods.includes('pix') && (
           <p className="text-center text-amber-600 text-sm mt-4">
             ⚠️ Chave PIX não configurada
           </p>
