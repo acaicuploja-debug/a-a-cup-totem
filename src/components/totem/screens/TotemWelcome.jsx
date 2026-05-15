@@ -61,7 +61,7 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
         </>
       )}
 
-      <div className="absolute inset-0 bg-black/40 z-10" />
+      <div className="absolute inset-0 bg-black/10 z-10" />
 
       {/* Admin Button */}
       <button
