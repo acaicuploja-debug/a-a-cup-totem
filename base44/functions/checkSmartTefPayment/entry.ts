@@ -29,48 +29,70 @@ Deno.serve(async (req) => {
     const datetimeInitial = `${dateStr} 00:00:00`;
     const datetimeFinal = `${dateStr} 23:59:59`;
 
-    const response = await fetch('https://api.smarttef.mobi/commands/order/list', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${jwtToken}`,
-        'Ocp-Apim-Subscription-Key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        datetimeInitial,
-        datetimeFinal
-      })
-    });
+    // Testar variações para consultar ordem específica pelo chargeId
+    const getEndpoints = [
+      { method: 'GET',  url: `https://api.smarttef.mobi/commands/order/${chargeId}` },
+      { method: 'GET',  url: `https://api.smarttef.mobi/commands/order/charge/${chargeId}` },
+      { method: 'POST', url: `https://api.smarttef.mobi/commands/order/status`, body: JSON.stringify({ charge_id: chargeId }) },
+      { method: 'POST', url: `https://api.smarttef.mobi/commands/order/get`,    body: JSON.stringify({ charge_id: chargeId }) },
+      { method: 'POST', url: `https://api.smarttef.mobi/commands/pooling`,       body: JSON.stringify({ datetimeInitial, datetimeFinal }) },
+    ];
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Smart TEF polling error:', errorText);
-      return Response.json({ status: 'pending' });
+    let card = null;
+    let rawStatus = '';
+
+    for (const ep of getEndpoints) {
+      const fetchOpts = {
+        method: ep.method,
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+          'Ocp-Apim-Subscription-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
+      };
+      if (ep.body) fetchOpts.body = ep.body;
+
+      const response = await fetch(ep.url, fetchOpts);
+      console.log(`[${ep.method}] ${ep.url}: ${response.status}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', JSON.stringify(data).substring(0, 500));
+
+        // Pode ser um objeto direto (ordem única) ou array
+        const orders = Array.isArray(data) ? data : (data.orders || data.data || [data]);
+        card = orders.find(o => 
+          o.charge_id === chargeId || o.chargeId === chargeId || 
+          o.id === chargeId || String(o.orderId) === chargeId
+        );
+
+        if (card) {
+          rawStatus = (card.status || card.transactionStatus || card.payment_status || '').toUpperCase();
+          console.log('Found card, status:', rawStatus);
+          break;
+        } else {
+          console.log('Endpoint ok but card not found. Total items:', orders.length, 'Sample:', JSON.stringify(orders[0] || {}).substring(0, 200));
+        }
+      } else {
+        const errText = await response.text();
+        console.error(`Error [${ep.url}]:`, errText);
+      }
     }
-
-    const data = await response.json();
-    const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
-
-    // Buscar o card pelo charge_id
-    const card = orders.find(o => o.charge_id === chargeId || o.chargeId === chargeId);
 
     if (!card) {
       return Response.json({ status: 'pending' });
     }
 
-    // Status: APPROVED, DENIED, CANCELLED, PENDING
-    const rawStatus = (card.status || card.transactionStatus || '').toUpperCase();
-
-    if (rawStatus === 'APPROVED' || rawStatus === 'PAID' || rawStatus === 'CONFIRMED') {
+    if (rawStatus === 'APPROVED' || rawStatus === 'PAID' || rawStatus === 'CONFIRMED' || rawStatus === 'AUTHORIZED') {
       return Response.json({ 
         status: 'approved',
         transactionId: card.transactionId || card.id,
         authorizationCode: card.authorizationCode || card.authorization_code
       });
-    } else if (rawStatus === 'DENIED' || rawStatus === 'CANCELLED' || rawStatus === 'REJECTED') {
+    } else if (rawStatus === 'DENIED' || rawStatus === 'CANCELLED' || rawStatus === 'REJECTED' || rawStatus === 'ERROR') {
       return Response.json({ status: 'denied', message: 'Pagamento recusado pela maquininha.' });
     } else {
-      return Response.json({ status: 'pending' });
+      return Response.json({ status: 'pending', rawStatus });
     }
 
   } catch (error) {
