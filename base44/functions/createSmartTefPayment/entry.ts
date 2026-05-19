@@ -62,21 +62,12 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
-    // Após pagamento aprovado, atualizar pedido para em_preparo
-    if (data.transactionId || data.authorizationCode) {
-      await base44.asServiceRole.entities.Order.update(orderId, {
-        status: 'em_preparo',
-        payment_method: paymentType, // 'debito' ou 'credito'
-        payment_confirmed_at: new Date().toISOString()
-      });
-    }
-
     return Response.json({
       success: true,
-      transactionId: data.transactionId,
-      authorizationCode: data.authorizationCode,
-      responseCode: data.responseCode,
-      message: data.message
+      payment_identifier: data.payment_identifier,
+      charge_id: data.charge_id,
+      payment_status: data.payment_status,
+      order_type: data.order_type
     });
 
   } catch (error) {

@@ -30,7 +30,7 @@ export default function TotemSmartTefCard({
     return () => stopPolling();
   }, []);
 
-  const startPolling = (type, chargeId) => {
+  const startPolling = (type, paymentIdentifier) => {
     // Timeout máximo
     timeoutRef.current = setTimeout(() => {
       stopPolling();
@@ -40,7 +40,7 @@ export default function TotemSmartTefCard({
 
     pollingRef.current = setInterval(async () => {
       try {
-        const res = await base44.functions.invoke('checkSmartTefPayment', { chargeId });
+        const res = await base44.functions.invoke('checkSmartTefPayment', { payment_identifier: paymentIdentifier });
         const { status, transactionId, authorizationCode } = res.data;
 
         if (status === 'approved') {
@@ -73,9 +73,9 @@ export default function TotemSmartTefCard({
         description: `Pedido #${orderId}`
       });
 
-      if (response.data.success) {
-        // Card criado na maquininha — agora faz polling esperando o pagamento
-        startPolling(type, orderId.toString());
+      if (response.data.success && response.data.payment_identifier) {
+        // Card criado na maquininha — agora faz polling usando o payment_identifier
+        startPolling(type, response.data.payment_identifier);
       } else {
         setErrorMessage(response.data.message || 'Erro ao enviar para maquininha. Tente novamente.');
         setStep('error');
