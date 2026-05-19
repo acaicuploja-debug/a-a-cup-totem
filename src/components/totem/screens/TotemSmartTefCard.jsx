@@ -3,18 +3,19 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
+import { useCart } from '../CartContext';
 
 const POLL_INTERVAL = 3000; // 3 segundos
 const POLL_TIMEOUT = 120000; // 2 minutos máximo
 
 export default function TotemSmartTefCard({ 
   total, 
-  orderId,
   settings,
   primaryColor,
   onSuccess, 
   onCancel
 }) {
+  const { items, customer, consumptionType, setCurrentOrder } = useCart();
   const [step, setStep] = useState('select'); // 'select' | 'processing' | 'success' | 'error'
   const [paymentType, setPaymentType] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,19 +47,74 @@ export default function TotemSmartTefCard({
         if (status === 'approved') {
           stopPolling();
           setStep('success');
+          // Criar pedido SOMENTE após pagamento confirmado
+          await createOrder(type);
           setTimeout(() => {
             onSuccess && onSuccess({ method: type, transactionId, authorizationCode });
           }, 2000);
         } else if (status === 'denied') {
           stopPolling();
-          setErrorMessage(res.data.message || 'Pagamento recusado. Tente novamente.');
-          setStep('error');
+          // Pagamento cancelado/recusado — voltar ao checkout para escolher outro método
+          onCancel && onCancel();
         }
         // 'pending' => continua polling
       } catch (e) {
         // ignora erros de rede e continua tentando
       }
     }, POLL_INTERVAL);
+  };
+
+  const createOrder = async (paymentMethod) => {
+    const now = new Date();
+    const brasiliaTime = now.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+
+    const orders = await base44.entities.Order.list('-order_number', 1);
+    const nextNumber = orders.length > 0 ? (orders[0].order_number || 0) + 1 : 1;
+
+    const order = await base44.entities.Order.create({
+      order_number: nextNumber,
+      customer_id: customer?.id || null,
+      customer_name: customer?.name || null,
+      customer_phone: customer?.phone || null,
+      items: items.map(item => ({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        complements: item.complements || [],
+        total: item.total,
+        cost_price: item.cost_price || 0
+      })),
+      subtotal: total,
+      total: total,
+      consumption_type: consumptionType,
+      payment_method: paymentMethod,
+      status: 'em_preparo',
+      order_datetime: brasiliaTime,
+      reward_redeemed: customer?.redeeming_reward || false
+    });
+
+    // Fidelidade
+    if (customer?.id) {
+      const loyaltyTarget = settings?.loyalty_target || 10;
+      if (customer.redeeming_reward) {
+        await base44.entities.Customer.update(customer.id, { loyalty_count: 0, has_pending_reward: false, reward_available_date: null });
+        await base44.entities.LoyaltyLog.create({ customer_id: customer.id, customer_phone: customer.phone, order_id: order.id, action: 'premio_resgatado', loyalty_count_before: customer.loyalty_count || 0, loyalty_count_after: 0, datetime_brasilia: brasiliaTime });
+      } else {
+        const currentCount = customer.loyalty_count || 0;
+        const newCount = currentCount + 1;
+        const hasPendingReward = newCount >= loyaltyTarget;
+        await base44.entities.Customer.update(customer.id, { loyalty_count: hasPendingReward ? loyaltyTarget : newCount, has_pending_reward: hasPendingReward, reward_available_date: hasPendingReward ? new Date().toISOString() : customer.reward_available_date });
+        await base44.entities.LoyaltyLog.create({ customer_id: customer.id, customer_phone: customer.phone, order_id: order.id, action: hasPendingReward ? 'premio_disponivel' : 'pedido_contado', loyalty_count_before: currentCount, loyalty_count_after: newCount, datetime_brasilia: brasiliaTime });
+      }
+    }
+
+    setCurrentOrder(order);
+    return order;
   };
 
   const handleSelectType = async (type) => {
@@ -68,9 +124,9 @@ export default function TotemSmartTefCard({
     try {
       const response = await base44.functions.invoke('createSmartTefPayment', {
         amount: total,
-        orderId: orderId,
+        orderId: Date.now().toString(),
         paymentType: type,
-        description: `Pedido #${orderId}`
+        description: `Pagamento cartao`
       });
 
       if (response.data.success && response.data.payment_identifier) {

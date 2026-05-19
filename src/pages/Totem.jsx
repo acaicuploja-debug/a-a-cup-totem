@@ -76,8 +76,8 @@ function TotemContent() {
   // Check for inactivity (1 minute)
   React.useEffect(() => {
     const interval = setInterval(() => {
-      // Don't reset if on PIX screen or admin
-      if (screen === SCREENS.PIX || showAdmin) return;
+      // Don't reset if on PIX or SmartTEF screen (pagamento em andamento) or admin
+      if (screen === SCREENS.PIX || screen === SCREENS.SMARTTEF || showAdmin) return;
       
       const inactiveTime = Date.now() - lastActivity;
       if (inactiveTime > 60000 && screen !== SCREENS.WELCOME) { // 1 minute
@@ -251,8 +251,6 @@ function TotemContent() {
               <TotemSmartTefCard 
                 {...screenProps}
                 total={total}
-                orderId={currentOrder?.id}
-                customerId={customer?.id}
                 onSuccess={handlePaymentConfirmed}
                 onCancel={() => setScreen(SCREENS.PAYMENT)}
               />

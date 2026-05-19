@@ -160,11 +160,9 @@ export default function TotemPayment({
         toast.success('Pedido criado!');
         onSelectPayment(method);
       } 
-      // Smart TEF - criar pedido e vai para tela de Smart TEF
+      // Smart TEF - vai para tela de Smart TEF SEM criar pedido ainda
+      // O pedido só é criado após confirmação do pagamento
       else if (method === 'smarttef') {
-        toast.info('Criando pedido...');
-        await createOrderMutation.mutateAsync(method);
-        toast.success('Pedido criado!');
         onSelectPayment(method);
       }
       // PIX - vai para tela de PIX
