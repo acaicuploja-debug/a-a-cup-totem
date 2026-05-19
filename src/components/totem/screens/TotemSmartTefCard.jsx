@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
+
+const POLL_INTERVAL = 3000; // 3 segundos
+const POLL_TIMEOUT = 120000; // 2 minutos máximo
 
 export default function TotemSmartTefCard({ 
   total, 
@@ -15,6 +18,48 @@ export default function TotemSmartTefCard({
   const [step, setStep] = useState('select'); // 'select' | 'processing' | 'success' | 'error'
   const [paymentType, setPaymentType] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const pollingRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const stopPolling = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  };
+
+  useEffect(() => {
+    return () => stopPolling();
+  }, []);
+
+  const startPolling = (type, chargeId) => {
+    // Timeout máximo
+    timeoutRef.current = setTimeout(() => {
+      stopPolling();
+      setErrorMessage('Tempo limite atingido. Por favor, tente novamente.');
+      setStep('error');
+    }, POLL_TIMEOUT);
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await base44.functions.invoke('checkSmartTefPayment', { chargeId });
+        const { status, transactionId, authorizationCode } = res.data;
+
+        if (status === 'approved') {
+          stopPolling();
+          setStep('success');
+          setTimeout(() => {
+            onSuccess && onSuccess({ method: type, transactionId, authorizationCode });
+          }, 2000);
+        } else if (status === 'denied') {
+          stopPolling();
+          setErrorMessage(res.data.message || 'Pagamento recusado. Tente novamente.');
+          setStep('error');
+        }
+        // 'pending' => continua polling
+      } catch (e) {
+        // ignora erros de rede e continua tentando
+      }
+    }, POLL_INTERVAL);
+  };
 
   const handleSelectType = async (type) => {
     setPaymentType(type);
@@ -24,23 +69,28 @@ export default function TotemSmartTefCard({
       const response = await base44.functions.invoke('createSmartTefPayment', {
         amount: total,
         orderId: orderId,
-        paymentType: type, // 'debito' ou 'credito'
+        paymentType: type,
         description: `Pedido #${orderId}`
       });
 
       if (response.data.success) {
-        setStep('success');
-        setTimeout(() => {
-          onSuccess && onSuccess({ method: type, transactionId: response.data.transactionId });
-        }, 2000);
+        // Card criado na maquininha — agora faz polling esperando o pagamento
+        startPolling(type, orderId.toString());
       } else {
-        setErrorMessage(response.data.message || 'Pagamento recusado. Tente novamente.');
+        setErrorMessage(response.data.message || 'Erro ao enviar para maquininha. Tente novamente.');
         setStep('error');
       }
     } catch (error) {
       setErrorMessage('Erro ao comunicar com a maquininha. Tente novamente.');
       setStep('error');
     }
+  };
+
+  const handleRetry = () => {
+    stopPolling();
+    setStep('select');
+    setPaymentType(null);
+    setErrorMessage('');
   };
 
   const formatTotal = (value) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
@@ -94,7 +144,7 @@ export default function TotemSmartTefCard({
           <p className="text-gray-600 text-center">{errorMessage}</p>
           <div className="flex flex-col gap-3 w-full max-w-sm">
             <Button
-              onClick={() => setStep('select')}
+              onClick={handleRetry}
               className="w-full h-14 text-lg text-white"
               style={{ backgroundColor: primaryColor }}
             >
