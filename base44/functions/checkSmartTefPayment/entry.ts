@@ -43,15 +43,19 @@ Deno.serve(async (req) => {
     const data = await response.json();
     console.log('Response:', JSON.stringify(data).substring(0, 500));
 
-    const rawStatus = (data.payment_status || '').toUpperCase();
+    // A API retorna um array — pegar o primeiro item
+    const order = Array.isArray(data) ? data[0] : data;
+    const rawStatus = (order?.payment_status || '').toUpperCase();
+    console.log('payment_status:', rawStatus);
 
-    if (rawStatus === 'APPROVED' || rawStatus === 'PAID' || rawStatus === 'CONFIRMED' || rawStatus === 'AUTHORIZED') {
+    // CNC = Concluído/Confirmado
+    if (['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED', 'CNC'].includes(rawStatus)) {
       return Response.json({
         status: 'approved',
-        transactionId: data.nsu_host || data.nsu_sitef,
-        authorizationCode: data.autorization_code
+        transactionId: order.nsu_host || order.nsu_sitef,
+        authorizationCode: order.autorization_code
       });
-    } else if (rawStatus === 'DENIED' || rawStatus === 'CANCELLED' || rawStatus === 'REJECTED' || rawStatus === 'ERROR' || rawStatus === 'REFUSED') {
+    } else if (['DENIED', 'CANCELLED', 'REJECTED', 'ERROR', 'REFUSED', 'CAN'].includes(rawStatus)) {
       return Response.json({ status: 'denied', message: 'Pagamento recusado pela maquininha.' });
     } else {
       return Response.json({ status: 'pending', rawStatus });
