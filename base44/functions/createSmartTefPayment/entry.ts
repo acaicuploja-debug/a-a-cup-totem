@@ -28,19 +28,23 @@ Deno.serve(async (req) => {
     const transactionType = paymentType === 'debito' ? 'DEBIT' : 'CREDIT';
 
     const payload = {
-      terminalId: terminalId,
-      amount: Math.round(amount * 100), // Converter para centavos
-      orderId: orderId.toString(),
-      description: description || 'Pedido',
-      transactionType: transactionType,
-      installments: 1
+      value: amount,
+      payment_type: transactionType,
+      installments: 1,
+      charge_id: orderId.toString(),
+      order_type: 'NRM',
+      extras: {
+        CPF: '',
+        Nome: ''
+      },
+      has_details: false
     };
 
-    const response = await fetch('https://app-web-04-smtef-api-prd.azurewebsites.net/api/v1/cards', {
+    const response = await fetch('https://api.smarttef.mobi/commands/order/create', {
       method: 'POST',
       headers: {
-        'Cgp-Aqim-Subscription-Key': apiKey,
         'Authorization': `Bearer ${jwtToken}`,
+        'Ocp-Apim-Subscription-Key': apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
