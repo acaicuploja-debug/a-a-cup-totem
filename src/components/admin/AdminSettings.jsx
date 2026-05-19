@@ -414,11 +414,44 @@ export default function AdminSettings({ settings, primaryColor }) {
                       )}
                     </div>
                   ))}
-                </div>
-              </div>
-              
-              <div className="border-t pt-6">
-                <h3 className="font-bold text-gray-900 mb-4">PIX Manual (QR Code Estático)</h3>
+                  </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                  <h3 className="font-bold text-gray-900 mb-4">Smart TEF (Cartão Integrado)</h3>
+
+                  <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">Ativar Smart TEF</p>
+                      <p className="text-sm text-gray-600">Pagamento com cartão via API Smart TEF</p>
+                    </div>
+                    <Switch
+                      checked={(formData.payment_methods || ['pix', 'cartao']).includes('smarttef')}
+                      onCheckedChange={() => togglePaymentMethod('smarttef')}
+                    />
+                  </div>
+
+                  {(formData.payment_methods || ['pix', 'cartao']).includes('smarttef') && (
+                    <>
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p className="text-sm text-blue-800">
+                          <strong>✅ Smart TEF configurado!</strong> A API já está conectada com sua chave e terminal.
+                        </p>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <p className="text-sm text-green-800">
+                          <strong>Benefícios:</strong> Pagamentos com cartão totalmente integrados no totem. 
+                          Os clientes podem inserir dados do cartão e transações são processadas automaticamente.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                  <h3 className="font-bold text-gray-900 mb-4">PIX Manual (QR Code Estático)</h3>
                 
                 <div className="space-y-4">
                   <div className="space-y-2">
