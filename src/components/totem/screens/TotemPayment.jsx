@@ -33,8 +33,13 @@ export default function TotemPayment({
   const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
   const [processingPayment, setProcessingPayment] = useState(null);
   
+  // Se smarttef está ativo, remover 'cartao' para não duplicar
+  const filteredMethods = configuredMethods.includes('smarttef')
+    ? configuredMethods.filter(m => m !== 'cartao')
+    : configuredMethods;
+
   // Garantir que PIX apareça sempre primeiro
-  const sortedMethods = [...configuredMethods].sort((a, b) => {
+  const sortedMethods = [...filteredMethods].sort((a, b) => {
     if (a === 'pix') return -1;
     if (b === 'pix') return 1;
     return 0;
