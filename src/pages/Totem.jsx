@@ -14,6 +14,7 @@ import TotemCustomer from '../components/totem/screens/TotemCustomer';
 import TotemConsumption from '../components/totem/screens/TotemConsumption';
 import TotemPayment from '../components/totem/screens/TotemPayment';
 import TotemPix from '../components/totem/screens/TotemPix';
+import TotemSmartTefCard from '../components/totem/screens/TotemSmartTefCard';
 import TotemSuccess from '../components/totem/screens/TotemSuccess';
 
 import Admin from './Admin';
@@ -32,6 +33,7 @@ const SCREENS = {
   CONSUMPTION: 'consumption',
   PAYMENT: 'payment',
   PIX: 'pix',
+  SMARTTEF: 'smarttef',
   SUCCESS: 'success'
 };
 
@@ -41,7 +43,7 @@ function TotemContent() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
-  const { clearCart, setCurrentOrder } = useCart();
+  const { clearCart, setCurrentOrder, total, currentOrder, customer } = useCart();
   
   const { data: settings } = useQuery({
     queryKey: ['store-settings'],
@@ -123,6 +125,8 @@ function TotemContent() {
   const handlePaymentSelect = (method) => {
     if (method === 'pix') {
       setScreen(SCREENS.PIX);
+    } else if (method === 'smarttef') {
+      setScreen(SCREENS.SMARTTEF);
     } else {
       setScreen(SCREENS.SUCCESS);
     }
@@ -241,7 +245,20 @@ function TotemContent() {
               onChangePaymentMethod={handleChangePaymentMethod}
             />
           )}
-          
+
+          {screen === SCREENS.SMARTTEF && (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+              <TotemSmartTefCard 
+                {...screenProps}
+                total={total}
+                orderId={currentOrder?.id}
+                customerId={customer?.id}
+                onSuccess={handlePaymentConfirmed}
+                onCancel={() => setScreen(SCREENS.PAYMENT)}
+              />
+            </div>
+          )}
+
           {screen === SCREENS.SUCCESS && (
             <TotemSuccess 
               {...screenProps}

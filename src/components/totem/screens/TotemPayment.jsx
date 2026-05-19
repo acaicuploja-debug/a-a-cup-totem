@@ -19,6 +19,7 @@ const paymentLabels = {
   debito: { title: 'Débito', subtitle: '', description: 'Passe o cartão na maquininha', emoji: '💳' },
   credito: { title: 'Crédito', subtitle: '(à vista)', description: 'Passe o cartão na maquininha', emoji: '💳' },
   cartao: { title: 'Cartão', subtitle: '', description: 'Débito ou crédito na maquininha', emoji: '💳' },
+  smarttef: { title: 'Cartão', subtitle: '(Smart TEF)', description: 'Pagamento integrado com inspeção', emoji: '💳' },
   dinheiro: { title: 'Dinheiro', subtitle: '', description: 'Pagamento em espécie', emoji: '💵' }
 };
 
@@ -152,6 +153,13 @@ export default function TotemPayment({
         toast.success('Pedido criado!');
         onSelectPayment(method);
       } 
+      // Smart TEF - criar pedido e vai para tela de Smart TEF
+      else if (method === 'smarttef') {
+        toast.info('Criando pedido...');
+        await createOrderMutation.mutateAsync(method);
+        toast.success('Pedido criado!');
+        onSelectPayment(method);
+      }
       // PIX - vai para tela de PIX
       else {
         onSelectPayment(method);
