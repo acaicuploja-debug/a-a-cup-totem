@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { amount, orderId, customerId, description } = await req.json();
+    const { amount, orderId, paymentType, description } = await req.json();
 
     if (!amount || !orderId) {
       return Response.json({ error: 'Missing required fields: amount, orderId' }, { status: 400 });
@@ -23,13 +23,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing Smart TEF configuration' }, { status: 500 });
     }
 
-    // Create payment request for Smart TEF
+    // Mapear tipo de pagamento para Smart TEF
+    // debito = DEBIT, credito = CREDIT
+    const transactionType = paymentType === 'debito' ? 'DEBIT' : 'CREDIT';
+
     const payload = {
       terminalId: terminalId,
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: Math.round(amount * 100), // Converter para centavos
       orderId: orderId.toString(),
       description: description || 'Pedido',
-      transactionType: 'PURCHASE',
+      transactionType: transactionType,
       installments: 1
     };
 
@@ -47,12 +50,22 @@ Deno.serve(async (req) => {
       const errorText = await response.text();
       console.error('Smart TEF API error:', errorText);
       return Response.json({ 
-        error: `Smart TEF API error: ${response.status}`,
+        success: false,
+        message: `Erro na maquininha (${response.status})`,
         details: errorText 
-      }, { status: response.status });
+      }, { status: 200 }); // Retornar 200 para o frontend tratar como recusa
     }
 
     const data = await response.json();
+
+    // Após pagamento aprovado, atualizar pedido para em_preparo
+    if (data.transactionId || data.authorizationCode) {
+      await base44.asServiceRole.entities.Order.update(orderId, {
+        status: 'em_preparo',
+        payment_method: paymentType, // 'debito' ou 'credito'
+        payment_confirmed_at: new Date().toISOString()
+      });
+    }
 
     return Response.json({
       success: true,
