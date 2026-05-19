@@ -11,6 +11,7 @@ const paymentIcons = {
   debito: CreditCard,
   credito: CreditCard,
   cartao: CreditCard,
+  smarttef: CreditCard,
   dinheiro: Banknote
 };
 
