@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
     // A API retorna um array — pegar o primeiro item
     const order = Array.isArray(data) ? data[0] : data;
     const rawStatus = (order?.payment_status || '').toUpperCase();
-    console.log('payment_status:', rawStatus);
+    console.log('payment_status:', rawStatus, '| full order keys:', Object.keys(order || {}));
+    console.log('order full:', JSON.stringify(order));
 
     // CNC = Concluído/Confirmado
     if (['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED', 'CNC'].includes(rawStatus)) {

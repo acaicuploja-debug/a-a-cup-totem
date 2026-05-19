@@ -44,6 +44,7 @@ export default function TotemSmartTefCard({
         const res = await base44.functions.invoke('checkSmartTefPayment', { payment_identifier: paymentIdentifier });
         const { status, transactionId, authorizationCode } = res.data;
 
+        console.log('[SmartTEF] poll status:', status, res.data);
         if (status === 'approved') {
           stopPolling();
           setStep('success');
@@ -52,7 +53,7 @@ export default function TotemSmartTefCard({
           setTimeout(() => {
             onSuccess && onSuccess({ method: type, transactionId, authorizationCode });
           }, 2000);
-        } else if (status === 'denied') {
+        } else if (status === 'denied' || status === 'cancelled' || status === 'canceled') {
           stopPolling();
           // Pagamento cancelado/recusado — voltar ao checkout para escolher outro método
           onCancel && onCancel();
@@ -172,6 +173,13 @@ export default function TotemSmartTefCard({
               {formatTotal(total)}
             </p>
           </div>
+          <Button
+            onClick={() => { stopPolling(); onCancel && onCancel(); }}
+            variant="outline"
+            className="mt-4 h-12 px-8 text-base"
+          >
+            Cancelar Pagamento
+          </Button>
         </div>
       </div>
     );
