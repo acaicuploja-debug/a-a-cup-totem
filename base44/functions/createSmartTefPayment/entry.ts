@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { amount, orderId, paymentType, description } = await req.json();
+    const { amount, orderId, paymentType, description, customerName, customerCpf } = await req.json();
 
     if (!amount || !orderId) {
       return Response.json({ error: 'Missing required fields: amount, orderId' }, { status: 400 });
@@ -34,8 +34,8 @@ Deno.serve(async (req) => {
       charge_id: orderId.toString(),
       order_type: 'NRM',
       extras: {
-        CPF: '',
-        Nome: ''
+        CPF: customerCpf || '',
+        Nome: customerName || ''
       },
       has_details: false
     };

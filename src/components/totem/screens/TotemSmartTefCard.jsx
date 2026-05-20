@@ -131,7 +131,9 @@ export default function TotemSmartTefCard({
         amount: total,
         orderId: Date.now().toString(),
         paymentType: type,
-        description: `Pagamento cartao`
+        description: `Pagamento cartao`,
+        customerName: customer?.name || '',
+        customerCpf: customer?.cpf || ''
       });
 
       if (response.data.success && response.data.payment_identifier) {
