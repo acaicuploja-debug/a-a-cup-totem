@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
-import { motion } from 'framer-motion';
 
 const POLL_INTERVAL = 3000; // 3 segundos
 const POLL_TIMEOUT = 120000; // 2 minutos máximo
@@ -215,31 +214,6 @@ export default function TotemSmartTefCard({
             <p className="text-3xl font-bold" style={{ color: primaryColor }}>
               {formatTotal(total)}
             </p>
-          </div>
-
-          {/* Instruções em destaque com seta animada */}
-          <div
-            className="w-full max-w-2xl flex items-start gap-6 p-6 rounded-3xl border-4 mt-6"
-            style={{ 
-              backgroundColor: `${primaryColor}10`,
-              borderColor: primaryColor
-            }}
-          >
-            <motion.div
-              animate={{ x: [-10, -25, -10] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="flex-shrink-0 mt-1"
-            >
-              <ArrowLeft className="w-14 h-14" style={{ color: primaryColor }} strokeWidth={2.5} />
-            </motion.div>
-            <div>
-              <p 
-                className="text-2xl font-bold leading-tight"
-                style={{ color: primaryColor }}
-              >
-                Clique em cima do seu nome na maquininha ao lado para efetuar o pagamento
-              </p>
-            </div>
           </div>
 
           <Button
