@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ArrowLeft } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
+import { motion } from 'framer-motion';
 
 const POLL_INTERVAL = 3000; // 3 segundos
 const POLL_TIMEOUT = 120000; // 2 minutos máximo
@@ -162,7 +163,7 @@ export default function TotemSmartTefCard({
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <TotemHeader title="Pagamento com Cartão" primaryColor={primaryColor} />
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 relative">
           <Loader2 className="w-20 h-20 animate-spin" style={{ color: primaryColor }} />
           <h2 className="text-2xl font-bold text-gray-900 text-center">Aguardando maquininha...</h2>
           <p className="text-gray-500 text-center text-lg">
@@ -179,6 +180,22 @@ export default function TotemSmartTefCard({
               {formatTotal(total)}
             </p>
           </div>
+
+          {/* Instruções e seta animada para a esquerda */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-4 pl-6">
+            <motion.div
+              animate={{ x: [-10, -30, -10] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <ArrowLeft className="w-12 h-12" style={{ color: primaryColor }} strokeWidth={2.5} />
+            </motion.div>
+            <div className="flex flex-col gap-2 max-w-xs">
+              <p className="text-lg font-bold text-gray-900">
+                Clique em cima do seu nome na maquininha ao lado para efetuar o pagamento
+              </p>
+            </div>
+          </div>
+
           <Button
             onClick={() => { stopPolling(); onCancel && onCancel(); }}
             variant="outline"
