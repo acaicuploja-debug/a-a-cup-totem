@@ -163,7 +163,7 @@ export default function TotemSmartTefCard({
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <TotemHeader title="Pagamento com Cartão" primaryColor={primaryColor} />
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8 relative">
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
           <Loader2 className="w-20 h-20 animate-spin" style={{ color: primaryColor }} />
           <h2 className="text-2xl font-bold text-gray-900 text-center">Aguardando maquininha...</h2>
           <p className="text-gray-500 text-center text-lg">
@@ -181,16 +181,26 @@ export default function TotemSmartTefCard({
             </p>
           </div>
 
-          {/* Instruções e seta animada para a esquerda */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-4 pl-6">
+          {/* Instruções em destaque com seta animada */}
+          <div
+            className="w-full max-w-2xl flex items-start gap-6 p-6 rounded-3xl border-4 mt-6"
+            style={{ 
+              backgroundColor: `${primaryColor}10`,
+              borderColor: primaryColor
+            }}
+          >
             <motion.div
-              animate={{ x: [-10, -30, -10] }}
+              animate={{ x: [-10, -25, -10] }}
               transition={{ duration: 1.5, repeat: Infinity }}
+              className="flex-shrink-0 mt-1"
             >
-              <ArrowLeft className="w-12 h-12" style={{ color: primaryColor }} strokeWidth={2.5} />
+              <ArrowLeft className="w-14 h-14" style={{ color: primaryColor }} strokeWidth={2.5} />
             </motion.div>
-            <div className="flex flex-col gap-2 max-w-xs">
-              <p className="text-lg font-bold text-gray-900">
+            <div>
+              <p 
+                className="text-2xl font-bold leading-tight"
+                style={{ color: primaryColor }}
+              >
                 Clique em cima do seu nome na maquininha ao lado para efetuar o pagamento
               </p>
             </div>
