@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       payment_type: transactionType,
       installments: 1,
       charge_id: orderId.toString(),
-      order_type: 'NRM',
+      order_type: 'CRD_UNICO',
       extras: {
         CPF: customerCpf || '',
         Nome: customerName || ''
