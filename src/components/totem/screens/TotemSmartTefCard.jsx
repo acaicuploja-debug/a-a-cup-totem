@@ -12,12 +12,13 @@ export default function TotemSmartTefCard({
   total, 
   settings,
   primaryColor,
+  initialPaymentType,
   onSuccess, 
   onCancel
 }) {
   const { items, customer, consumptionType, setCurrentOrder } = useCart();
-  const [step, setStep] = useState('select'); // 'select' | 'processing' | 'success' | 'error'
-  const [paymentType, setPaymentType] = useState(null);
+  const [step, setStep] = useState(initialPaymentType ? 'processing' : 'select');
+  const [paymentType, setPaymentType] = useState(initialPaymentType || null);
   const [errorMessage, setErrorMessage] = useState('');
   const pollingRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -28,6 +29,9 @@ export default function TotemSmartTefCard({
   };
 
   useEffect(() => {
+    if (initialPaymentType) {
+      handleSelectType(initialPaymentType);
+    }
     return () => stopPolling();
   }, []);
 

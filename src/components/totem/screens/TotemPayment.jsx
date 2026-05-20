@@ -33,6 +33,7 @@ export default function TotemPayment({
   const { items, total, customer, consumptionType, setPaymentMethod, setCurrentOrder } = useCart();
   const configuredMethods = settings?.payment_methods || ['pix', 'cartao'];
   const [processingPayment, setProcessingPayment] = useState(null);
+  const [showSmartTefTypes, setShowSmartTefTypes] = useState(false);
   
   // Se smarttef está ativo, remover 'cartao' avulso para não duplicar
   // mas manter 'smarttef' que vai aparecer como "Cartão"
@@ -145,6 +146,11 @@ export default function TotemPayment({
     }
   });
   
+  const handleSmartTefType = (type) => {
+    setPaymentMethod(type);
+    onSelectPayment('smarttef', type);
+  };
+
   const handleSelect = async (method) => {
     // Prevenir cliques múltiplos
     if (processingPayment) return;
@@ -160,10 +166,10 @@ export default function TotemPayment({
         toast.success('Pedido criado!');
         onSelectPayment(method);
       } 
-      // Smart TEF - vai para tela de Smart TEF SEM criar pedido ainda
-      // O pedido só é criado após confirmação do pagamento
+      // Smart TEF - mostra opções débito/crédito inline
       else if (method === 'smarttef') {
-        onSelectPayment(method);
+        setShowSmartTefTypes(true);
+        setProcessingPayment(null);
       }
       // PIX - vai para tela de PIX
       else {
@@ -205,8 +211,44 @@ export default function TotemPayment({
           </div>
         </div>
         
+        {showSmartTefTypes && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3 text-center">Como vai pagar no cartão?</h3>
+            <div className="space-y-3">
+              <button
+                onClick={() => handleSmartTefType('debito')}
+                className="w-full flex items-center gap-6 p-6 rounded-2xl border-2 border-gray-200 bg-white hover:border-gray-300 hover:scale-105 active:scale-95 transition-all"
+              >
+                <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl" style={{ backgroundColor: `${primaryColor}15` }}>💳</div>
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-bold text-gray-900">Débito</h3>
+                  <p className="text-gray-500">Débito à vista</p>
+                </div>
+                <ArrowRight className="w-6 h-6 text-gray-400" />
+              </button>
+              <button
+                onClick={() => handleSmartTefType('credito')}
+                className="w-full flex items-center gap-6 p-6 rounded-2xl border-2 border-gray-200 bg-white hover:border-gray-300 hover:scale-105 active:scale-95 transition-all"
+              >
+                <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl" style={{ backgroundColor: `${primaryColor}15` }}>💳</div>
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-bold text-gray-900">Crédito à Vista</h3>
+                  <p className="text-gray-500">Crédito em 1x</p>
+                </div>
+                <ArrowRight className="w-6 h-6 text-gray-400" />
+              </button>
+              <button
+                onClick={() => setShowSmartTefTypes(false)}
+                className="w-full py-3 text-gray-500 underline text-sm"
+              >
+                Voltar
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {sortedMethods.map((method, index) => {
+          {!showSmartTefTypes && sortedMethods.map((method) => {
             const Icon = paymentIcons[method];
             const label = paymentLabels[method];
             const isPix = method === 'pix';

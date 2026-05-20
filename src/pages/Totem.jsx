@@ -43,6 +43,7 @@ function TotemContent() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
+  const [smartTefType, setSmartTefType] = useState(null);
   const { clearCart, setCurrentOrder, total, currentOrder, customer } = useCart();
   
   const { data: settings } = useQuery({
@@ -122,10 +123,11 @@ function TotemContent() {
   
   const handleConsumptionComplete = () => setScreen(SCREENS.PAYMENT);
   
-  const handlePaymentSelect = (method) => {
+  const handlePaymentSelect = (method, subType) => {
     if (method === 'pix') {
       setScreen(SCREENS.PIX);
     } else if (method === 'smarttef') {
+      setSmartTefType(subType || null);
       setScreen(SCREENS.SMARTTEF);
     } else {
       setScreen(SCREENS.SUCCESS);
@@ -251,6 +253,7 @@ function TotemContent() {
               <TotemSmartTefCard 
                 {...screenProps}
                 total={total}
+                initialPaymentType={smartTefType}
                 onSuccess={handlePaymentConfirmed}
                 onCancel={() => setScreen(SCREENS.PAYMENT)}
               />
