@@ -40,9 +40,14 @@ Deno.serve(async (req) => {
     console.log('payment_status:', rawStatus, '| full order keys:', Object.keys(order || {}));
     console.log('order full:', JSON.stringify(order));
 
-    // PROC_PAG = pagamento já autorizado pela adquirente (aguarda impressão no POS)
-    // CNC = Concluído (após impressão) — ambos representam pagamento aprovado
-    if (['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED', 'CNC', 'PROC_PAG'].includes(rawStatus)) {
+    // CNC = Concluído
+    // PROC_PAG com authorization_code preenchido = pagamento já autorizado pela adquirente
+    const isApproved = rawStatus === 'CNC' ||
+      rawStatus === 'PROC_PAG' && (order.autorization_code || order.nsu_host || order.nsu_sitef);
+
+    console.log('isApproved:', isApproved, '| autorization_code:', order.autorization_code, '| nsu_host:', order.nsu_host);
+
+    if (isApproved || ['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED'].includes(rawStatus)) {
       return Response.json({
         status: 'approved',
         transactionId: order.nsu_host || order.nsu_sitef,
