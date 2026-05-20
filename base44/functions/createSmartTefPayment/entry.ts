@@ -18,12 +18,14 @@ Deno.serve(async (req) => {
     // debito = DEBIT, credito = CREDIT
     const transactionType = paymentType === 'debito' ? 'DEBIT' : 'CREDIT';
 
+    // CRD_UNICO exige serial_pos OU user_id obrigatoriamente (conforme documentação)
     const payload = {
       value: amount,
       payment_type: transactionType,
       installments: 1,
       charge_id: orderId.toString(),
       order_type: 'CRD_UNICO',
+      serial_pos: terminalId, // obrigatório para CRD_UNICO
       extras: {
         CPF: customerCpf || '',
         Nome: customerName || ''
