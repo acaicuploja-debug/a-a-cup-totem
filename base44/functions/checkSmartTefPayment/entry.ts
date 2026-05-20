@@ -40,14 +40,15 @@ Deno.serve(async (req) => {
     console.log('payment_status:', rawStatus, '| full order keys:', Object.keys(order || {}));
     console.log('order full:', JSON.stringify(order));
 
-    // CNC = Concluído/Confirmado
-    if (['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED', 'CNC'].includes(rawStatus)) {
+    // PROC_PAG = pagamento já autorizado pela adquirente (aguarda impressão no POS)
+    // CNC = Concluído (após impressão) — ambos representam pagamento aprovado
+    if (['APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED', 'CNC', 'PROC_PAG'].includes(rawStatus)) {
       return Response.json({
         status: 'approved',
         transactionId: order.nsu_host || order.nsu_sitef,
         authorizationCode: order.autorization_code
       });
-    } else if (['DENIED', 'CANCELLED', 'REJECTED', 'ERROR', 'REFUSED', 'CAN'].includes(rawStatus)) {
+    } else if (['DENIED', 'CANCELLED', 'REJECTED', 'ERROR', 'REFUSED', 'CAN', 'REJ_PAG', 'CAN_ERP'].includes(rawStatus)) {
       return Response.json({ status: 'denied', message: 'Pagamento recusado pela maquininha.' });
     } else {
       return Response.json({ status: 'pending', rawStatus });
