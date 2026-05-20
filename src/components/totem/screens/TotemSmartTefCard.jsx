@@ -112,6 +112,7 @@ export default function TotemSmartTefCard({
       payment_method: paymentMethod,
       status: 'em_preparo',
       order_datetime: brasiliaTime,
+      payment_confirmed_at: new Date().toISOString(),
       reward_redeemed: currentCustomer?.redeeming_reward || false
     });
 
