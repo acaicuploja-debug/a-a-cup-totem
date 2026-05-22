@@ -20,6 +20,8 @@ export default function TotemSmartTefCard({
   const [step, setStep] = useState(initialPaymentType ? 'processing' : 'select');
   const [paymentType, setPaymentType] = useState(initialPaymentType || null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [countdown, setCountdown] = useState(10);
+  const countdownRef = useRef(null);
   const pollingRef = useRef(null);
   const timeoutRef = useRef(null);
   // Ref para evitar stale closure dentro do polling
@@ -33,6 +35,21 @@ export default function TotemSmartTefCard({
   const stopPolling = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  };
+
+  const startCountdown = () => {
+    setCountdown(10);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   useEffect(() => {
@@ -175,6 +192,7 @@ export default function TotemSmartTefCard({
 
       if (response.data.success && response.data.payment_identifier) {
         // Card criado na maquininha — agora faz polling usando o payment_identifier
+        startCountdown();
         startPolling(type, response.data.payment_identifier);
       } else {
         setErrorMessage(response.data.message || 'Erro ao enviar para maquininha. Tente novamente.');
@@ -200,11 +218,29 @@ export default function TotemSmartTefCard({
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <TotemHeader title="Pagamento com Cartão" primaryColor={primaryColor} />
         <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
-          <Loader2 className="w-20 h-20 animate-spin" style={{ color: primaryColor }} />
-          <h2 className="text-2xl font-bold text-gray-900 text-center">Aguardando maquininha...</h2>
-          <p className="text-gray-500 text-center text-lg">
-            Insira ou aproxime o cartão na maquininha.
-          </p>
+          {countdown > 0 ? (
+            <>
+              <div
+                className="w-28 h-28 rounded-full flex items-center justify-center text-5xl font-bold border-4"
+                style={{ borderColor: primaryColor, color: primaryColor }}
+              >
+                {countdown}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Preparando maquininha...</h2>
+              <p className="text-gray-500 text-center text-lg">
+                Aguarde <strong>{countdown} segundo{countdown !== 1 ? 's' : ''}</strong> que já aparecerá na maquininha ao lado.
+              </p>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-20 h-20 animate-spin" style={{ color: primaryColor }} />
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Aguardando maquininha...</h2>
+              <p className="text-gray-500 text-center text-lg">
+                Insira ou aproxime o cartão na maquininha.
+              </p>
+            </>
+          )}
+
           <div
             className="px-8 py-4 rounded-2xl text-center"
             style={{ backgroundColor: `${primaryColor}15` }}
