@@ -95,7 +95,9 @@ ${orderData.items?.map(item => `
 <div><strong>Pagamento:</strong> ${
 orderData.payment_method === 'pix' && orderData.mercadopago_payment_id ? 'Pix Online - Pago' :
 orderData.payment_method === 'pix' ? 'PIX' :
-orderData.payment_method === 'cartao' ? 'Cartão' :
+orderData.payment_method === 'debito' ? 'Cartão de Débito - Pago' :
+orderData.payment_method === 'credito' ? 'Cartão de Crédito - Pago' :
+orderData.payment_method === 'cartao' ? 'Cartão - Pago' :
 orderData.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartão'
 }</div>
 
@@ -178,7 +180,9 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
     Pagamento: ${
     orderData.payment_method === 'pix' && orderData.mercadopago_payment_id ? 'Pix Online - Pago' :
     orderData.payment_method === 'pix' ? 'PIX' :
-    orderData.payment_method === 'cartao' ? 'Cartao' :
+    orderData.payment_method === 'debito' ? 'Cartao de Debito - Pago' :
+    orderData.payment_method === 'credito' ? 'Cartao de Credito - Pago' :
+    orderData.payment_method === 'cartao' ? 'Cartao - Pago' :
     orderData.payment_method === 'dinheiro' ? 'Dinheiro' : 'Cartao'
     }
 
