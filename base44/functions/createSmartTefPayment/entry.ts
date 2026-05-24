@@ -18,9 +18,12 @@ Deno.serve(async (req) => {
     // debito = DEBIT, credito = CREDIT
     const transactionType = paymentType === 'debito' ? 'DEBIT' : 'CREDIT';
 
+    // Smart TEF exige no máximo 2 casas decimais
+    const roundedAmount = Math.round(Number(amount) * 100) / 100;
+
     // CRD_UNICO exige serial_pos OU user_id obrigatoriamente (conforme documentação)
     const payload = {
-      value: amount,
+      value: roundedAmount,
       payment_type: transactionType,
       installments: 1,
       charge_id: orderId.toString(),
