@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
+import { updateCustomerLoyalty } from '@/utils/loyaltyUtils';
 
 const POLL_INTERVAL = 3000; // 3 segundos
 const POLL_TIMEOUT = 120000; // 2 minutos máximo
@@ -134,44 +135,8 @@ export default function TotemSmartTefCard({
       reward_redeemed: currentCustomer?.redeeming_reward || false
     });
 
-    // Fidelidade — incrementa pedido do cliente
-    if (currentCustomer?.id) {
-      const loyaltyTarget = settings?.loyalty_target || 10;
-      if (currentCustomer.redeeming_reward) {
-        await base44.entities.Customer.update(currentCustomer.id, {
-          loyalty_count: 0,
-          has_pending_reward: false,
-          reward_available_date: null
-        });
-        await base44.entities.LoyaltyLog.create({
-          customer_id: currentCustomer.id,
-          customer_phone: currentCustomer.phone,
-          order_id: order.id,
-          action: 'premio_resgatado',
-          loyalty_count_before: currentCustomer.loyalty_count || 0,
-          loyalty_count_after: 0,
-          datetime_brasilia: brasiliaTime
-        });
-      } else {
-        const currentCount = currentCustomer.loyalty_count || 0;
-        const newCount = currentCount + 1;
-        const hasPendingReward = newCount >= loyaltyTarget;
-        await base44.entities.Customer.update(currentCustomer.id, {
-          loyalty_count: hasPendingReward ? loyaltyTarget : newCount,
-          has_pending_reward: hasPendingReward,
-          reward_available_date: hasPendingReward ? new Date().toISOString() : currentCustomer.reward_available_date
-        });
-        await base44.entities.LoyaltyLog.create({
-          customer_id: currentCustomer.id,
-          customer_phone: currentCustomer.phone,
-          order_id: order.id,
-          action: hasPendingReward ? 'premio_disponivel' : 'pedido_contado',
-          loyalty_count_before: currentCount,
-          loyalty_count_after: newCount,
-          datetime_brasilia: brasiliaTime
-        });
-      }
-    }
+    // Fidelidade — sempre busca dados frescos do banco para evitar stale data
+    await updateCustomerLoyalty({ customer: currentCustomer, orderId: order.id, settings, brasiliaTime });
 
     setCurrentOrder(order);
     return order;

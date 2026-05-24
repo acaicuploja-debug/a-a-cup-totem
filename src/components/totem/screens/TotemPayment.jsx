@@ -5,6 +5,7 @@ import { QrCode, CreditCard, Banknote, ArrowRight, Loader2 } from 'lucide-react'
 import TotemHeader from '../TotemHeader';
 import { useCart } from '../CartContext';
 import { toast } from 'sonner';
+import { updateCustomerLoyalty } from '@/utils/loyaltyUtils';
 
 const paymentIcons = {
   pix: QrCode,
@@ -97,47 +98,8 @@ export default function TotemPayment({
         reward_redeemed: customer?.redeeming_reward || false
       });
 
-      // Update loyalty
-      if (customer?.id) {
-        if (customer.redeeming_reward) {
-          await base44.entities.Customer.update(customer.id, {
-            loyalty_count: 0,
-            has_pending_reward: false,
-            reward_available_date: null
-          });
-
-          await base44.entities.LoyaltyLog.create({
-            customer_id: customer.id,
-            customer_phone: customer.phone,
-            order_id: order.id,
-            action: 'premio_resgatado',
-            loyalty_count_before: customer.loyalty_count || 0,
-            loyalty_count_after: 0,
-            datetime_brasilia: brasiliaTime
-          });
-        } else {
-          const currentCount = customer.loyalty_count || 0;
-          const newCount = currentCount + 1;
-          const loyaltyTarget = settings?.loyalty_target || 10;
-          const hasPendingReward = newCount >= loyaltyTarget;
-
-          await base44.entities.Customer.update(customer.id, {
-            loyalty_count: hasPendingReward ? loyaltyTarget : newCount,
-            has_pending_reward: hasPendingReward,
-            reward_available_date: hasPendingReward ? new Date().toISOString() : customer.reward_available_date
-          });
-
-          await base44.entities.LoyaltyLog.create({
-            customer_id: customer.id,
-            customer_phone: customer.phone,
-            order_id: order.id,
-            action: hasPendingReward ? 'premio_disponivel' : 'pedido_contado',
-            loyalty_count_before: currentCount,
-            loyalty_count_after: newCount,
-            datetime_brasilia: brasiliaTime
-          });
-        }
-      }
+      // Update loyalty (sempre busca dados frescos do banco para evitar stale data)
+      await updateCustomerLoyalty({ customer, orderId: order.id, settings, brasiliaTime });
 
       return order;
     },
