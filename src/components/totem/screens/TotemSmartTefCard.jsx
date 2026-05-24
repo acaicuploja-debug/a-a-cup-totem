@@ -83,8 +83,9 @@ export default function TotemSmartTefCard({
           }, 2000);
         } else if (status === 'denied' || status === 'cancelled' || status === 'canceled') {
           stopPolling();
-          // Pagamento cancelado/recusado — voltar ao checkout para escolher outro método
-          onCancel && onCancel();
+          // Pagamento recusado/cancelado — mostrar tela de erro para o cliente tentar novamente
+          setErrorMessage('Cartão recusado. Verifique o saldo ou tente outro cartão.');
+          setStep('error');
         }
         // 'pending' => continua polling
       } catch (e) {
