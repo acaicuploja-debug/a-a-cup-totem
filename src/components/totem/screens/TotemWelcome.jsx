@@ -63,14 +63,6 @@ export default function TotemWelcome({ settings, primaryColor, onStart, onOpenAd
 
       <div className="absolute inset-0 bg-black/10 z-10" />
 
-      {/* Admin Button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onOpenAdmin(); }}
-        className="hidden lg:block absolute top-6 right-6 z-20 p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all"
-      >
-        <Settings className="w-5 h-5 text-white" />
-      </button>
-
 
     </div>
   );
