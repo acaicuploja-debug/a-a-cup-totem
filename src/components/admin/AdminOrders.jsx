@@ -383,10 +383,10 @@ export default function AdminOrders({ settings, primaryColor }) {
                 <div>${item.quantity}x ${item.product_name}</div>
                 <div>R$ ${item.total.toFixed(2)}</div>
                 ${item.complements?.length > 0 ? `
-                  <div class="complements">
-                    ${item.complements.map(c => `<div class="complement-item">+ ${c.name}</div>`).join('')}
-                  </div>
-                ` : ''}
+                   <div class="complements">
+                     ${item.complements.map(c => `<div class="complement-item" style="${(c.qty > 1) ? 'font-weight:900; font-size:17px;' : ''}">+ ${c.qty > 1 ? `<span style="background:#000;color:#fff;padding:1px 5px;border-radius:3px;font-size:15px;">${c.qty}x</span> ` : ''}${c.name}${c.qty > 1 ? ' &#9650;&#9650;' : ''}</div>`).join('')}
+                   </div>
+                 ` : ''}
               </div>
             `).join('') || ''}
           </div>
