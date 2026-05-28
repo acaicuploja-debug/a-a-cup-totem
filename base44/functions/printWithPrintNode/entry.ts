@@ -84,7 +84,7 @@ ${orderData.items?.map(item => `
 <div style="margin: 5px 0;">
   <div>${item.weight ? `${item.product_name} ${item.weight.toFixed(3)}kg` : `${item.quantity}x ${item.product_name}`}</div>
   <div style="text-align: right;">R$ ${item.total.toFixed(2)}</div>
-  ${item.complements?.length > 0 ? item.complements.map(c => `<div style="margin-left: 20px;">+ ${c.qty > 1 ? `${c.qty}x ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2)})` : ''}</div>`).join('') : ''}
+  ${item.complements?.length > 0 ? item.complements.map(c => `<div style="margin-left: 20px; ${c.qty > 1 ? 'font-weight: bold;' : ''}">+ ${c.qty > 1 ? `<span style="background:#fff3cd; padding:0 3px; border-radius:3px;">&#9733; ${c.qty}x</span> ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2)})` : ''}${c.qty > 1 ? ' <span style="color:#c00; font-weight:bold;">&#x25C4; MULT.</span>' : ''}</div>`).join('') : ''}
 </div>
 `).join('') || ''}
 
@@ -168,7 +168,7 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
     : `${item.quantity}x ${item.product_name}`;
     line += `\n         R$ ${item.total.toFixed(2)}`;
     if (item.complements?.length > 0) {
-    line += '\n' + item.complements.map(c => `         + ${c.qty > 1 ? `${c.qty}x ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2)})` : ''}`).join('\n');
+    line += '\n' + item.complements.map(c => `         + ${c.qty > 1 ? `[${c.qty}x] *** ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2)})` : ''}${c.qty > 1 ? ' ***' : ''}`).join('\n');
     }
     return line;
     }).join('\n') || ''}
