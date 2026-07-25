@@ -1,0 +1,151 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "number",
+      "description": "N\u00famero sequencial do pedido"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID do cliente"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Peso em kg (para produtos por quilo)"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "complements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "cost_price": {
+            "type": "number",
+            "description": "Custo do item (fixo ou calculado por %)"
+          },
+          "sold_by_weight": {
+            "type": "boolean",
+            "description": "Se foi vendido por peso"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number"
+    },
+    "total": {
+      "type": "number"
+    },
+    "consumption_type": {
+      "type": "string",
+      "enum": [
+        "local",
+        "viagem"
+      ],
+      "description": "Comer no local ou embalar"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "pix",
+        "debito",
+        "credito",
+        "cartao",
+        "dinheiro"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aguardando_pix",
+        "aguardando_point",
+        "pagamento_informado",
+        "em_preparo",
+        "pronto",
+        "finalizado",
+        "cancelado"
+      ],
+      "default": "aguardando_pix"
+    },
+    "cancellation_reason": {
+      "type": "string",
+      "description": "Motivo do cancelamento"
+    },
+    "cancellation_details": {
+      "type": "string",
+      "description": "Detalhes adicionais do cancelamento"
+    },
+    "pix_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reward_redeemed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se resgatou pr\u00eamio neste pedido"
+    },
+    "order_datetime": {
+      "type": "string",
+      "description": "Data/hora do pedido (Bras\u00edlia)"
+    },
+    "mercadopago_payment_id": {
+      "type": "string",
+      "description": "ID do pagamento no Mercado Pago"
+    },
+    "mercadopago_payment_intent_id": {
+      "type": "string",
+      "description": "ID da inten\u00e7\u00e3o de pagamento no Point Smart"
+    },
+    "payment_confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da confirma\u00e7\u00e3o do pagamento"
+    }
+  },
+  "required": [
+    "customer_phone",
+    "items",
+    "total"
+  ],
+  "security": {
+    "create": "true",
+    "read": "auth.role == 'admin'",
+    "update": "auth.role == 'admin'",
+    "delete": "auth.role == 'admin'"
+  }
+}

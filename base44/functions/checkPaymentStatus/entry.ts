@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       return Response.json({ confirmed: false, message: 'No payment ID' });
     }
     
-    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN_PIX');
     if (!accessToken) {
       return Response.json({ error: 'Access token not configured' }, { status: 500 });
     }

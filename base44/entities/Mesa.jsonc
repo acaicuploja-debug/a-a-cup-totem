@@ -1,0 +1,67 @@
+{
+  "name": "Mesa",
+  "type": "object",
+  "properties": {
+    "number": {
+      "type": "number",
+      "description": "N\u00famero da mesa (1-6)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "livre",
+        "ocupada"
+      ],
+      "default": "livre"
+    },
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido em aberto"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Peso em kg (para produtos por quilo)"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "opened_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "number"
+  ],
+  "security": {
+    "create": "auth.role == 'admin'",
+    "read": "auth.role == 'admin'",
+    "update": "auth.role == 'admin'",
+    "delete": "auth.role == 'admin'"
+  }
+}

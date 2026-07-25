@@ -1,0 +1,36 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone (identificador \u00fanico)"
+    },
+    "cpf": {
+      "type": "string",
+      "description": "CPF do cliente"
+    },
+    "loyalty_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Contagem de pedidos para fidelidade"
+    },
+    "has_pending_reward": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se tem pr\u00eamio dispon\u00edvel para resgate"
+    },
+    "reward_available_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data que o pr\u00eamio ficou dispon\u00edvel"
+    }
+  },
+  "required": [
+    "phone"
+  ]
+}

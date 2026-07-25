@@ -1,0 +1,54 @@
+{
+  "name": "Feedback",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido"
+    },
+    "order_number": {
+      "type": "number",
+      "description": "N\u00famero do pedido"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Telefone do cliente"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "negative",
+        "neutral",
+        "pending"
+      ],
+      "default": "pending",
+      "description": "Sentimento do feedback"
+    },
+    "feedback_text": {
+      "type": "string",
+      "description": "Texto do feedback do cliente"
+    },
+    "google_review_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se enviou link do Google"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID da conversa do agente"
+    },
+    "feedback_datetime": {
+      "type": "string",
+      "description": "Data/hora do feedback"
+    }
+  },
+  "required": [
+    "order_id",
+    "customer_phone"
+  ]
+}

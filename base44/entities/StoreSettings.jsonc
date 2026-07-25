@@ -1,0 +1,166 @@
+{
+  "name": "StoreSettings",
+  "type": "object",
+  "properties": {
+    "store_name": {
+      "type": "string",
+      "default": "A\u00e7a\u00ed Cup"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#6B21A8"
+    },
+    "secondary_color": {
+      "type": "string",
+      "default": "#EC4899"
+    },
+    "background_url": {
+      "type": "string"
+    },
+    "welcome_banners": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "URLs dos banners da tela inicial do totem"
+    },
+    "pix_key": {
+      "type": "string"
+    },
+    "pix_key_type": {
+      "type": "string",
+      "enum": [
+        "cpf",
+        "cnpj",
+        "email",
+        "telefone",
+        "aleatoria"
+      ]
+    },
+    "pix_receiver_name": {
+      "type": "string"
+    },
+    "payment_methods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pix",
+          "cartao",
+          "dinheiro"
+        ]
+      },
+      "default": [
+        "pix",
+        "cartao"
+      ]
+    },
+    "payment_adjustments": {
+      "type": "object",
+      "description": "Desconto ou acr\u00e9scimo por forma de pagamento",
+      "properties": {
+        "pix": {
+          "type": "number",
+          "default": 0
+        },
+        "cartao": {
+          "type": "number",
+          "default": 0
+        },
+        "dinheiro": {
+          "type": "number",
+          "default": 0
+        }
+      }
+    },
+    "loyalty_target": {
+      "type": "number",
+      "default": 10
+    },
+    "loyalty_reward_product_id": {
+      "type": "string"
+    },
+    "loyalty_reward_description": {
+      "type": "string",
+      "default": "A\u00e7a\u00ed 300ml gr\u00e1tis"
+    },
+    "whatsapp_number": {
+      "type": "string"
+    },
+    "google_review_link": {
+      "type": "string"
+    },
+    "notification_sound": {
+      "type": "string",
+      "enum": [
+        "bell",
+        "chime",
+        "ding",
+        "alert"
+      ],
+      "default": "bell"
+    },
+    "notification_volume": {
+      "type": "number",
+      "default": 0.8
+    },
+    "mercadopago_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "mercadopago_public_key": {
+      "type": "string"
+    },
+    "mercadopago_device_id": {
+      "type": "string"
+    },
+    "default_printer": {
+      "type": "string"
+    },
+    "whatsapp_api_token": {
+      "type": "string"
+    },
+    "whatsapp_phone_number_id": {
+      "type": "string"
+    },
+    "whatsapp_automations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": [
+              "order_finished",
+              "inactive_customer",
+              "birthday",
+              "custom"
+            ]
+          },
+          "trigger_days": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "default": []
+    }
+  },
+  "required": []
+}
