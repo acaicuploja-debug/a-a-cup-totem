@@ -40,16 +40,17 @@ Deno.serve(async (req) => {
     console.log('payment_status:', rawStatus, '| full order keys:', Object.keys(order || {}));
     console.log('order full:', JSON.stringify(order));
 
-    // PROC_PAG = pagamento já autorizado pela adquirente (aguardando impressão no POS)
-    // CNC = Concluído (após impressão)
-    // Ambos indicam pagamento aprovado para o totem
-    if (['CNC', 'PROC_PAG', 'APPROVED', 'PAID', 'CONFIRMED', 'AUTHORIZED'].includes(rawStatus)) {
+    // CNC = Concluído: pagamento efetivamente autorizado e finalizado na maquininha.
+    // PROC_PAG = "processando pagamento": o pedido foi enviado à maquininha mas o cliente
+    // ainda NÃO finalizou o pagamento. NÃO deve ser tratado como aprovado.
+    // Demais status intermediários (AGUARD, PROC_PAG, etc.) permanecem como 'pending'.
+    if (['CNC'].includes(rawStatus)) {
       return Response.json({
         status: 'approved',
         transactionId: order.nsu_host || order.nsu_sitef,
         authorizationCode: order.autorization_code
       });
-    } else if (['DENIED', 'CANCELLED', 'REJECTED', 'ERROR', 'REFUSED', 'CAN', 'REJ_PAG', 'CAN_ERP'].includes(rawStatus)) {
+    } else if (['DENIED', 'CANCELLED', 'REJECTED', 'ERROR', 'REFUSED', 'CAN', 'REJ_PAG', 'CAN_ERP', 'DEN_ERP'].includes(rawStatus)) {
       return Response.json({ status: 'denied', message: 'Pagamento recusado pela maquininha.' });
     } else {
       return Response.json({ status: 'pending', rawStatus });
