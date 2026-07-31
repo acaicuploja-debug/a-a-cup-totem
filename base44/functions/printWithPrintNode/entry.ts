@@ -168,7 +168,7 @@ ${loyaltyText ? `<div class="center bold" style="margin: 10px 0;">${loyaltyText}
     : `${item.quantity}x ${item.product_name}`;
     line += `\n         R$ ${item.total.toFixed(2)}`;
     if (item.complements?.length > 0) {
-    line += '\n' + item.complements.map(c => `         + ${c.qty > 1 ? `[${c.qty}x] *** ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2)})` : ''}${c.qty > 1 ? ' ***' : ''}`).join('\n');
+    line += '\n' + item.complements.map(c => `         + ${c.qty > 1 ? `${c.qty}x ` : ''}${c.name}${c.price > 0 ? ` (R$ ${(c.price * (c.qty || 1)).toFixed(2).replace('.', ',')})` : ''}`).join('\n');
     }
     return line;
     }).join('\n') || ''}
