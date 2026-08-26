@@ -136,7 +136,7 @@ function TotemContent() {
   
   const handleContinueShopping = () => setScreen(SCREENS.CATALOG);
   
-  const handleProceedFromCart = () => setScreen(SCREENS.UPSELL);
+  const handleProceedFromCart = () => setScreen(SCREENS.CUSTOMER);
   
   const handleSkipUpsell = () => setScreen(SCREENS.CUSTOMER);
   
@@ -220,7 +220,7 @@ function TotemContent() {
               {...screenProps}
               product={selectedProduct}
               onBack={handleBackToProducts}
-              onAddToCart={() => setScreen(SCREENS.CATALOG)}
+              onAddToCart={() => setScreen(SCREENS.CART)}
             />
           )}
 
@@ -230,6 +230,10 @@ function TotemContent() {
               onContinueShopping={handleContinueShopping}
               onProceed={handleProceedFromCart}
               onBack={handleBackToProducts}
+              onProductSelect={(product) => {
+                setSelectedProduct(product);
+                setScreen(SCREENS.PRODUCT_DETAIL);
+              }}
             />
           )}
           
@@ -246,7 +250,7 @@ function TotemContent() {
             <TotemCustomer 
               {...screenProps}
               onComplete={handleCustomerComplete}
-              onBack={() => setScreen(SCREENS.UPSELL)}
+              onBack={() => setScreen(SCREENS.CART)}
             />
           )}
           

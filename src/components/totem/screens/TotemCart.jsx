@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TotemHeader from '../TotemHeader';
 import CartItem from '../CartItem';
+import CartUpsell from '../CartUpsell';
 import { useCart } from '../CartContext';
 import { toast } from 'sonner';
 
@@ -14,7 +15,8 @@ export default function TotemCart({
   primaryColor,
   onContinueShopping,
   onProceed,
-  onBack 
+  onBack,
+  onProductSelect
 }) {
   const { items, updateItemQuantity, removeItem, subtotal, discount, total, appliedCoupon, setAppliedCoupon } = useCart();
   
@@ -197,6 +199,8 @@ export default function TotemCart({
             </div>
           </div>
         </div>
+
+        <CartUpsell primaryColor={primaryColor} onProductSelect={onProductSelect} />
       </main>
       
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
@@ -216,7 +220,7 @@ export default function TotemCart({
             className="w-full h-14 text-lg font-semibold rounded-xl"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Continuar Comprando
+            Comprar Mais
           </Button>
         </div>
       </div>
