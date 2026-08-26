@@ -16,6 +16,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import AdminCategories from '../components/admin/AdminCategories';
 import AdminProducts from '../components/admin/AdminProducts';
@@ -49,8 +50,6 @@ export default function Admin({ onClose }) {
     return localStorage.getItem('admin_active_tab') || 'dashboard';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const previousPreparingOrderIds = React.useRef(new Set());
-  const isFirstLoad = React.useRef(true);
   
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['current-user'],
@@ -82,48 +81,43 @@ export default function Admin({ onClose }) {
     gcTime: 0
   });
 
-  // Auto-print - impressão única garantida
+  // Auto-print via PrintNode — dispara para todo pedido que atinge em_preparo.
+  // IDs já impressos são persistidos no localStorage para não reimprimir e para
+  // não perder pedidos que chegaram enquanto o painel estava fechado ou durante
+  // o carregamento da página (corrige a race condition da primeira carga).
   React.useEffect(() => {
-    if (!allOrders || !settings || !settings.default_printer) {
-      if (!settings?.default_printer) {
-        console.warn('⚠️ Impressora padrão não configurada');
-      }
-      return;
-    }
+    if (!allOrders || !settings?.default_printer) return;
 
+    const PRINTED_KEY = 'admin_printed_order_ids';
     const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
 
-    // PRIMEIRA CARGA: marcar todos pedidos existentes como já impressos
-    if (isFirstLoad.current) {
-      console.log('🆕 PRIMEIRA CARGA - Marcando pedidos existentes como já impressos');
-      previousPreparingOrderIds.current = new Set(currentPreparingOrders.map(o => o.id));
-      isFirstLoad.current = false;
+    // Primeira abertura (sem registro no localStorage): marca os pedidos atuais
+    // como já impressos para não reimprimir pedidos antigos de aberturas passadas.
+    if (!localStorage.getItem(PRINTED_KEY)) {
+      localStorage.setItem(PRINTED_KEY, JSON.stringify(currentPreparingOrders.map(o => o.id).slice(-200)));
       return;
     }
 
-    // DETECTAR NOVOS PEDIDOS (não existiam antes)
-    const newOrders = currentPreparingOrders.filter(
-      order => !previousPreparingOrderIds.current.has(order.id)
-    );
+    const printedIds = new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]'));
+    const ordersToPrint = currentPreparingOrders.filter(o => !printedIds.has(o.id));
+    if (ordersToPrint.length === 0) return;
 
-    if (newOrders.length > 0) {
-      console.log(`🚨 ${newOrders.length} NOVO(S) PEDIDO(S) - Imprimindo...`);
-      
-      newOrders.forEach((order) => {
-        // Marcar IMEDIATAMENTE como impresso
-        previousPreparingOrderIds.current.add(order.id);
-        
-        console.log(`📄 Imprimindo #${order.order_number}`);
-        base44.functions.invoke('printWithPrintNode', {
-          orderId: order.id,
-          printerName: settings.default_printer
-        }).then(() => {
-          console.log(`✅ #${order.order_number} impresso`);
-        }).catch((error) => {
-          console.error(`❌ Erro ao imprimir #${order.order_number}:`, error);
-        });
+    // Marcar como impresso imediatamente para evitar reimpressão no próximo poll
+    const updatedPrinted = [...printedIds, ...ordersToPrint.map(o => o.id)].slice(-200);
+    localStorage.setItem(PRINTED_KEY, JSON.stringify(updatedPrinted));
+
+    ordersToPrint.forEach((order) => {
+      console.log(`📄 Imprimindo #${order.order_number}`);
+      base44.functions.invoke('printWithPrintNode', {
+        orderId: order.id,
+        printerName: settings.default_printer
+      }).then(() => {
+        console.log(`✅ #${order.order_number} impresso`);
+      }).catch((error) => {
+        console.error(`❌ Erro ao imprimir #${order.order_number}:`, error);
+        toast.error(`Falha ao imprimir o pedido #${order.order_number} (PrintNode). Verifique a impressora.`);
       });
-    }
+    });
   }, [allOrders, settings]);
   
   const primaryColor = settings?.primary_color || '#6B21A8';
