@@ -16,6 +16,7 @@ import TotemPayment from '../components/totem/screens/TotemPayment';
 import TotemPix from '../components/totem/screens/TotemPix';
 import TotemSmartTefCard from '../components/totem/screens/TotemSmartTefCard';
 import TotemSuccess from '../components/totem/screens/TotemSuccess';
+import InactivityWarning from '../components/totem/InactivityWarning.jsx';
 
 import Admin from './Admin';
 
@@ -74,20 +75,40 @@ function TotemContent() {
     };
   }, []);
   
-  // Check for inactivity (1 minute)
+  // Inatividade: aviso visual aos 45s e encerramento aos 60s.
+  // Contador único derivado de lastActivity (sem timers duplicados / sem race condition).
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [warningCountdown, setWarningCountdown] = useState(15);
+
   React.useEffect(() => {
     const interval = setInterval(() => {
-      // Don't reset if on PIX or SmartTEF screen (pagamento em andamento) or admin
+      // Não atuar em pagamento em andamento, admin ou tela inicial
       if (screen === SCREENS.PIX || screen === SCREENS.SMARTTEF || showAdmin) return;
-      
-      const inactiveTime = Date.now() - lastActivity;
-      if (inactiveTime > 60000 && screen !== SCREENS.WELCOME) { // 1 minute
-        handleNewOrder();
+      if (screen === SCREENS.WELCOME) return;
+
+      const inactive = Date.now() - lastActivity;
+
+      if (showInactivityWarning) {
+        // Qualquer interação reseta lastActivity → fechar aviso e manter o pedido intacto
+        if (inactive < 45000) {
+          setShowInactivityWarning(false);
+          return;
+        }
+        const remaining = 15 - Math.floor((inactive - 45000) / 1000);
+        if (remaining <= 0) {
+          setShowInactivityWarning(false);
+          handleNewOrder();
+        } else {
+          setWarningCountdown(remaining);
+        }
+      } else if (inactive >= 45000) {
+        setShowInactivityWarning(true);
+        setWarningCountdown(15);
       }
-    }, 5000); // Check every 5 seconds
-    
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [screen, lastActivity, showAdmin]);
+  }, [screen, lastActivity, showAdmin, showInactivityWarning]);
   
   const handleStartOrder = () => setScreen(SCREENS.CATALOG);
   
@@ -144,6 +165,11 @@ function TotemContent() {
     setSelectedProduct(null);
     setCurrentOrder(null);
     setScreen(SCREENS.WELCOME);
+  };
+
+  const handleContinueOrder = () => {
+    setLastActivity(Date.now());
+    setShowInactivityWarning(false);
   };
   
   const screenProps = {
@@ -273,6 +299,14 @@ function TotemContent() {
         <div className="hidden md:block fixed inset-0 z-50 bg-white">
           <Admin onClose={() => setShowAdmin(false)} />
         </div>
+      )}
+
+      {showInactivityWarning && (
+        <InactivityWarning
+          countdown={warningCountdown}
+          onContinue={handleContinueOrder}
+          primaryColor={primaryColor}
+        />
       )}
     </div>
   );
