@@ -83,8 +83,15 @@ function TotemContent() {
   React.useEffect(() => {
     const interval = setInterval(() => {
       // Não atuar em pagamento em andamento, admin ou tela inicial
-      if (screen === SCREENS.PIX || screen === SCREENS.SMARTTEF || showAdmin) return;
-      if (screen === SCREENS.WELCOME) return;
+      if (screen === SCREENS.PIX || screen === SCREENS.SMARTTEF || showAdmin) {
+        // Garante que um aviso disparado em tela anterior seja fechado ao entrar no pagamento
+        if (showInactivityWarning) setShowInactivityWarning(false);
+        return;
+      }
+      if (screen === SCREENS.WELCOME) {
+        if (showInactivityWarning) setShowInactivityWarning(false);
+        return;
+      }
 
       const inactive = Date.now() - lastActivity;
 
@@ -146,8 +153,12 @@ function TotemContent() {
   
   const handlePaymentSelect = (method, subType) => {
     if (method === 'pix') {
+      setShowInactivityWarning(false);
+      setLastActivity(Date.now());
       setScreen(SCREENS.PIX);
     } else if (method === 'smarttef') {
+      setShowInactivityWarning(false);
+      setLastActivity(Date.now());
       setSmartTefType(subType || null);
       setScreen(SCREENS.SMARTTEF);
     } else {
