@@ -47,6 +47,11 @@
                 },
                 "price": {
                   "type": "number"
+                },
+                "qty": {
+                  "type": "number",
+                  "default": 1,
+                  "description": "Quantidade selecionada do adicional (para grupos multiplic\u00e1veis)"
                 }
               }
             }
