@@ -81,30 +81,38 @@ export default function Admin({ onClose }) {
     gcTime: 0
   });
 
-  // Auto-print via PrintNode — dispara para todo pedido que atinge em_preparo.
-  // IDs já impressos são persistidos no localStorage para não reimprimir e para
-  // não perder pedidos que chegaram enquanto o painel estava fechado ou durante
-  // o carregamento da página (corrige a race condition da primeira carga).
+  // Auto-print via PrintNode — dispara uma ÚNICA vez para cada pedido que atinge
+  // em_preparo. IDs já impressos são persistidos no localStorage (cap amplo) e
+  // só pedidos recentes são considerados, evitando reimpressão de comandas
+  // antigas presas em em_preparo (corrige duplicidade na confirmação de
+  // pagamento e reimpressão ao finalizar todos).
   React.useEffect(() => {
     if (!allOrders || !settings?.default_printer) return;
 
     const PRINTED_KEY = 'admin_printed_order_ids';
-    const currentPreparingOrders = allOrders.filter(o => o.status === 'em_preparo');
+    const RECENT_WINDOW_MS = 30 * 60 * 1000; // só pedidos criados nos últimos 30 min
+    const now = Date.now();
+
+    const recentPreparing = allOrders.filter(o =>
+      o.status === 'em_preparo' &&
+      o.created_date &&
+      (now - new Date(o.created_date).getTime()) < RECENT_WINDOW_MS
+    );
 
     // Primeira abertura (sem registro no localStorage): marca os pedidos atuais
     // como já impressos para não reimprimir pedidos antigos de aberturas passadas.
     if (!localStorage.getItem(PRINTED_KEY)) {
-      localStorage.setItem(PRINTED_KEY, JSON.stringify(currentPreparingOrders.map(o => o.id).slice(-200)));
+      localStorage.setItem(PRINTED_KEY, JSON.stringify(recentPreparing.map(o => o.id)));
       return;
     }
 
     const printedIds = new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]'));
-    const ordersToPrint = currentPreparingOrders.filter(o => !printedIds.has(o.id));
+    const ordersToPrint = recentPreparing.filter(o => !printedIds.has(o.id));
     if (ordersToPrint.length === 0) return;
 
     // Marcar como impresso imediatamente para evitar reimpressão no próximo poll
-    const updatedPrinted = [...printedIds, ...ordersToPrint.map(o => o.id)].slice(-200);
-    localStorage.setItem(PRINTED_KEY, JSON.stringify(updatedPrinted));
+    ordersToPrint.forEach(o => printedIds.add(o.id));
+    localStorage.setItem(PRINTED_KEY, JSON.stringify(Array.from(printedIds).slice(-5000)));
 
     ordersToPrint.forEach((order) => {
       console.log(`📄 Imprimindo #${order.order_number}`);
