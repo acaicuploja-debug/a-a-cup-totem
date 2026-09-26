@@ -69,30 +69,59 @@ export default function TotemSmartTefCard({
     }, POLL_TIMEOUT);
 
     pollingRef.current = setInterval(async () => {
+      // Erros de rede do polling são ignorados — continua tentando até o status mudar.
+      let res;
       try {
-        const res = await base44.functions.invoke('checkSmartTefPayment', { payment_identifier: paymentIdentifier });
-        const { status, transactionId, authorizationCode } = res.data;
+        res = await base44.functions.invoke('checkSmartTefPayment', { payment_identifier: paymentIdentifier });
+      } catch (e) {
+        return;
+      }
 
-        console.log('[SmartTEF] poll status:', status, res.data);
-        if (status === 'approved') {
-          stopPolling();
+      const { status, transactionId, authorizationCode } = res.data;
+      console.log('[SmartTEF] poll status:', status, res.data);
+
+      if (status === 'approved') {
+        stopPolling();
+        // Criar o pedido é CRÍTICO — o pagamento já foi aprovado na maquininha.
+        // Não pode ser engolido silenciosamente: retry e, se persistir, alertar o atendente.
+        try {
+          await createOrderWithRetry(type);
           setStep('success');
-          // Criar pedido SOMENTE após pagamento confirmado
-          await createOrder(type);
           setTimeout(() => {
             onSuccess && onSuccess({ method: type, transactionId, authorizationCode });
           }, 2000);
-        } else if (status === 'denied' || status === 'cancelled' || status === 'canceled') {
-          stopPolling();
-          // Pagamento recusado/cancelado — mostrar tela de erro para o cliente tentar novamente
-          setErrorMessage('Cartão recusado. Verifique o saldo ou tente outro cartão.');
+        } catch (err) {
+          console.error('[SmartTEF] Falha crítica ao criar pedido após pagamento aprovado:', err);
+          setErrorMessage('Pagamento aprovado, mas houve um erro ao registrar o pedido. PROCURE UM ATENDENTE imediatamente.');
           setStep('error');
         }
-        // 'pending' => continua polling
-      } catch (e) {
-        // ignora erros de rede e continua tentando
+      } else if (status === 'denied' || status === 'cancelled' || status === 'canceled') {
+        stopPolling();
+        // Pagamento recusado/cancelado — mostrar tela de erro para o cliente tentar novamente
+        setErrorMessage('Cartão recusado. Verifique o saldo ou tente outro cartão.');
+        setStep('error');
       }
+      // 'pending' => continua polling
     }, POLL_INTERVAL);
+  };
+
+  // Cria o pedido com retry — o pagamento já foi confirmado, então o pedido
+  // DEVE ser registrado. Falhas transitórias de rede não podem fazer o pedido
+  // sumir do gestor.
+  const createOrderWithRetry = async (paymentMethod) => {
+    const MAX_RETRIES = 4;
+    const RETRY_DELAY = 1500;
+    let lastError;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await createOrder(paymentMethod);
+      } catch (err) {
+        console.error(`[SmartTEF] Tentativa ${attempt}/${MAX_RETRIES} de criar pedido falhou:`, err);
+        lastError = err;
+        if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, RETRY_DELAY));
+      }
+    }
+    throw lastError;
   };
 
   const createOrder = async (paymentMethod) => {
@@ -135,8 +164,12 @@ export default function TotemSmartTefCard({
       reward_redeemed: currentCustomer?.redeeming_reward || false
     });
 
-    // Fidelidade — sempre busca dados frescos do banco para evitar stale data
-    await updateCustomerLoyalty({ customer: currentCustomer, orderId: order.id, settings, brasiliaTime });
+    // Fidelidade — não pode fazer o pedido "sumir" se falhar. O pedido já foi criado.
+    try {
+      await updateCustomerLoyalty({ customer: currentCustomer, orderId: order.id, settings, brasiliaTime });
+    } catch (loyaltyErr) {
+      console.error('[SmartTEF] Erro ao atualizar fidelidade (pedido já criado):', loyaltyErr);
+    }
 
     setCurrentOrder(order);
     return order;
