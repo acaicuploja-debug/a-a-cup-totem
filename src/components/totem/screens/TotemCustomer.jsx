@@ -70,7 +70,10 @@ export default function TotemCustomer({
     return () => clearTimeout(debounce);
   }, [phone]);
   
+  // networkMode: 'always' — o totem não pode ficar com o spinner travado se a
+  // conexão cair momentaneamente (padrão 'online' PAUSA a mutação indefinidamente).
   const createCustomerMutation = useMutation({
+    networkMode: 'always',
     mutationFn: async (data) => {
       if (foundCustomer) {
         await base44.entities.Customer.update(foundCustomer.id, data);
@@ -84,6 +87,14 @@ export default function TotemCustomer({
       queryClient.invalidateQueries(['customers']);
     }
   });
+
+  const withTimeout = (promise, ms) => {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('timeout')), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  };
   
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -99,12 +110,24 @@ export default function TotemCustomer({
       return;
     }
 
-    await createCustomerMutation.mutateAsync({
-      name,
-      phone: cleanPhone,
-      cpf: cpf.replace(/\D/g, '')
-    });
-    onComplete();
+    try {
+      await withTimeout(
+        createCustomerMutation.mutateAsync({
+          name,
+          phone: cleanPhone,
+          cpf: cpf.replace(/\D/g, '')
+        }),
+        20000
+      );
+      onComplete();
+    } catch (err) {
+      console.error('Erro ao salvar cliente:', err);
+      toast.error(
+        err?.message === 'timeout'
+          ? 'Tempo limite excedido. Verifique a conexão e tente novamente.'
+          : 'Erro ao salvar seus dados. Tente novamente.'
+      );
+    }
   };
   
   const handleRedeemReward = () => {
